@@ -241,7 +241,7 @@ useful. Review found the following and DeepSeek fixed them in the follow-up comm
 | Intra-file duplicates | Only duplicates against existing history were flagged; the same row twice in one file imported twice. | Fingerprints are added to the seen-set while parsing. |
 | Direction | Positive expense rows (e.g. "Bakers Inn Restock") were parsed as inflows. | Recognized categories determine direction; statement sign is used for uncategorized rows. |
 | Amounts | Accounting parentheses `(45.00)` were treated as positive. | `parseAmountCell` handles parentheses, commas, symbols; returns `null` for blanks. |
-| Tests | No coverage for the above. | 7 new Vitest cases; mobile suite now **26 tests** (41 monorepo total). |
+| Tests | No coverage for the above. | 7 new Vitest cases; mobile suite now **26 tests** (42 monorepo total). |
 
 Still open after this pass:
 
