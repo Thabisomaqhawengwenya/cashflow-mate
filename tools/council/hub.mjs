@@ -77,8 +77,17 @@ export const COUNCIL_REGISTRY = [
     tier: 'Council Member',
   },
   {
+    id: 'codex',
+    name: 'OpenAI Codex',
+    role: 'IPC Socket Runtime & Sandbox Engine',
+    binaryPath: path.join(USER_HOME, '.codex'),
+    configPath: path.join(USER_HOME, '.codex\\config.toml'),
+    bridgeProtocol: 'Windows Named Pipe IPC (\\\\.\\pipe\\OpenAI.CodexSandbox.* & codex-ipc)',
+    tier: 'Council Member',
+  },
+  {
     id: 'copilot',
-    name: 'GitHub Copilot & Codex',
+    name: 'GitHub Copilot',
     role: 'Inline Autocomplete & Syntax Synthesizer',
     binaryPath: path.join(USER_HOME, '.copilot'),
     configPath: path.resolve('.github\\copilot-instructions.md'),
@@ -179,10 +188,19 @@ export function broadcastTask(taskSummary) {
       stdio: 'inherit',
     });
   } catch (err) {
-    console.error('Bridge notification error:', err.message);
+    console.error('DeepSeek Bridge notification error:', err.message);
   }
 
-  // 2. Append to Council Event Ledger
+  // 2. Dispatch over Codex IPC Socket Bridge
+  try {
+    execSync(`node tools/codex-bridge/notify.mjs "${taskSummary.replace(/"/g, '\\"')}"`, {
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('Codex Bridge notification error:', err.message);
+  }
+
+  // 3. Append to Council Event Ledger
   const logEntry = {
     timestamp: new Date().toISOString(),
     commander: 'Mr Q',
