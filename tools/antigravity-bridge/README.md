@@ -33,6 +33,10 @@ When that state goes **true → false** (after a short settle window), the bridg
 `agent.turn.completed`. It never modifies Antigravity's files, messages, or DOM; it only reads
 state and uses Antigravity's own `window.nativeNotifications` API for the desktop toast.
 
+On completion the bridge also reads the authoritative final assistant message from
+`~/.gemini/antigravity/brain/<conversation-id>/.system_generated/logs/transcript.jsonl`, because
+the renderer only keeps a stale/short copy of the last response in the DOM.
+
 ## Quick start
 
 ```powershell
@@ -77,7 +81,10 @@ Newline-delimited JSON on stdout and on the named pipe.
   "durationSource": "observed",
   "workedFor": "Worked for 2m",
   "workedCount": 5,
-  "lastAssistantText": "…the last ~800 characters of the final assistant message…"
+  "lastAssistantText": "…short DOM tail of the final message…",
+  "finalMessage": "…authoritative final assistant message read from Antigravity's transcript.jsonl, last 4000 characters…",
+  "finalMessageStep": 450,
+  "finalMessageAt": "2026-10-26T10:43:09Z"
 }
 ```
 

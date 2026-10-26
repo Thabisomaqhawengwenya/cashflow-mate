@@ -538,6 +538,63 @@ function formatDuration(ms) {
   return `${hours}h ${minutes % 60}m`;
 }
 
+const AG_BRAIN_DIR = path.join(os.homedir(), '.gemini', 'antigravity', 'brain');
+
+/**
+ * Antigravity writes its agent trajectory to
+ *   ~/.gemini/antigravity/brain/<conversationId>/.system_generated/logs/transcript.jsonl
+ * The renderer only keeps a stale/short DOM copy of the final response, so read
+ * the authoritative last assistant message from the transcript for the event.
+ */
+function readFinalAssistantMessage(conversationId) {
+  if (!conversationId) return null;
+  const file = path.join(
+    AG_BRAIN_DIR,
+    conversationId,
+    '.system_generated',
+    'logs',
+    'transcript.jsonl'
+  );
+  try {
+    const stat = fs.statSync(file);
+    if (!stat.isFile() || stat.size === 0) return null;
+
+    // Read at most the last 2 MB; a partial first line is simply skipped below.
+    const maxBytes = 2 * 1024 * 1024;
+    const start = Math.max(0, stat.size - maxBytes);
+    const length = stat.size - start;
+    const buffer = Buffer.alloc(length);
+    const fd = fs.openSync(file, 'r');
+    try {
+      fs.readSync(fd, buffer, 0, length, start);
+    } finally {
+      fs.closeSync(fd);
+    }
+
+    const lines = buffer.toString('utf8').split('\n');
+    for (let index = lines.length - 1; index >= 0; index--) {
+      const line = lines[index].trim();
+      if (!line || !line.startsWith('{')) continue;
+      let step;
+      try {
+        step = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (step.type !== 'PLANNER_RESPONSE' || !step.content) continue;
+      if (Array.isArray(step.tool_calls) && step.tool_calls.length > 0) continue;
+      return {
+        text: String(step.content),
+        stepIndex: step.step_index ?? null,
+        createdAt: step.created_at ?? null,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function handleObserverPayload(payload) {
   let event;
   try {
@@ -581,8 +638,10 @@ function handleObserverPayload(payload) {
     runtime.working = false;
     runtime.conversationId = event.conversationId;
     runtime.conversationTitle = event.title;
+    const conversationId = event.conversationId || runtime.conversationId;
+    const finalMessage = readFinalAssistantMessage(conversationId);
     publish('agent.turn.completed', {
-      conversationId: event.conversationId,
+      conversationId,
       title: event.title,
       url: event.url,
       durationMs: typeof event.durationMs === 'number' ? event.durationMs : null,
@@ -590,6 +649,9 @@ function handleObserverPayload(payload) {
       workedFor: event.workedFor || null,
       workedCount: event.workedCount ?? null,
       lastAssistantText: event.lastAssistantText || null,
+      finalMessage: finalMessage?.text ? finalMessage.text.slice(-4000) : null,
+      finalMessageStep: finalMessage?.stepIndex ?? null,
+      finalMessageAt: finalMessage?.createdAt ?? null,
     });
   }
 }
