@@ -135,6 +135,9 @@ export default function OverviewScreen() {
             <Pressable
               key={item.id}
               onPress={() => setPeriod(item.id as any)}
+              accessibilityRole="button"
+              accessibilityLabel={`Filter by ${item.label}`}
+              accessibilityState={{ selected: isActive }}
               style={[
                 styles.periodChip,
                 {
@@ -343,7 +346,12 @@ export default function OverviewScreen() {
           <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>Record Transaction</Text>
-              <Pressable onPress={() => setIsModalOpen(false)}>
+              <Pressable
+                onPress={() => setIsModalOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close transaction modal"
+                hitSlop={12}
+              >
                 <Ionicons name="close" size={22} color={theme.tabIconDefault} />
               </Pressable>
             </View>
@@ -352,6 +360,9 @@ export default function OverviewScreen() {
             <View style={styles.toggleRow}>
               <Pressable
                 onPress={() => setDirection('inflow')}
+                accessibilityRole="button"
+                accessibilityLabel="Income Inflow"
+                accessibilityState={{ selected: direction === 'inflow' }}
                 style={[
                   styles.toggleBtn,
                   {
@@ -367,6 +378,9 @@ export default function OverviewScreen() {
 
               <Pressable
                 onPress={() => setDirection('outflow')}
+                accessibilityRole="button"
+                accessibilityLabel="Expense Outflow"
+                accessibilityState={{ selected: direction === 'outflow' }}
                 style={[
                   styles.toggleBtn,
                   {

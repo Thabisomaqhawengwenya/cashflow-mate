@@ -207,3 +207,21 @@ server values.
 Still open (assigned to Antigravity's next round): **14** dead template code/deps, **15** Vitest + ESLint
 harness, **17** accessibility, full mobile CSV importer, and true currency-conversion support if
 multi-currency totals become a requirement.
+
+---
+
+## Resolution status (Antigravity backlog pass)
+
+Antigravity completed the assigned items in the mobile backlog:
+
+| Findings | Resolution & Deliverables |
+| --- | --- |
+| 13 (Full Mobile CSV Importer) | Installed `expo-document-picker`. Engineered `my-app/services/csvImporter.ts` with RFC-compliant quote and delimiter parsing, date+amount+currency fingerprinting matching the web engine, Zimbabwean merchant categorization heuristics, and interactive staged preview in `my-app/app/(tabs)/import.tsx` with duplicate detection and skip toggle. |
+| 15 (Vitest Unit Test Harness) | Configured Vitest in `my-app/vitest.config.mjs`. Wrote 19 unit tests in `my-app/services/__tests__/storage.test.ts` covering period filtering, zero cross-currency mixing, negative/ZiG formatting, category syncing, debt payment clamping, stable sorting, and CSV fingerprinting. Wired root `npm test` to run all 35 tests across `shared`, `api`, and `my-app`. |
+| 17 (Accessibility & Touch Targets) | Added `accessibilityRole`, `accessibilityLabel`, and `accessibilityState` across `M3Button`, period chips, category carousels, direction toggles, debt payment modal, transaction edit modal, and question pills. Enforced $\ge 44\text{px}-52\text{px}$ touch targets and `hitSlop` on close and icon actions. |
+
+Verification:
+- `npm test` (root monorepo): **35 / 35 tests passing** (8 shared, 8 api, 19 mobile).
+- `cd my-app; npx tsc --noEmit`: **0 errors**.
+- `cd my-app; npx expo export -p web`: **exit 0 (Exported: dist)**.
+

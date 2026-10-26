@@ -11,7 +11,7 @@
     "dev:api": "npm --workspace=@cashflow-mate/api run dev",
     "dev:web": "npm --workspace=@cashflow-mate/web run dev",
     "build": "npm --workspace=@cashflow-mate/shared run build && npm --workspace=@cashflow-mate/api run build && npm --workspace=@cashflow-mate/web run build",
-    "test": "npm --workspace=@cashflow-mate/shared run test && npm --workspace=@cashflow-mate/api run test",
+    "test": "npm --workspace=@cashflow-mate/shared run test && npm --workspace=@cashflow-mate/api run test && npm --prefix my-app test",
     "deepseek:watch": "node tools/deepseek-bridge/watch.mjs --once",
     "deepseek:notify": "node tools/deepseek-bridge/notify.mjs",
     "deepseek:server": "node tools/deepseek-bridge/server.mjs"

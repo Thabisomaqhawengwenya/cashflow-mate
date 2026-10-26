@@ -125,6 +125,9 @@ export default function TransactionsScreen() {
               <Pressable
                 key={item.id}
                 onPress={() => setDirectionFilter(item.id as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${item.label}`}
+                accessibilityState={{ selected: isActive }}
                 style={[
                   styles.filterChip,
                   {
@@ -145,6 +148,9 @@ export default function TransactionsScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catCarousel}>
           <Pressable
             onPress={() => setSelectedCategory('all')}
+            accessibilityRole="button"
+            accessibilityLabel="Filter by All Categories"
+            accessibilityState={{ selected: selectedCategory === 'all' }}
             style={[
               styles.catChip,
               {
@@ -159,6 +165,9 @@ export default function TransactionsScreen() {
             <Pressable
               key={key}
               onPress={() => setSelectedCategory(key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Filter by category ${cat.label}`}
+              accessibilityState={{ selected: selectedCategory === key }}
               style={[
                 styles.catChip,
                 {
@@ -255,7 +264,12 @@ export default function TransactionsScreen() {
           <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Transaction</Text>
-              <Pressable onPress={() => setSelectedTx(null)}>
+              <Pressable
+                onPress={() => setSelectedTx(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Close category editor"
+                hitSlop={12}
+              >
                 <Ionicons name="close" size={22} color={theme.tabIconDefault} />
               </Pressable>
             </View>

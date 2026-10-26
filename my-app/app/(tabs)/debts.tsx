@@ -275,7 +275,12 @@ export default function DebtsScreen() {
           <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>Record Payment</Text>
-              <Pressable onPress={() => setSelectedDebt(null)}>
+              <Pressable
+                onPress={() => setSelectedDebt(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Close payment modal"
+                hitSlop={12}
+              >
                 <Ionicons name="close" size={22} color={theme.tabIconDefault} />
               </Pressable>
             </View>
@@ -319,7 +324,12 @@ export default function DebtsScreen() {
           <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>New Debt / Credit</Text>
-              <Pressable onPress={() => setIsAddOpen(false)}>
+              <Pressable
+                onPress={() => setIsAddOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close new debt modal"
+                hitSlop={12}
+              >
                 <Ionicons name="close" size={22} color={theme.tabIconDefault} />
               </Pressable>
             </View>
@@ -327,6 +337,9 @@ export default function DebtsScreen() {
             <View style={styles.toggleRow}>
               <Pressable
                 onPress={() => setDirection('owed_to_business')}
+                accessibilityRole="button"
+                accessibilityLabel="Customer Owes Me"
+                accessibilityState={{ selected: direction === 'owed_to_business' }}
                 style={[
                   styles.toggleBtn,
                   {
@@ -342,6 +355,9 @@ export default function DebtsScreen() {
 
               <Pressable
                 onPress={() => setDirection('owed_by_business')}
+                accessibilityRole="button"
+                accessibilityLabel="I Owe Supplier"
+                accessibilityState={{ selected: direction === 'owed_by_business' }}
                 style={[
                   styles.toggleBtn,
                   {

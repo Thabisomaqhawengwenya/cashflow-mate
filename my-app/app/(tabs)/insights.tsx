@@ -193,6 +193,9 @@ export default function InsightsScreen() {
             <Pressable
               key={item.id}
               onPress={() => setLanguage(item.id as any)}
+              accessibilityRole="button"
+              accessibilityLabel={`Switch language to ${item.label}`}
+              accessibilityState={{ selected: isActive }}
               style={[
                 styles.langChip,
                 {
@@ -219,6 +222,8 @@ export default function InsightsScreen() {
               setQuestion(q);
               handleAsk(q);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`Ask question: ${q}`}
             style={[styles.questionPill, { backgroundColor: theme.surfaceContainer, borderColor: theme.outlineVariant }]}
           >
             <Ionicons name="chatbubble-ellipses-outline" size={15} color={theme.primary} />

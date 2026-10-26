@@ -13,6 +13,8 @@ export interface M3ButtonProps {
   isLoading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
+  accessibilityLabel?: string;
+  accessibilityRole?: 'button' | 'radio' | 'tab';
 }
 
 export const M3Button: React.FC<M3ButtonProps> = ({
@@ -24,6 +26,8 @@ export const M3Button: React.FC<M3ButtonProps> = ({
   isLoading = false,
   disabled = false,
   style,
+  accessibilityLabel,
+  accessibilityRole = 'button',
 }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
@@ -60,6 +64,10 @@ export const M3Button: React.FC<M3ButtonProps> = ({
     <Pressable
       onPress={onPress}
       disabled={disabled || isLoading}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityState={{ disabled: disabled || isLoading }}
+      hitSlop={size === 'sm' ? { top: 6, bottom: 6, left: 6, right: 6 } : undefined}
       style={({ pressed }) => [
         styles.base,
         {
