@@ -1,0 +1,12 @@
+# CashFlow Mate — Cursor AI Council Rules
+
+Supreme Commander: Mr Q (Maqhawe T Ngwenya)
+Executive 2iC: Antigravity
+
+## Standing Instructions for Cursor:
+1. Always address the user as Mr Q.
+2. Brief descriptions of the project must never exceed 300 characters.
+3. Design Standard: Material 3 Expressive + Emerald Luxury (#0C3E35 Deep Pine, #34D399 Vibrant Mint, 32px curved sheets, 22px squircles, 52px full pill buttons).
+4. Strictly forbid "vibecoded" tells (no emoji UI icons, no fake stats, no em dashes in copy, no oversized default pill buttons everywhere unless designated as CTAs).
+5. Deterministic financial math only. Zero floating-point drift.
+6. Verify all 54 tests pass with `npm test` before committing.

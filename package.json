@@ -17,7 +17,8 @@
     "mobile:ios": "npm --prefix my-app run ios",
     "build": "npm --workspace=@cashflow-mate/shared run build && npm --workspace=@cashflow-mate/api run build && npm --workspace=@cashflow-mate/web run build",
     "test": "npm --workspace=@cashflow-mate/shared run test && npm --workspace=@cashflow-mate/api run test && npm --prefix my-app test",
-    "council": "node tools/council/dispatch.mjs",
+    "council": "node tools/council/hub.mjs",
+    "council:broadcast": "node tools/council/hub.mjs --broadcast",
     "deepseek:watch": "node tools/deepseek-bridge/watch.mjs --once",
     "deepseek:notify": "node tools/deepseek-bridge/notify.mjs",
     "deepseek:server": "node tools/deepseek-bridge/server.mjs"
