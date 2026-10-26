@@ -44,6 +44,7 @@ const EVENTS_FILE = path.join(STATE_DIR, 'events.jsonl');
 const LOG_FILE = path.join(STATE_DIR, 'server.log');
 const STATE_FILE = path.join(STATE_DIR, 'server.json');
 const TOAST_ENABLED = !hasFlag('--no-toast') && process.env.DEEPSEEK_BRIDGE_NO_TOAST !== '1';
+const AUTH_TOKEN = process.env.DEEPSEEK_BRIDGE_TOKEN || '';
 const STARTED_AT = new Date().toISOString();
 
 fs.mkdirSync(STATE_DIR, { recursive: true });
@@ -105,7 +106,9 @@ function triggerNativeToast(title, body) {
     }
   }
 
-  // Also notify via Antigravity DevTools if available
+  // Log Antigravity DevTools availability for diagnostics. This server does
+  // not push notifications through the renderer; tools/antigravity-bridge/
+  // handles the Antigravity side.
   try {
     const devtoolsPath = path.join(
       process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'),
@@ -115,8 +118,7 @@ function triggerNativeToast(title, body) {
     if (fs.existsSync(devtoolsPath)) {
       const port = Number(fs.readFileSync(devtoolsPath, 'utf8').split(/\r?\n/)[0].trim());
       if (port > 0) {
-        // DevTools notification is secondary and non-blocking
-        log('info', 'Antigravity DevTools detected on port', { port });
+        log('info', 'Antigravity DevTools detected on port (diagnostic only)', { port });
       }
     }
   } catch {}
@@ -137,13 +139,15 @@ const sseSubscribers = new Set();
 // ---------------------------------------------------------------------------
 
 function publish(data) {
+  // Client payload first; canonical transport fields last so a caller cannot
+  // spoof the server identity or timestamp.
   const event = {
-    event: data.event || 'deepseek.action',
+    ...data,
+    event: String(data.event || 'deepseek.action'),
     ts: new Date().toISOString(),
     source: 'deepseek-bridge',
     version: VERSION,
-    summary: data.summary || data.message || 'DeepSeek completed an action',
-    ...data,
+    summary: String(data.summary || data.message || 'DeepSeek completed an action'),
   };
 
   runtime.lastEvent = event;
@@ -262,10 +266,21 @@ pipeServer.listen(PIPE_PATH, () => {
 // ---------------------------------------------------------------------------
 
 const httpServer = http.createServer((req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Only browser origins that are themselves on loopback may call this local
+  // API. Without this check, any web page could POST fake notifications.
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : '';
+  const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(origin);
+  if (origin && !isLocalOrigin) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Forbidden origin' }));
+    return;
+  }
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-DeepSeek-Token');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -274,6 +289,13 @@ const httpServer = http.createServer((req, res) => {
   }
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+  // Optional shared-secret protection for callers that need it.
+  if (AUTH_TOKEN && req.method === 'POST' && req.headers['x-deepseek-token'] !== AUTH_TOKEN) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized: missing or invalid X-DeepSeek-Token' }));
+    return;
+  }
 
   // Health / Status
   if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health' || url.pathname === '/status')) {
@@ -323,11 +345,19 @@ const httpServer = http.createServer((req, res) => {
   // POST /notify or /event
   if (req.method === 'POST' && (url.pathname === '/notify' || url.pathname === '/event')) {
     let body = '';
+    let rejected = false;
     req.on('data', (chunk) => {
+      if (rejected) return;
       body += chunk;
-      if (body.length > 1e6) req.destroy(); // 1MB limit
+      if (body.length > 1e6) {
+        rejected = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Payload too large (1 MB limit)' }));
+        req.destroy();
+      }
     });
     req.on('end', () => {
+      if (rejected) return;
       try {
         const data = body ? JSON.parse(body) : {};
         const publishedEvent = publish(data);

@@ -62,11 +62,102 @@ export function roundMoney(amount: number): number {
 
 export function formatMoney(amount: number, currency: CurrencyCode = 'USD'): string {
   const rounded = roundMoney(amount);
-  const formatted = rounded.toLocaleString('en-US', {
+  const formatted = Math.abs(rounded).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return currency === 'USD' ? `$${formatted}` : `${currency} ${formatted}`;
+  const sign = rounded < 0 ? '-' : '';
+  const symbol = currency === 'USD' ? '$' : currency === 'ZWG' ? 'ZiG ' : currency === 'ZAR' ? 'R ' : `${currency} `;
+  return `${sign}${symbol}${formatted}`;
+}
+
+/** Local calendar date (Africa/Harare etc.), never UTC-shifted. */
+export function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export type ReportPeriod = 'this_month' | 'last_month' | 'all';
+
+export interface ReportPeriodRange {
+  period: ReportPeriod;
+  label: string;
+  startDate: string;
+  endDate: string;
+}
+
+/** Local-time month boundaries for the report period selector. */
+export function getReportPeriodRange(
+  period: ReportPeriod = 'this_month',
+  now: Date = new Date()
+): ReportPeriodRange {
+  if (period === 'all') {
+    return { period, label: 'All Records', startDate: '0000-01-01', endDate: '9999-12-31' };
+  }
+  const offset = period === 'last_month' ? -1 : 0;
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+  return {
+    period,
+    label: period === 'last_month' ? 'Last Month' : 'This Month',
+    startDate: getLocalDateString(start),
+    endDate: getLocalDateString(end),
+  };
+}
+
+/**
+ * Map a category to the canonical transaction classification and direction.
+ * Used when a user re-categorizes a record so type/direction cannot drift out
+ * of sync with the category (e.g. drawings must never stay `business_expense`).
+ */
+export function categoryClassification(category: string): {
+  type: MobileTransaction['type'];
+  direction: MobileTransaction['direction'];
+} {
+  const defaultType = CATEGORIES[category]?.defaultType;
+  switch (defaultType) {
+    case 'business_income':
+      return { type: 'business_income', direction: 'inflow' };
+    case 'transfer':
+      return { type: 'transfer', direction: 'neutral' };
+    case 'loan_received':
+      return { type: 'loan_received', direction: 'inflow' };
+    case 'loan_repayment':
+      return { type: 'loan_repayment', direction: 'outflow' };
+    case 'owner_withdrawal':
+      return { type: 'owner_withdrawal', direction: 'outflow' };
+    case 'business_expense':
+      return { type: 'business_expense', direction: 'outflow' };
+    default:
+      return { type: 'unknown', direction: 'outflow' };
+  }
+}
+
+/** Stable newest-first ordering (date, then record id timestamp). */
+export function sortTransactionsByDateDesc(transactions: MobileTransaction[]): MobileTransaction[] {
+  const idTimestamp = (id: string) => {
+    const stamp = Number(String(id).split('_')[1]);
+    return Number.isFinite(stamp) ? stamp : 0;
+  };
+  return [...transactions].sort((a, b) => {
+    const byDate = b.transactionDate.localeCompare(a.transactionDate);
+    return byDate !== 0 ? byDate : idTimestamp(b.id) - idTimestamp(a.id);
+  });
+}
+
+function parseStored<T>(raw: string | null, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function cloneSeed<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 const INITIAL_BUSINESS: BusinessProfile = {
@@ -316,9 +407,9 @@ export class MobileStorageService {
     const data = await AsyncStorage.getItem(STORAGE_KEY_BIZ);
     if (!data) {
       await AsyncStorage.setItem(STORAGE_KEY_BIZ, JSON.stringify(INITIAL_BUSINESS));
-      return INITIAL_BUSINESS;
+      return cloneSeed(INITIAL_BUSINESS);
     }
-    return JSON.parse(data);
+    return parseStored<BusinessProfile>(data, cloneSeed(INITIAL_BUSINESS));
   }
 
   static async updateBusiness(profile: Partial<BusinessProfile>): Promise<BusinessProfile> {
@@ -332,16 +423,16 @@ export class MobileStorageService {
     const data = await AsyncStorage.getItem(STORAGE_KEY_TX);
     if (!data) {
       await AsyncStorage.setItem(STORAGE_KEY_TX, JSON.stringify(INITIAL_TRANSACTIONS));
-      return INITIAL_TRANSACTIONS;
+      return cloneSeed(INITIAL_TRANSACTIONS);
     }
-    return JSON.parse(data);
+    return parseStored<MobileTransaction[]>(data, cloneSeed(INITIAL_TRANSACTIONS));
   }
 
   static async saveTransaction(tx: Omit<MobileTransaction, 'id'>): Promise<MobileTransaction> {
     const all = await this.getTransactions();
     const newTx: MobileTransaction = {
       ...tx,
-      id: `tx_${Date.now()}`,
+      id: `tx_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     };
     all.unshift(newTx);
     await AsyncStorage.setItem(STORAGE_KEY_TX, JSON.stringify(all));
@@ -367,16 +458,16 @@ export class MobileStorageService {
     const data = await AsyncStorage.getItem(STORAGE_KEY_DEBTS);
     if (!data) {
       await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(INITIAL_DEBTS));
-      return INITIAL_DEBTS;
+      return cloneSeed(INITIAL_DEBTS);
     }
-    return JSON.parse(data);
+    return parseStored<MobileDebt[]>(data, cloneSeed(INITIAL_DEBTS));
   }
 
   static async saveDebt(debt: Omit<MobileDebt, 'id' | 'paidAmount' | 'status'>): Promise<MobileDebt> {
     const all = await this.getDebts();
     const newDebt: MobileDebt = {
       ...debt,
-      id: `debt_${Date.now()}`,
+      id: `debt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       paidAmount: 0,
       status: 'outstanding',
     };
@@ -385,16 +476,27 @@ export class MobileStorageService {
     return newDebt;
   }
 
-  static async recordDebtPayment(id: string, paymentAmount: number): Promise<void> {
+  static async recordDebtPayment(id: string, paymentAmount: number): Promise<number> {
     const all = await this.getDebts();
     const idx = all.findIndex((d) => d.id === id);
-    if (idx !== -1) {
-      const debt = all[idx];
-      const newPaid = roundMoney(debt.paidAmount + paymentAmount);
-      debt.paidAmount = newPaid;
-      debt.status = newPaid >= debt.totalAmount ? 'settled' : 'partially_paid';
-      await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(all));
-    }
+    if (idx === -1) return 0;
+
+    const debt = all[idx];
+    const remaining = roundMoney(Math.max(0, debt.totalAmount - debt.paidAmount));
+    const applied = Math.min(roundMoney(Math.max(0, paymentAmount)), remaining);
+    if (applied <= 0) return 0;
+
+    const newPaid = roundMoney(debt.paidAmount + applied);
+    debt.paidAmount = newPaid;
+    debt.status = newPaid >= debt.totalAmount ? 'settled' : 'partially_paid';
+    await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(all));
+    return applied;
+  }
+
+  static async deleteDebt(id: string): Promise<void> {
+    const all = await this.getDebts();
+    const filtered = all.filter((d) => d.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(filtered));
   }
 
   static async resetDemoData(): Promise<void> {
@@ -405,17 +507,33 @@ export class MobileStorageService {
 
   /**
    * Deterministic financial summary calculation adhering strictly to Zimbabwe small trader accounting.
+   *
+   * - `period` filters by LOCAL calendar month (the period chips are not decorative).
+   * - `currency` segregates currencies; USD and ZiG are never summed together.
+   * - Internal transfers are neutral; loans/drawings are cash movements but not operating profit.
    */
-  static calculateSummary(transactions: MobileTransaction[], period: 'this_month' | 'last_month' | 'all' = 'this_month') {
+  static calculateSummary(
+    transactions: MobileTransaction[],
+    options: { period?: ReportPeriod; currency?: CurrencyCode; now?: Date } = {}
+  ) {
+    const period = options.period ?? 'this_month';
+    const currency = options.currency ?? 'USD';
+    const range = getReportPeriodRange(period, options.now ?? new Date());
+
     let recordedInflows = 0;
     let recordedOutflows = 0;
     let operatingRevenue = 0;
     let operatingExpenses = 0;
     let unreviewedCount = 0;
+    let transactionCount = 0;
 
     const categoryMap: Record<string, number> = {};
 
     for (const t of transactions) {
+      if (t.currency !== currency) continue;
+      if (t.transactionDate < range.startDate || t.transactionDate > range.endDate) continue;
+      transactionCount++;
+
       const amt = roundMoney(t.amount);
 
       if (t.reviewStatus === 'pending_review' || t.category === 'uncategorized') {
@@ -454,6 +572,12 @@ export class MobileStorageService {
       .sort((a, b) => b.amount - a.amount);
 
     return {
+      period: range.period,
+      periodLabel: range.label,
+      periodStartDate: range.startDate,
+      periodEndDate: range.endDate,
+      currency,
+      transactionCount,
       recordedInflows,
       recordedOutflows,
       netCashFlow,

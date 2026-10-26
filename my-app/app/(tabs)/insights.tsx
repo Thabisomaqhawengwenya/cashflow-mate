@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -8,13 +8,16 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
+  BusinessProfile,
   MobileStorageService,
   MobileTransaction,
   formatMoney,
+  CATEGORIES,
 } from '@/services/storage';
 import { M3Card } from '@/components/M3/M3Card';
 import { M3Button } from '@/components/M3/M3Button';
@@ -35,38 +38,105 @@ export default function InsightsScreen() {
   const [language, setLanguage] = useState<'en' | 'sn' | 'nd'>('en');
   const [question, setQuestion] = useState('');
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
   const [observations, setObservations] = useState<string[]>([]);
   const [isThinking, setIsThinking] = useState(false);
 
-  useEffect(() => {
-    MobileStorageService.getTransactions().then(setTransactions);
+  const currency = business?.currency || 'USD';
+
+  const loadData = useCallback(async () => {
+    const [txs, profile] = await Promise.all([
+      MobileStorageService.getTransactions(),
+      MobileStorageService.getBusiness(),
+    ]);
+    setTransactions(txs);
+    setBusiness(profile);
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  const categoryStats = (category: string) => {
+    const rows = transactions.filter(
+      (t) => t.currency === currency && t.category === category && t.direction === 'outflow'
+    );
+    const amount = rows.reduce((sum, t) => sum + t.amount, 0);
+    return { amount: Math.round(amount * 100) / 100, count: rows.length };
+  };
+
   const handleAsk = (q?: string) => {
-    const query = q || question;
-    if (!query.trim()) return;
+    const query = (q || question).trim();
+    if (!query) return;
 
     setIsThinking(true);
     setAnswer(null);
 
-    const summary = MobileStorageService.calculateSummary(transactions, 'this_month');
+    const summary = MobileStorageService.calculateSummary(transactions, {
+      period: 'this_month',
+      currency,
+    });
     const topExpense = summary.categoryBreakdown[0];
+    const lower = query.toLowerCase();
+
+    const matchedCategory = /stock|inventory|restock/.test(lower)
+      ? 'stock_purchase'
+      : /kombi|transport|fuel|haulage/.test(lower)
+      ? 'transport_fuel'
+      : /rent|stall|council/.test(lower)
+      ? 'rent'
+      : /fee|ecocash|bank|imtt|charge/.test(lower)
+      ? 'mobile_money_fees'
+      : /zetdc|electric|token|power|water/.test(lower)
+      ? 'utilities_electricity'
+      : /drawing|personal|family|school/.test(lower)
+      ? 'owner_drawings'
+      : null;
+
+    const wantsReview = /review|pending|uncategor|attention/.test(lower);
+    const wantsProfit = /profit|margin/.test(lower);
+    const wantsCashFlow = /cash\s*flow|cashflow|net/.test(lower);
 
     setTimeout(() => {
       let ans = '';
       const obs: string[] = [];
 
       obs.push(
-        `Recorded total inflows: ${formatMoney(summary.recordedInflows)} across daily sales.`
+        `Recorded total inflows: ${formatMoney(summary.recordedInflows, currency)}; outflows: ${formatMoney(summary.recordedOutflows, currency)}; net cash flow: ${formatMoney(summary.netCashFlow, currency)}.`
       );
-      obs.push(
-        `Recorded total outflows: ${formatMoney(summary.recordedOutflows)} with net cash flow of ${formatMoney(summary.netCashFlow)}.`
-      );
+
+      if (language === 'sn') {
+        ans = `Makadii! Mumwedzi uno webhizinesi, maita mari inosvika ${formatMoney(summary.recordedInflows, currency)} yemapayments, mukashandisa ${formatMoney(summary.recordedOutflows, currency)}. Cash yasara mubhizinesi ndeye ${formatMoney(summary.netCashFlow, currency)}. ${topExpense ? `Chakanyanya kudya mari ndeche ${topExpense.label}.` : ''} Profit yemazuva ose inofungidzirwa kuita ${formatMoney(summary.estimatedOperatingProfit, currency)}.`;
+      } else if (language === 'nd') {
+        ans = `Salibonani! Ngalikheli inyanga, ibhizimusi liholenze imali engange ${formatMoney(summary.recordedInflows, currency)}, lasebenzisa ${formatMoney(summary.recordedOutflows, currency)}. Imali eseleyo yi ${formatMoney(summary.netCashFlow, currency)}. ${topExpense ? `Okudle imali kakhulu yi ${topExpense.label}.` : ''} Inzuzo yokusebenza ilinganiselwa ku ${formatMoney(summary.estimatedOperatingProfit, currency)}.`;
+      } else if (wantsReview) {
+        ans =
+          summary.unreviewedCount > 0
+            ? `In ${summary.periodLabel}, ${summary.unreviewedCount} transaction${summary.unreviewedCount === 1 ? '' : 's'} still need review. Until they are categorized, the operating profit estimate can understate or overstate the real result. Open the Transactions tab and tap each record marked "Review".`
+            : `Good news: every transaction recorded in ${summary.periodLabel} is confirmed and categorized, so your operating profit estimate is based on complete records.`;
+      } else if (matchedCategory) {
+        const stats = categoryStats(matchedCategory);
+        const label = CATEGORIES[matchedCategory]?.label || matchedCategory;
+        if (stats.count > 0) {
+          ans = `In ${summary.periodLabel}, you recorded ${stats.count} transaction${stats.count === 1 ? '' : 's'} in ${label}, totaling ${formatMoney(stats.amount, currency)}. That is ${Math.round((stats.amount / Math.max(summary.recordedOutflows, 1)) * 100)}% of your recorded outflows.`;
+          obs.push(`${label}: ${formatMoney(stats.amount, currency)} across ${stats.count} record(s).`);
+        } else {
+          ans = `You recorded no ${label.toLowerCase()} expenses in ${summary.periodLabel}. Your largest outflow category was ${topExpense ? `${topExpense.label} at ${formatMoney(topExpense.amount, currency)}` : 'not yet recorded'}.`;
+        }
+      } else if (wantsProfit) {
+        ans = `Your estimated operating profit for ${summary.periodLabel} is ${formatMoney(summary.estimatedOperatingProfit, currency)} (operating revenue ${formatMoney(summary.operatingRevenue, currency)} minus operating expenses ${formatMoney(summary.operatingExpenses, currency)}). This deliberately excludes Mukando loans, owner drawings and internal float transfers. Your net cash flow, which does include those movements, is ${formatMoney(summary.netCashFlow, currency)}.`;
+      } else if (wantsCashFlow) {
+        ans = `In ${summary.periodLabel}, cash in was ${formatMoney(summary.recordedInflows, currency)} and cash out was ${formatMoney(summary.recordedOutflows, currency)}, leaving net cash flow of ${formatMoney(summary.netCashFlow, currency)}. Remember that cash flow includes loans, drawings and internal transfers, so it is not the same as profit.`;
+      } else {
+        ans = `During ${summary.periodLabel}, your business recorded ${formatMoney(summary.recordedInflows, currency)} in total cash inflows and spent ${formatMoney(summary.recordedOutflows, currency)}, leaving you with a net cash flow of ${formatMoney(summary.netCashFlow, currency)}. ${topExpense ? `Your largest expense allocation was dedicated to ${topExpense.label}.` : ''} Your estimated operating profit is ${formatMoney(summary.estimatedOperatingProfit, currency)}, which strictly focuses on trading sales minus operational expenses (excluding loan pools and personal drawings).`;
+      }
 
       if (topExpense) {
         obs.push(
-          `Largest expense category: ${topExpense.label} at ${formatMoney(topExpense.amount)} (${topExpense.percentage}% of all expenses).`
+          `Largest expense category: ${topExpense.label} at ${formatMoney(topExpense.amount, currency)} (${topExpense.percentage}% of all expenses).`
         );
       }
 
@@ -74,14 +144,6 @@ export default function InsightsScreen() {
         obs.push(
           `You have ${summary.unreviewedCount} unreviewed transaction(s) waiting for category confirmation.`
         );
-      }
-
-      if (language === 'sn') {
-        ans = `Makadii! Mumwedzi uno webhizinesi, maita mari inosvika ${formatMoney(summary.recordedInflows)} yemapayments, mukashandisa ${formatMoney(summary.recordedOutflows)}. Cash yasara mubhizinesi ndeye ${formatMoney(summary.netCashFlow)}. ${topExpense ? `Chakanyanya kudya mari ndeche ${topExpense.label}.` : ''} Profit yemazuva ose inofungidzirwa kuita ${formatMoney(summary.estimatedOperatingProfit)}.`;
-      } else if (language === 'nd') {
-        ans = `Salibonani! Ngalikheli inyanga, ibhizimusi liholenze imali engange ${formatMoney(summary.recordedInflows)}, lasebenzisa ${formatMoney(summary.recordedOutflows)}. Imali eseleyo yi ${formatMoney(summary.netCashFlow)}. ${topExpense ? `Okudle imali kakhulu yi ${topExpense.label}.` : ''} Inzuzo yokusebenza ilinganiselwa ku ${formatMoney(summary.estimatedOperatingProfit)}.`;
-      } else {
-        ans = `During this reporting period, your business recorded ${formatMoney(summary.recordedInflows)} in total cash inflows and spent ${formatMoney(summary.recordedOutflows)}, leaving you with a net cash flow of ${formatMoney(summary.netCashFlow)}. ${topExpense ? `Your largest expense allocation was dedicated to ${topExpense.label}.` : ''} Your estimated operating profit is ${formatMoney(summary.estimatedOperatingProfit)}, which strictly focuses on trading sales minus operational expenses (excluding loan pools and personal drawings).`;
       }
 
       setAnswer(ans);
@@ -98,8 +160,7 @@ export default function InsightsScreen() {
         style: 'destructive',
         onPress: async () => {
           await MobileStorageService.resetDemoData();
-          const txs = await MobileStorageService.getTransactions();
-          setTransactions(txs);
+          await loadData();
           setAnswer(null);
           Alert.alert('Restored', 'Demo records restored successfully.');
         },
@@ -112,12 +173,12 @@ export default function InsightsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: theme.text }]}>AI Business Assistant</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Grounded Business Assistant</Text>
           <Text style={[styles.subhead, { color: theme.tabIconDefault }]}>
-            Grounded plain-language cash-flow explanations
+            Deterministic answers from your recorded {currency} transactions
           </Text>
         </View>
-        <M3Badge label="Grounded AI" variant="primary" />
+        <M3Badge label="Grounded Rules" variant="primary" />
       </View>
 
       {/* Language Switcher */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -12,8 +12,8 @@ import Colors from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
+  BusinessProfile,
   MobileStorageService,
-  MobileTransaction,
   formatMoney,
   CATEGORIES,
 } from '@/services/storage';
@@ -91,19 +91,34 @@ export default function ImportScreen() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('ecocash');
   const [isImporting, setIsImporting] = useState(false);
   const [successReport, setSuccessReport] = useState<{ count: number } | null>(null);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
+  const currency = business?.currency || 'USD';
   const activeTemplate = SAMPLE_TEMPLATES.find((t) => t.id === selectedTemplate) || SAMPLE_TEMPLATES[0];
+
+  useEffect(() => {
+    MobileStorageService.getBusiness().then(setBusiness);
+  }, []);
+
+  const fingerprint = (row: {
+    originalReference?: string;
+    transactionDate: string;
+    amount: number;
+    description: string;
+  }) =>
+    row.originalReference ||
+    `${row.transactionDate}|${row.amount.toFixed(2)}|${row.description}`;
 
   const handleCommitImport = async () => {
     setIsImporting(true);
     try {
       const existing = await MobileStorageService.getTransactions();
-      const existingRefs = new Set(existing.map((t) => t.originalReference).filter(Boolean));
+      const existingRefs = new Set(existing.map((t) => fingerprint(t)));
 
       let importedCount = 0;
       for (const row of activeTemplate.rows) {
-        // Skip duplicate candidates by reference
-        if (row.originalReference && existingRefs.has(row.originalReference)) {
+        // Duplicate candidates: reference, or date+amount+description fingerprint
+        if (existingRefs.has(fingerprint(row))) {
           continue;
         }
 
@@ -111,13 +126,14 @@ export default function ImportScreen() {
           transactionDate: row.transactionDate,
           description: row.description,
           amount: row.amount,
-          currency: 'USD',
+          currency,
           direction: row.direction,
           type: row.type,
           category: row.category,
           originalReference: row.originalReference,
           reviewStatus: 'confirmed',
         });
+        existingRefs.add(fingerprint(row));
         importedCount++;
       }
 
@@ -136,6 +152,10 @@ export default function ImportScreen() {
         <Text style={[styles.title, { color: theme.text }]}>Import Statements</Text>
         <Text style={[styles.subhead, { color: theme.tabIconDefault }]}>
           Import EcoCash, InnBucks, or cash register records with automatic categorization.
+        </Text>
+        <Text style={[styles.demoNote, { color: theme.review }]}>
+          Demo statement importer: these are realistic sample payloads. A native file picker +
+          CSV parser is the next planned feature.
         </Text>
       </View>
 
@@ -202,7 +222,8 @@ export default function ImportScreen() {
                   { color: row.direction === 'inflow' ? theme.inflow : theme.outflow },
                 ]}
               >
-                {row.direction === 'inflow' ? '+' : '-'}${row.amount.toFixed(2)}
+                {row.direction === 'inflow' ? '+' : '-'}
+                {formatMoney(row.amount, currency)}
               </Text>
             </View>
           ))}
@@ -257,6 +278,11 @@ const styles = StyleSheet.create({
   subhead: {
     fontSize: 12,
     marginTop: 2,
+  },
+  demoNote: {
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 6,
   },
   sectionTitle: {
     fontSize: 13,

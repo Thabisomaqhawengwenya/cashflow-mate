@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -9,13 +9,16 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
   MobileStorageService,
   MobileTransaction,
+  categoryClassification,
   formatMoney,
+  sortTransactionsByDateDesc,
   CATEGORIES,
 } from '@/services/storage';
 import { M3Card } from '@/components/M3/M3Card';
@@ -42,20 +45,24 @@ export default function TransactionsScreen() {
     setTransactions(all);
   }, []);
 
-  useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions();
+    }, [loadTransactions])
+  );
 
-  const filtered = transactions.filter((tx) => {
-    const matchesSearch =
-      tx.description.toLowerCase().includes(search.toLowerCase()) ||
-      (tx.originalReference && tx.originalReference.toLowerCase().includes(search.toLowerCase()));
+  const filtered = sortTransactionsByDateDesc(
+    transactions.filter((tx) => {
+      const matchesSearch =
+        tx.description.toLowerCase().includes(search.toLowerCase()) ||
+        (tx.originalReference && tx.originalReference.toLowerCase().includes(search.toLowerCase()));
 
-    const matchesCat = selectedCategory === 'all' || tx.category === selectedCategory;
-    const matchesDir = directionFilter === 'all' || tx.direction === directionFilter;
+      const matchesCat = selectedCategory === 'all' || tx.category === selectedCategory;
+      const matchesDir = directionFilter === 'all' || tx.direction === directionFilter;
 
-    return matchesSearch && matchesCat && matchesDir;
-  });
+      return matchesSearch && matchesCat && matchesDir;
+    })
+  );
 
   const handleOpenEdit = (tx: MobileTransaction) => {
     setSelectedTx(tx);
@@ -65,8 +72,11 @@ export default function TransactionsScreen() {
 
   const handleSaveEdit = async () => {
     if (!selectedTx) return;
+    const classification = categoryClassification(editCategory);
     await MobileStorageService.updateTransaction(selectedTx.id, {
       category: editCategory,
+      type: classification.type,
+      direction: classification.direction,
       notes: editNotes,
       reviewStatus: 'confirmed',
     });

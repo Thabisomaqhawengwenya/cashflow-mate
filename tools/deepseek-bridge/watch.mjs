@@ -74,23 +74,12 @@ function tryConnectPipe(pipePath) {
 async function ensureServer() {
   diag('Server not reachable, spawning server.mjs in background...');
   const serverScript = path.join(__dirname, 'server.mjs');
-  if (process.platform === 'win32') {
-    spawn(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-Command',
-        `Start-Process -FilePath "${process.execPath}" -ArgumentList "${serverScript}" -WindowStyle Hidden`,
-      ],
-      { detached: true, stdio: 'ignore' }
-    ).unref();
-  } else {
-    const child = spawn(process.execPath, [serverScript], {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-  }
+  const child = spawn(process.execPath, [serverScript], {
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  child.unref();
 
   const deadline = Date.now() + 10000;
   while (Date.now() < deadline) {

@@ -1,8 +1,28 @@
-// NOTE: The default React Native styling doesn't support server rendering.
-// Server rendered styles should not change between the first render of the HTML
-// and the first render on the client. Typically, web developers will use CSS media queries
-// to render different styles on the client and server, these aren't directly supported in React Native
-// but can be achieved using a styling library like Nativewind.
+// Web color scheme: follow the user's OS preference and stay SSR-safe.
+// The default Expo template hardcodes 'light', which silently disabled dark
+// mode on the web build even though app.json declares userInterfaceStyle:
+// "automatic".
+import { useSyncExternalStore } from 'react';
+
+const QUERY = '(prefers-color-scheme: dark)';
+
+function subscribe(callback: () => void) {
+  if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+  const media = window.matchMedia(QUERY);
+  media.addEventListener('change', callback);
+  return () => media.removeEventListener('change', callback);
+}
+
+function getSnapshot() {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia(QUERY).matches;
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
 export function useColorScheme() {
-  return 'light';
+  const isDark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return isDark ? 'dark' : 'light';
 }

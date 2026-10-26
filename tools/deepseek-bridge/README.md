@@ -15,7 +15,7 @@ A bi-directional event bridge and local socket server connecting **DeepSeek** an
 │                   DeepSeek Bridge Server (server.mjs)                  │
 │  - Named Pipe: \\.\pipe\deepseek-bridge                                │
 │  - HTTP & SSE: http://127.0.0.1:45124                                  │
-│  - Native Windows Toast Dispatcher (PowerShell & Antigravity CDP)       │
+│  - Native Windows toast dispatcher (PowerShell)                        │
 │  - Event Log: .state/events.jsonl                                      │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
@@ -88,3 +88,26 @@ node tools/deepseek-bridge/watch.mjs --once
 | `client.mjs` | ESM Node.js module export for programmatic notifications |
 | `toast.ps1` | Native Windows toast notification script |
 | `.state/events.jsonl` | Append-only event history log |
+
+---
+
+## Security model
+
+- The HTTP/SSE server binds to `127.0.0.1` only.
+- Browser requests with a non-loopback `Origin` are rejected with `403`, so a random web page cannot
+  spoof "DeepSeek" notifications. Loopback dev origins (`http://localhost:*`, `http://127.0.0.1:*`) are allowed.
+- Optional shared secret: start the server with `DEEPSEEK_BRIDGE_TOKEN=<secret>` and send
+  `X-DeepSeek-Token: <secret>` on `POST /notify`.
+- The named pipe has no additional auth; it relies on the Windows user-session boundary. Any process
+  running as the same user can publish events, so treat the machine account as trusted.
+- Canonical event fields (`event`, `ts`, `source`, `version`, `summary`) are set by the server and cannot
+  be overridden by a caller.
+
+## Limitations
+
+- **Auto-wake requires a waiting watcher.** Antigravity is only woken if a `watch.mjs --once` background
+  task is currently running. Otherwise events are still logged and toasted.
+- **No replay.** A watcher only sees events published after it connects. Use `.state/events.jsonl` to
+  inspect earlier events.
+- The DevTools port is only *detected* for diagnostics; this bridge does not send notifications through
+  Antigravity's renderer. That is what `tools/antigravity-bridge/` is for.

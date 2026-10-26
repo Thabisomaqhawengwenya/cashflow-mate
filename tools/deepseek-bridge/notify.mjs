@@ -120,23 +120,14 @@ function tryHttp(port, data) {
 
 async function ensureServerRunning() {
   const serverScript = path.join(__dirname, 'server.mjs');
-  if (process.platform === 'win32') {
-    spawn(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-Command',
-        `Start-Process -FilePath "${process.execPath}" -ArgumentList "${serverScript}" -WindowStyle Hidden`,
-      ],
-      { detached: true, stdio: 'ignore' }
-    ).unref();
-  } else {
-    const child = spawn(process.execPath, [serverScript], {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-  }
+  // Spawn Node directly. A PowerShell Start-Process wrapper is fragile when the
+  // repository path contains spaces (as this one does).
+  const child = spawn(process.execPath, [serverScript], {
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  child.unref();
 
   // Wait for server to come up
   const deadline = Date.now() + 5000;

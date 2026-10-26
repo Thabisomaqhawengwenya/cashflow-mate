@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -9,13 +9,16 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
+  BusinessProfile,
   MobileStorageService,
   MobileDebt,
   formatMoney,
+  getLocalDateString,
 } from '@/services/storage';
 import { M3Card } from '@/components/M3/M3Card';
 import { M3Button } from '@/components/M3/M3Button';
@@ -27,6 +30,7 @@ export default function DebtsScreen() {
   const theme = Colors[colorScheme];
 
   const [debts, setDebts] = useState<MobileDebt[]>([]);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [filter, setFilter] = useState<'all' | 'owed_to_business' | 'owed_by_business'>('all');
 
   // Repayment Modal
@@ -41,22 +45,33 @@ export default function DebtsScreen() {
   const [notes, setNotes] = useState('');
 
   const loadDebts = useCallback(async () => {
-    const all = await MobileStorageService.getDebts();
+    const [all, profile] = await Promise.all([
+      MobileStorageService.getDebts(),
+      MobileStorageService.getBusiness(),
+    ]);
     setDebts(all);
+    setBusiness(profile);
   }, []);
 
-  useEffect(() => {
-    loadDebts();
-  }, [loadDebts]);
+  useFocusEffect(
+    useCallback(() => {
+      loadDebts();
+    }, [loadDebts])
+  );
 
+  const currency = business?.currency || 'USD';
   const filteredDebts = debts.filter((d) => filter === 'all' || d.direction === filter);
 
   const totalOwedToBusiness = debts
-    .filter((d) => d.direction === 'owed_to_business' && d.status !== 'settled')
+    .filter(
+      (d) => d.direction === 'owed_to_business' && d.status !== 'settled' && d.currency === currency
+    )
     .reduce((sum, d) => sum + (d.totalAmount - d.paidAmount), 0);
 
   const totalOwedByBusiness = debts
-    .filter((d) => d.direction === 'owed_by_business' && d.status !== 'settled')
+    .filter(
+      (d) => d.direction === 'owed_by_business' && d.status !== 'settled' && d.currency === currency
+    )
     .reduce((sum, d) => sum + (d.totalAmount - d.paidAmount), 0);
 
   const handleRecordPayment = async () => {
@@ -67,10 +82,27 @@ export default function DebtsScreen() {
       return;
     }
 
-    await MobileStorageService.recordDebtPayment(selectedDebt.id, p);
+    const applied = await MobileStorageService.recordDebtPayment(selectedDebt.id, p);
+    if (applied < p) {
+      Alert.alert('Payment Capped', `Only ${formatMoney(applied, selectedDebt.currency)} was outstanding; the balance is now settled.`);
+    }
     setSelectedDebt(null);
     setPayAmount('');
     await loadDebts();
+  };
+
+  const handleDeleteDebt = (debt: MobileDebt) => {
+    Alert.alert('Delete Debt Record', `Remove the credit record for ${debt.personName}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await MobileStorageService.deleteDebt(debt.id);
+          await loadDebts();
+        },
+      },
+    ]);
   };
 
   const handleCreateDebt = async () => {
@@ -84,8 +116,8 @@ export default function DebtsScreen() {
       personName: personName.trim(),
       direction,
       totalAmount: t,
-      currency: 'USD',
-      recordedDate: new Date().toISOString().substring(0, 10),
+      currency,
+      recordedDate: getLocalDateString(),
       notes: notes.trim() || undefined,
     });
 
@@ -120,7 +152,7 @@ export default function DebtsScreen() {
         <M3Card variant="kpi" style={styles.kpiCard}>
           <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>Customers Owe You</Text>
           <Text style={[styles.kpiValue, { color: theme.inflow }]}>
-            {formatMoney(totalOwedToBusiness, 'USD')}
+            {formatMoney(totalOwedToBusiness, currency)}
           </Text>
           <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Market customer credit</Text>
         </M3Card>
@@ -128,7 +160,7 @@ export default function DebtsScreen() {
         <M3Card variant="kpi" style={styles.kpiCard}>
           <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>You Owe Others</Text>
           <Text style={[styles.kpiValue, { color: theme.outflow }]}>
-            {formatMoney(totalOwedByBusiness, 'USD')}
+            {formatMoney(totalOwedByBusiness, currency)}
           </Text>
           <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Stock / Mukando loans</Text>
         </M3Card>
@@ -177,13 +209,24 @@ export default function DebtsScreen() {
                     {isOwedToMe ? 'Owes your business' : 'You owe them'} &bull; {debt.recordedDate}
                   </Text>
                 </View>
-                {debt.status === 'settled' ? (
-                  <M3Badge label="Settled" variant="inflow" />
-                ) : debt.status === 'partially_paid' ? (
-                  <M3Badge label="Partial" variant="neutral" />
-                ) : (
-                  <M3Badge label="Outstanding" variant="review" />
-                )}
+                <View style={styles.cardHeaderRight}>
+                  {debt.status === 'settled' ? (
+                    <M3Badge label="Settled" variant="inflow" />
+                  ) : debt.status === 'partially_paid' ? (
+                    <M3Badge label="Partial" variant="neutral" />
+                  ) : (
+                    <M3Badge label="Outstanding" variant="review" />
+                  )}
+                  <Pressable
+                    onPress={() => handleDeleteDebt(debt)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete debt record for ${debt.personName}`}
+                    hitSlop={8}
+                    style={{ marginLeft: 6 }}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={theme.tabIconDefault} />
+                  </Pressable>
+                </View>
               </View>
 
               <View style={[styles.summaryBox, { backgroundColor: theme.surfaceContainer }]}>
@@ -244,7 +287,7 @@ export default function DebtsScreen() {
                 </Text>
 
                 <M3Input
-                  label="Payment Amount ($)"
+                  label={`Payment Amount (${selectedDebt.currency})`}
                   keyboardType="decimal-pad"
                   value={payAmount}
                   onChangeText={setPayAmount}
@@ -321,7 +364,7 @@ export default function DebtsScreen() {
             />
 
             <M3Input
-              label="Total Debt Amount ($)"
+              label={`Total Debt Amount (${currency})`}
               placeholder="0.00"
               keyboardType="decimal-pad"
               value={totalAmount}
@@ -426,6 +469,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 10,
+  },
+  cardHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   personName: {
     fontSize: 14,

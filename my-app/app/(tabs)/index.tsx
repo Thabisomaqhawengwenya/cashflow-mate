@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -18,6 +19,8 @@ import {
   MobileTransaction,
   BusinessProfile,
   formatMoney,
+  getLocalDateString,
+  sortTransactionsByDateDesc,
   CATEGORIES,
 } from '@/services/storage';
 import { M3Card } from '@/components/M3/M3Card';
@@ -49,9 +52,11 @@ export default function OverviewScreen() {
     setTransactions(txs);
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -59,7 +64,10 @@ export default function OverviewScreen() {
     setRefreshing(false);
   };
 
-  const summary = MobileStorageService.calculateSummary(transactions, period);
+  const currency = business?.currency || 'USD';
+  const summary = MobileStorageService.calculateSummary(transactions, { period, currency });
+  const recentTransactions = sortTransactionsByDateDesc(transactions).slice(0, 5);
+  const topExpense = summary.categoryBreakdown[0];
 
   const handleCreateTransaction = async () => {
     const amt = parseFloat(amount);
@@ -80,10 +88,10 @@ export default function OverviewScreen() {
         : 'business_expense';
 
     await MobileStorageService.saveTransaction({
-      transactionDate: new Date().toISOString().substring(0, 10),
+      transactionDate: getLocalDateString(),
       description: desc.trim(),
       amount: amt,
-      currency: business?.currency || 'USD',
+      currency,
       direction,
       type,
       category,
@@ -233,8 +241,9 @@ export default function OverviewScreen() {
           <Text style={[styles.aiTitle, { color: theme.text }]}>Cash-Flow Intelligence</Text>
         </View>
         <Text style={[styles.aiBody, { color: theme.text }]}>
-          Your bread and grocery sales generated {formatMoney(summary.operatingRevenue, business?.currency)}.
-          Inventory restocking from Bakers Inn and Probrands accounted for the majority of outgoing expenses.
+          {topExpense
+            ? `Your trading sales generated ${formatMoney(summary.operatingRevenue, currency)}. Your largest recorded expense category was ${topExpense.label} at ${formatMoney(topExpense.amount, currency)} (${topExpense.percentage}% of outflows).`
+            : `Your trading sales generated ${formatMoney(summary.operatingRevenue, currency)}. No operating expenses were recorded for ${summary.periodLabel.toLowerCase()}.`}
         </Text>
       </M3Card>
 
@@ -276,7 +285,7 @@ export default function OverviewScreen() {
           />
         </View>
 
-        {transactions.slice(0, 5).map((tx) => {
+        {recentTransactions.map((tx) => {
           const isIncome = tx.direction === 'inflow';
           const isOutflow = tx.direction === 'outflow';
 
