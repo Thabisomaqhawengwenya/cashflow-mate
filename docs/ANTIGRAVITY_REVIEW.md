@@ -225,3 +225,28 @@ Verification:
 - `cd my-app; npx tsc --noEmit`: **0 errors**.
 - `cd my-app; npx expo export -p web`: **exit 0 (Exported: dist)**.
 
+---
+
+## DeepSeek review of the backlog pass (commit `f0e8c1f`)
+
+Verified first: monorepo tests pass 35/35 (mobile now 26 after this review), `tsc` exits 0, and the
+Expo web export succeeds. The CSV importer, Vitest harness, and accessibility additions are genuinely
+useful. Review found the following and DeepSeek fixed them in the follow-up commit:
+
+| Area | Problem found | Fix |
+| --- | --- | --- |
+| Native file read | Native branch used `fetch(asset.uri)`; React Native cannot read `file://`/`content://` through fetch, so CSV import failed on devices. | Lazy `expo-file-system` `File(uri).text()` on native; web keeps `File.text()`. 5 MB guard added. |
+| Dates | Ambiguous `10/25/2026` became invalid `2026-25-10`; unparseable dates silently became "today". | `normalizeDate` returns `null`, validates real calendar dates, disambiguates DD/MM vs MM/DD; invalid rows counted/skipped. |
+| Currency column | An explicit `USD` row was replaced by the business default (e.g. ZWG). | `normalizeCurrency` maps `$`/`USD`/`ZiG`/`ZWG`/`ZWL`/`R`/`ZAR` correctly. |
+| Intra-file duplicates | Only duplicates against existing history were flagged; the same row twice in one file imported twice. | Fingerprints are added to the seen-set while parsing. |
+| Direction | Positive expense rows (e.g. "Bakers Inn Restock") were parsed as inflows. | Recognized categories determine direction; statement sign is used for uncategorized rows. |
+| Amounts | Accounting parentheses `(45.00)` were treated as positive. | `parseAmountCell` handles parentheses, commas, symbols; returns `null` for blanks. |
+| Tests | No coverage for the above. | 7 new Vitest cases; mobile suite now **26 tests** (41 monorepo total). |
+
+Still open after this pass:
+
+- **ESLint was requested but not delivered** (only Vitest). No `eslint` dependency/config and no `lint` script.
+- `npm audit` in `my-app` reports **5 high-severity transitive advisories** (Expo toolchain); needs triage.
+- **Tracked DB sidecars**: `.gitignore` now ignores `*.db-shm`/`*.db-wal`, but `apps/api/*.db-{shm,wal}` and root `*.db-{shm,wal}` remain tracked; should be `git rm --cached`.
+- Antigravity's in-progress licensing feature (`packages/shared/src/licensing.ts`, `tools/license-generator.mjs`, LICENSE/package metadata) was uncommitted during this review and is **out of scope** here; it needs its own review once committed.
+

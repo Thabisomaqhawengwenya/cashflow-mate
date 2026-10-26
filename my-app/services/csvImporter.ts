@@ -22,6 +22,7 @@ export interface CsvImportResult {
   fileName: string;
   totalRows: number;
   validRows: number;
+  invalidRows: number;
   duplicateCount: number;
   newRows: number;
   rows: ParsedCsvRow[];
@@ -159,32 +160,104 @@ export function categorizeDescription(description: string): string {
 }
 
 /**
- * Parse date from various formats (YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, DD-MM-YYYY)
+ * Parse date from various formats (YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, DD-MM-YYYY, DD.MM.YYYY).
+ * Returns null for invalid dates so callers can reject the row instead of silently
+ * back-dating it to "today".
  */
-export function normalizeDate(dateStr: string): string {
+export function normalizeDate(dateStr: string): string | null {
   const trimmed = dateStr.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  if (!trimmed) return null;
 
-  // DD/MM/YYYY or DD-MM-YYYY
-  const dmyMatch = trimmed.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})/);
-  if (dmyMatch) {
-    const day = dmyMatch[1].padStart(2, '0');
-    const month = dmyMatch[2].padStart(2, '0');
-    const year = dmyMatch[3];
-    return `${year}-${month}-${day}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return isValidYmd(trimmed) ? trimmed : null;
   }
 
-  // Fallback to today if unparseable
-  const d = new Date(trimmed);
-  if (!isNaN(d.getTime())) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+  const numeric = trimmed.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})/);
+  if (numeric) {
+    const first = parseInt(numeric[1], 10);
+    const second = parseInt(numeric[2], 10);
+    const year = numeric[3];
+
+    let day: number;
+    let month: number;
+    if (first > 12 && second <= 12) {
+      // 25/10/2026 -> DD/MM
+      day = first;
+      month = second;
+    } else if (second > 12 && first <= 12) {
+      // 10/25/2026 -> MM/DD
+      day = second;
+      month = first;
+    } else {
+      // Ambiguous: prefer DD/MM, the common Zimbabwean format.
+      day = first;
+      month = second;
+    }
+
+    const ymd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return isValidYmd(ymd) ? ymd : null;
   }
 
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const parsed = new Date(trimmed);
+  if (!isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const ymd = `${year}-${month}-${day}`;
+    return isValidYmd(ymd) ? ymd : null;
+  }
+
+  return null;
+}
+
+function isValidYmd(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+/** Normalize a currency cell (USD/$/ZiG/ZWG/ZAR/R) to the app currency codes. */
+export function normalizeCurrency(
+  value: string | undefined,
+  fallback: CurrencyCode = 'USD'
+): CurrencyCode {
+  const token = (value || '').trim().toUpperCase();
+  if (!token) return fallback;
+  if (token.includes('USD') || token === 'US$' || token === '$') return 'USD';
+  if (token.includes('ZWG') || token.includes('ZIG') || token.includes('ZWL')) return 'ZWG';
+  if (token.includes('ZAR') || token === 'RAND' || token === 'R') return 'ZAR';
+  return fallback;
+}
+
+/**
+ * Parse a dirty money cell. Handles currency symbols, thousands separators,
+ * spaces and accounting parentheses (e.g. "(45.50)" -> -45.5).
+ */
+export function parseAmountCell(value: string | undefined): number | null {
+  if (value === undefined || value === null) return null;
+  let cleaned = String(value).trim();
+  if (!cleaned) return null;
+
+  let negative = false;
+  if (/^\(.*\)$/.test(cleaned)) {
+    negative = true;
+    cleaned = cleaned.slice(1, -1);
+  }
+
+  cleaned = cleaned.replace(/[^0-9.,-]/g, '').replace(/,/g, '');
+  if (!cleaned || cleaned === '-' || cleaned === '.') return null;
+  const parsed = parseFloat(cleaned);
+  if (!Number.isFinite(parsed)) return null;
+  return negative ? -Math.abs(parsed) : parsed;
 }
 
 /**
@@ -198,7 +271,8 @@ export function processCsvData(
 ): CsvImportResult {
   const { headers, rows } = parseCsvText(csvText);
 
-  // Find column candidates
+  // Find column candidates (tighter matches than the original loose `includes`
+  // checks, which could pick "invoice" as a credit column).
   const dateCol = headers.find((h) => h.includes('date') || h.includes('time'));
   const descCol = headers.find(
     (h) => h.includes('desc') || h.includes('detail') || h.includes('narr') || h.includes('memo') || h.includes('particular')
@@ -206,13 +280,21 @@ export function processCsvData(
   const amountCol = headers.find(
     (h) => h.includes('amount') || h.includes('value') || h.includes('total') || h === 'amt'
   );
-  const debitCol = headers.find((h) => h.includes('debit') || h.includes('out') || h.includes('withdrawal'));
-  const creditCol = headers.find((h) => h.includes('credit') || h.includes('in') || h.includes('deposit'));
+  const debitCol = headers.find(
+    (h) => h.includes('debit') || h.includes('withdrawal') || h.includes('money out') || h === 'dr'
+  );
+  const creditCol = headers.find(
+    (h) => h.includes('credit') || h.includes('deposit') || h.includes('money in') || h === 'cr'
+  );
   const currCol = headers.find((h) => h.includes('curr') || h.includes('ccy'));
-  const refCol = headers.find((h) => h.includes('ref') || h.includes('id') || h.includes('code'));
+  const refCol = headers.find((h) => h.includes('ref') || h === 'id' || h.includes('code'));
+  const typeCol = headers.find(
+    (h) => h === 'type' || h.includes('direction') || h.includes('dr/cr') || h.includes('transaction type')
+  );
 
-  // Build existing fingerprint set
-  const existingFingerprints = new Set(
+  // Build existing fingerprint set; also add each parsed row as we go so
+  // duplicate rows *within the same file* are flagged too.
+  const seenFingerprints = new Set(
     existingTransactions.map((t) =>
       generateTransactionFingerprint(t.transactionDate, t.amount, t.description, t.currency)
     )
@@ -220,42 +302,80 @@ export function processCsvData(
 
   const parsedRows: ParsedCsvRow[] = [];
   let duplicateCount = 0;
+  let invalidRows = 0;
 
   for (const row of rows) {
     const rawDate = dateCol ? row[dateCol] : Object.values(row)[0] || '';
-    const rawDesc = descCol ? row[descCol] : Object.values(row)[1] || 'Unlabeled Transaction';
+    const rawDesc = (descCol ? row[descCol] : Object.values(row)[1] || '').trim();
+
+    const normalizedDate = normalizeDate(rawDate);
+    if (!normalizedDate || !rawDesc) {
+      invalidRows++;
+      continue;
+    }
+
+    // Optional explicit direction/type column.
+    let explicitDirection: 'inflow' | 'outflow' | null = null;
+    if (typeCol && row[typeCol]) {
+      const typeValue = row[typeCol].toLowerCase();
+      if (/(credit|cr\b|\bin\b|income|deposit|received)/.test(typeValue)) explicitDirection = 'inflow';
+      else if (/(debit|dr\b|\bout\b|expense|payment|withdraw)/.test(typeValue)) explicitDirection = 'outflow';
+    }
 
     let amount = 0;
     let direction: 'inflow' | 'outflow' = 'outflow';
 
-    if (creditCol && row[creditCol] && parseFloat(row[creditCol].replace(/[^0-9.-]/g, '')) > 0) {
-      amount = parseFloat(row[creditCol].replace(/[^0-9.-]/g, ''));
+    const creditValue = creditCol ? parseAmountCell(row[creditCol]) : null;
+    const debitValue = debitCol ? parseAmountCell(row[debitCol]) : null;
+
+    if (creditValue !== null && creditValue !== 0) {
+      amount = Math.abs(creditValue);
       direction = 'inflow';
-    } else if (debitCol && row[debitCol] && parseFloat(row[debitCol].replace(/[^0-9.-]/g, '')) > 0) {
-      amount = parseFloat(row[debitCol].replace(/[^0-9.-]/g, ''));
+    } else if (debitValue !== null && debitValue !== 0) {
+      amount = Math.abs(debitValue);
       direction = 'outflow';
     } else if (amountCol && row[amountCol]) {
-      const parsedNum = parseFloat(row[amountCol].replace(/[^0-9.-]/g, ''));
-      if (!isNaN(parsedNum)) {
-        amount = Math.abs(parsedNum);
-        direction = parsedNum >= 0 ? 'inflow' : 'outflow';
+      const parsedNumber = parseAmountCell(row[amountCol]);
+      if (parsedNumber === null || parsedNumber === 0) {
+        invalidRows++;
+        continue;
       }
+      amount = Math.abs(parsedNumber);
+      direction = parsedNumber < 0 ? 'outflow' : 'inflow';
+    } else {
+      invalidRows++;
+      continue;
     }
 
-    if (isNaN(amount) || amount === 0) continue;
+    if (amount <= 0) {
+      invalidRows++;
+      continue;
+    }
 
-    const normalizedDate = normalizeDate(rawDate);
-    const rawCurr = currCol ? row[currCol]?.toUpperCase() : defaultCurrency;
-    const currency: CurrencyCode = rawCurr === 'ZWG' || rawCurr === 'ZAR' ? rawCurr : defaultCurrency;
-    const reference = refCol ? row[refCol] : undefined;
     const category = categorizeDescription(rawDesc);
+    const classification = categoryClassification(category);
+
+    // For recognized categories the category wins over the amount's sign: a
+    // positive "Bakers Inn stock" row is still an outflow, not income.
+    if (explicitDirection) {
+      direction = explicitDirection;
+    } else if (
+      category !== 'uncategorized' &&
+      (classification.direction === 'inflow' || classification.direction === 'outflow')
+    ) {
+      direction = classification.direction;
+    }
+
+    const currency = normalizeCurrency(currCol ? row[currCol] : undefined, defaultCurrency);
+    const reference = refCol ? row[refCol] : undefined;
 
     const fingerprint = generateTransactionFingerprint(normalizedDate, amount, rawDesc, currency);
-    const isDuplicate = existingFingerprints.has(fingerprint);
+    const isDuplicate = seenFingerprints.has(fingerprint);
 
     if (isDuplicate) {
       duplicateCount++;
     }
+    seenFingerprints.add(fingerprint);
 
     parsedRows.push({
       raw: row,
@@ -275,6 +395,7 @@ export function processCsvData(
     fileName,
     totalRows: rows.length,
     validRows: parsedRows.length,
+    invalidRows,
     duplicateCount,
     newRows: parsedRows.length - duplicateCount,
     rows: parsedRows,
@@ -293,12 +414,15 @@ export function convertCsvRowsToTransactions(
 
   return eligible.map((r) => {
     const classification = categoryClassification(r.category);
+    // Recognized categories carry their own direction; only uncategorized rows
+    // keep the direction inferred from the statement sign.
+    const direction = r.category === 'uncategorized' ? r.direction : classification.direction;
     return {
       transactionDate: r.date,
       description: r.description,
       amount: r.amount,
       currency: r.currency,
-      direction: r.direction || classification.direction,
+      direction,
       type: classification.type,
       category: r.category,
       originalReference: r.reference,

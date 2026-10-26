@@ -120,17 +120,32 @@ export default function ImportScreen() {
 
       const asset = result.assets[0];
       const fileName = asset.name || 'statement.csv';
+      const MAX_BYTES = 5 * 1024 * 1024;
+
+      if (typeof asset.size === 'number' && asset.size > MAX_BYTES) {
+        Alert.alert('File Too Large', 'Please choose a CSV file smaller than 5 MB.');
+        setIsReadingFile(false);
+        return;
+      }
 
       let text = '';
       if (Platform.OS === 'web' && (asset as any).file) {
         text = await (asset as any).file.text();
       } else {
-        const response = await fetch(asset.uri);
-        text = await response.text();
+        // Native file:// and content:// URIs are not readable with fetch().
+        // Import lazily so the web bundle never touches the native module.
+        const { File } = await import('expo-file-system');
+        text = await new File(asset.uri).text();
       }
 
       if (!text || text.trim().length === 0) {
         Alert.alert('Empty File', 'The selected file contains no readable text.');
+        setIsReadingFile(false);
+        return;
+      }
+
+      if (text.length > MAX_BYTES) {
+        Alert.alert('File Too Large', 'The statement exceeds the 5 MB parser limit.');
         setIsReadingFile(false);
         return;
       }
@@ -310,7 +325,8 @@ export default function ImportScreen() {
                 Statement Preview
               </Text>
               <Text style={[styles.previewMeta, { color: theme.tabIconDefault }]}>
-                {importResult.fileName} • {importResult.validRows} valid rows found
+                {importResult.fileName} • {importResult.validRows} valid rows
+                {importResult.invalidRows > 0 ? ` • ${importResult.invalidRows} invalid skipped` : ''}
               </Text>
             </View>
 

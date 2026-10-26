@@ -34,6 +34,9 @@ import {
   categorizeDescription,
   processCsvData,
   convertCsvRowsToTransactions,
+  normalizeDate,
+  normalizeCurrency,
+  parseAmountCell,
 } from '../csvImporter';
 
 describe('Mobile Currency and Formatting', () => {
@@ -359,5 +362,70 @@ describe('CSV Importer and Fingerprinting', () => {
     const converted = convertCsvRowsToTransactions(result.rows, true);
     expect(converted.length).toBe(1);
     expect(converted[0].description).toBe('New Wholesale Restock');
+  });
+});
+
+describe('CSV Importer Edge Cases', () => {
+  it('normalizes DD/MM and unambiguous MM/DD dates and rejects invalid dates', () => {
+    expect(normalizeDate('2026-10-25')).toBe('2026-10-25');
+    expect(normalizeDate('25/10/2026')).toBe('2026-10-25');
+    expect(normalizeDate('10/25/2026')).toBe('2026-10-25');
+    expect(normalizeDate('31/02/2026')).toBeNull();
+    expect(normalizeDate('not-a-date')).toBeNull();
+  });
+
+  it('normalizes currency symbols and codes to app currency codes', () => {
+    expect(normalizeCurrency('usd', 'ZWG')).toBe('USD');
+    expect(normalizeCurrency('ZiG', 'USD')).toBe('ZWG');
+    expect(normalizeCurrency('ZWL', 'USD')).toBe('ZWG');
+    expect(normalizeCurrency('R', 'USD')).toBe('ZAR');
+    expect(normalizeCurrency('', 'ZWG')).toBe('ZWG');
+  });
+
+  it('parses dirty amount cells including parentheses as negative', () => {
+    expect(parseAmountCell('$1,234.50')).toBe(1234.5);
+    expect(parseAmountCell('(45.00)')).toBe(-45);
+    expect(parseAmountCell('-12.00')).toBe(-12);
+    expect(parseAmountCell('')).toBeNull();
+  });
+
+  it('flags duplicate rows inside the same file and skips invalid rows', () => {
+    const csv = `Date,Description,Amount,Currency
+2026-10-25,Bakers Inn Stock,-30.00,USD
+2026-10-25,Bakers Inn Stock,-30.00,USD
+31/02/2026,Invalid date row,-5.00,USD
+2026-10-26,Customer sale,25.00,USD`;
+    const result = processCsvData(csv, [], 'USD');
+    expect(result.totalRows).toBe(4);
+    expect(result.validRows).toBe(3);
+    expect(result.invalidRows).toBe(1);
+    expect(result.duplicateCount).toBe(1);
+    expect(result.newRows).toBe(2);
+  });
+
+  it('honours an explicit currency column instead of the default currency', () => {
+    const csv = `Date,Description,Amount,Currency
+2026-10-25,Customer payment,25.00,USD`;
+    const result = processCsvData(csv, [], 'ZWG');
+    expect(result.rows[0].currency).toBe('USD');
+  });
+
+  it('forces category-consistent direction for positive expense rows', () => {
+    const csv = `Date,Description,Amount
+2026-10-25,Bakers Inn Wholesale Bread Restock,33.00`;
+    const result = processCsvData(csv, [], 'USD');
+    expect(result.rows[0].direction).toBe('outflow');
+    const converted = convertCsvRowsToTransactions(result.rows, true);
+    expect(converted[0].direction).toBe('outflow');
+    expect(converted[0].type).toBe('business_expense');
+  });
+
+  it('parses debit/credit bank columns into directions', () => {
+    const csv = `Posting Date,Details,Debit,Credit,Currency
+2026-10-25,POS Settlement,,145.00,USD
+2026-10-25,National Foods Restock,95.00,,USD`;
+    const result = processCsvData(csv, [], 'USD');
+    expect(result.rows[0].direction).toBe('inflow');
+    expect(result.rows[1].direction).toBe('outflow');
   });
 });
