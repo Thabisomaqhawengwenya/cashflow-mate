@@ -7,10 +7,12 @@ import {
   Pressable,
   Modal,
   Alert,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import Colors from '@/constants/Colors';
+import { useFocusEffect, router } from 'expo-router';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -21,9 +23,8 @@ import {
   sortTransactionsByDateDesc,
   CATEGORIES,
 } from '@/services/storage';
-import { M3Card } from '@/components/M3/M3Card';
-import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
+import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 
 export default function TransactionsScreen() {
@@ -32,8 +33,7 @@ export default function TransactionsScreen() {
 
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [directionFilter, setDirectionFilter] = useState<'all' | 'inflow' | 'outflow'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'inflow' | 'outflow' | 'review'>('all');
 
   // Edit Modal
   const [selectedTx, setSelectedTx] = useState<MobileTransaction | null>(null);
@@ -55,12 +55,16 @@ export default function TransactionsScreen() {
     transactions.filter((tx) => {
       const matchesSearch =
         tx.description.toLowerCase().includes(search.toLowerCase()) ||
-        (tx.originalReference && tx.originalReference.toLowerCase().includes(search.toLowerCase()));
+        (tx.originalReference && tx.originalReference.toLowerCase().includes(search.toLowerCase())) ||
+        tx.category.toLowerCase().includes(search.toLowerCase());
 
-      const matchesCat = selectedCategory === 'all' || tx.category === selectedCategory;
-      const matchesDir = directionFilter === 'all' || tx.direction === directionFilter;
+      if (!matchesSearch) return false;
 
-      return matchesSearch && matchesCat && matchesDir;
+      if (selectedFilter === 'all') return true;
+      if (selectedFilter === 'inflow') return tx.direction === 'inflow';
+      if (selectedFilter === 'outflow') return tx.direction === 'outflow';
+      if (selectedFilter === 'review') return tx.reviewStatus === 'pending_review';
+      return true;
     })
   );
 
@@ -100,238 +104,289 @@ export default function TransactionsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Search Header */}
-      <View style={styles.header}>
-        <M3Input
-          label="Search Transactions"
-          placeholder="Search by vendor, bread, customer name, ref..."
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+    <View style={styles.screenWrapper}>
+      {/* 1. Deep Forest Emerald Header with Filter Capsules (Directly from Screen 3) */}
+      <View style={styles.emeraldHeader}>
+        {/* Top Navigation Row */}
+        <View style={styles.topNavRow}>
+          <Pressable
+            onPress={() => router.push('/(tabs)')}
+            hitSlop={10}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Home"
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.headerTitle}>My Transactions</Text>
+          <Pressable
+            onPress={() => router.push('/modal')}
+            hitSlop={10}
+            style={styles.backButton}
+          >
+            <Ionicons name="filter-outline" size={20} color="#FFFFFF" />
+          </Pressable>
+        </View>
 
-      {/* Direction & Category Filter Chips */}
-      <View style={styles.filterSection}>
-        {/* Direction Switcher */}
-        <View style={styles.directionRow}>
+        {/* Search Bar inside Header */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={17} color="rgba(255, 255, 255, 0.6)" />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by vendor, bread, customer name..."
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
+            style={styles.searchInput}
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={16} color="rgba(255, 255, 255, 0.6)" />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Filter Capsule Tabs (Directly from Screen 3) */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterPillRow}
+        >
           {[
             { id: 'all', label: 'All' },
-            { id: 'inflow', label: '+ Inflows' },
-            { id: 'outflow', label: '- Outflows' },
+            { id: 'inflow', label: 'Inflows' },
+            { id: 'outflow', label: 'Outflows' },
+            { id: 'review', label: 'Needs Review' },
           ].map((item) => {
-            const isActive = directionFilter === item.id;
+            const isActive = selectedFilter === item.id;
             return (
               <Pressable
                 key={item.id}
-                onPress={() => setDirectionFilter(item.id as any)}
+                onPress={() => setSelectedFilter(item.id as any)}
                 accessibilityRole="button"
                 accessibilityLabel={`Filter by ${item.label}`}
-                accessibilityState={{ selected: isActive }}
                 style={[
-                  styles.filterChip,
+                  styles.filterPill,
                   {
-                    backgroundColor: isActive ? theme.primary : theme.surfaceContainer,
-                    borderColor: isActive ? theme.primary : theme.outlineVariant,
+                    backgroundColor: isActive
+                      ? EmeraldTokens.mintCta
+                      : 'rgba(255, 255, 255, 0.14)',
                   },
                 ]}
               >
-                <Text style={{ fontSize: 11, fontWeight: '600', color: isActive ? '#FFFFFF' : theme.text }}>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    {
+                      color: isActive ? EmeraldTokens.mintDarkText : '#FFFFFF',
+                      fontWeight: isActive ? '700' : '500',
+                    },
+                  ]}
+                >
                   {item.label}
                 </Text>
               </Pressable>
             );
           })}
-        </View>
-
-        {/* Categories Horizontal Carousel */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catCarousel}>
-          <Pressable
-            onPress={() => setSelectedCategory('all')}
-            accessibilityRole="button"
-            accessibilityLabel="Filter by All Categories"
-            accessibilityState={{ selected: selectedCategory === 'all' }}
-            style={[
-              styles.catChip,
-              {
-                backgroundColor: selectedCategory === 'all' ? theme.secondaryContainer : theme.surfaceContainer,
-                borderColor: selectedCategory === 'all' ? theme.primary : 'transparent',
-              },
-            ]}
-          >
-            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text }}>All Categories</Text>
-          </Pressable>
-          {Object.entries(CATEGORIES).map(([key, cat]) => (
-            <Pressable
-              key={key}
-              onPress={() => setSelectedCategory(key)}
-              accessibilityRole="button"
-              accessibilityLabel={`Filter by category ${cat.label}`}
-              accessibilityState={{ selected: selectedCategory === key }}
-              style={[
-                styles.catChip,
-                {
-                  backgroundColor: selectedCategory === key ? theme.secondaryContainer : theme.surfaceContainer,
-                  borderColor: selectedCategory === key ? theme.primary : 'transparent',
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text }}>{cat.label}</Text>
-            </Pressable>
-          ))}
         </ScrollView>
       </View>
 
-      {/* Transactions List */}
-      <ScrollView contentContainerStyle={styles.listContent}>
-        {filtered.length > 0 ? (
-          filtered.map((tx) => {
-            const isIncome = tx.direction === 'inflow';
-            const isOutflow = tx.direction === 'outflow';
+      {/* 2. White Curved Body Sheet */}
+      <View style={styles.sheetContainer}>
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>
+            All Records <Text style={styles.countBadge}>({filtered.length})</Text>
+          </Text>
+        </View>
 
-            return (
-              <Pressable key={tx.id} onPress={() => handleOpenEdit(tx)}>
-                <M3Card variant="elevated" style={styles.card}>
-                  <View style={styles.cardRow}>
-                    <View style={styles.cardLeft}>
-                      <View
-                        style={[
-                          styles.iconBubble,
-                          {
-                            backgroundColor: isIncome
-                              ? theme.inflowContainer
-                              : isOutflow
-                              ? theme.outflowContainer
-                              : theme.neutralContainer,
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={isIncome ? 'arrow-down' : isOutflow ? 'arrow-up' : 'swap-horizontal'}
-                          size={16}
-                          color={isIncome ? theme.inflow : isOutflow ? theme.outflow : theme.neutral}
-                        />
-                      </View>
-                      <View style={styles.descCol}>
-                        <Text style={[styles.descText, { color: theme.text }]} numberOfLines={1}>
-                          {tx.description}
-                        </Text>
-                        <Text style={[styles.metaText, { color: theme.tabIconDefault }]}>
-                          {tx.transactionDate} &bull; {CATEGORIES[tx.category]?.label || tx.category}
-                        </Text>
-                        {tx.originalReference && (
-                          <Text style={[styles.refText, { color: theme.tabIconDefault }]}>
-                            Ref: {tx.originalReference}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filtered.length > 0 ? (
+            filtered.map((tx) => {
+              const isInflow = tx.direction === 'inflow';
+              const catMeta = CATEGORIES[tx.category];
 
-                    <View style={styles.cardRight}>
-                      <Text
-                        style={[
-                          styles.amountText,
-                          {
-                            color: isIncome ? theme.inflow : isOutflow ? theme.outflow : theme.neutral,
-                          },
-                        ]}
-                      >
-                        {isIncome ? '+' : isOutflow ? '-' : ''}
-                        {formatMoney(tx.amount, tx.currency)}
+              return (
+                <Pressable
+                  key={tx.id}
+                  onPress={() => handleOpenEdit(tx)}
+                  style={({ pressed }) => [
+                    styles.txCard,
+                    { transform: [{ scale: pressed ? 0.98 : 1 }] },
+                  ]}
+                >
+                  {/* Top Row: Ref & Timestamp + Amount Badge */}
+                  <View style={styles.cardTopRow}>
+                    <View style={styles.cardRefGroup}>
+                      <Text style={styles.cardRefCode}>
+                        % {tx.originalReference || tx.id.slice(0, 8).toUpperCase()}
                       </Text>
-                      {tx.reviewStatus === 'pending_review' && (
-                        <M3Badge label="Review" variant="review" style={{ marginTop: 4 }} />
-                      )}
+                      <View style={styles.timeGroup}>
+                        <Ionicons name="time-outline" size={12} color={EmeraldTokens.textSubtle} />
+                        <Text style={styles.cardTimeText}>{tx.transactionDate}</Text>
+                      </View>
                     </View>
-                  </View>
-                </M3Card>
-              </Pressable>
-            );
-          })
-        ) : (
-          <View style={styles.emptyBox}>
-            <Ionicons name="receipt-outline" size={40} color={theme.tabIconDefault} />
-            <Text style={[styles.emptyText, { color: theme.tabIconDefault }]}>
-              No transactions match your search or filter.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
 
-      {/* Edit Transaction Modal */}
-      <Modal visible={selectedTx !== null} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Transaction</Text>
-              <Pressable
-                onPress={() => setSelectedTx(null)}
-                accessibilityRole="button"
-                accessibilityLabel="Close category editor"
-                hitSlop={12}
-              >
-                <Ionicons name="close" size={22} color={theme.tabIconDefault} />
-              </Pressable>
-            </View>
-
-            {selectedTx && (
-              <View style={styles.modalBody}>
-                <View style={[styles.detailsBox, { backgroundColor: theme.surfaceContainer }]}>
-                  <Text style={[styles.detailsDesc, { color: theme.text }]}>{selectedTx.description}</Text>
-                  <Text style={[styles.detailsAmount, { color: theme.primary }]}>
-                    {formatMoney(selectedTx.amount, selectedTx.currency)} &bull; {selectedTx.transactionDate}
-                  </Text>
-                </View>
-
-                <Text style={[styles.sectionLabel, { color: theme.text }]}>Assign Category:</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modalCatRow}>
-                  {Object.entries(CATEGORIES).map(([key, cat]) => (
-                    <Pressable
-                      key={key}
-                      onPress={() => setEditCategory(key)}
+                    {/* Amount Chip */}
+                    <View
                       style={[
-                        styles.catChip,
+                        styles.cardAmountBadge,
                         {
-                          backgroundColor: editCategory === key ? theme.primary : theme.surfaceContainer,
-                          borderColor: editCategory === key ? theme.primary : 'transparent',
+                          backgroundColor: isInflow
+                            ? EmeraldTokens.pastelMint
+                            : EmeraldTokens.pastelRose,
                         },
                       ]}
                     >
                       <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: '600',
-                          color: editCategory === key ? '#FFFFFF' : theme.text,
-                        }}
+                        style={[
+                          styles.cardAmountText,
+                          {
+                            color: isInflow
+                              ? EmeraldTokens.pastelMintText
+                              : EmeraldTokens.pastelRoseText,
+                          },
+                        ]}
                       >
-                        {cat.label}
+                        {isInflow ? '+' : '-'}
+                        {formatMoney(tx.amount, tx.currency)}
                       </Text>
-                    </Pressable>
-                  ))}
+                    </View>
+                  </View>
+
+                  {/* Middle Row: Description */}
+                  <Text style={styles.cardDescription} numberOfLines={2}>
+                    {tx.description}
+                  </Text>
+
+                  {/* Bottom Row: Counterparty/Category + Review Status */}
+                  <View style={styles.cardBottomRow}>
+                    <View style={styles.avatarGroup}>
+                      <View style={styles.miniAvatar}>
+                        <Ionicons
+                          name={isInflow ? 'arrow-down' : 'arrow-up'}
+                          size={12}
+                          color={EmeraldTokens.deepPine}
+                        />
+                      </View>
+                      <Text style={styles.categoryName} numberOfLines={1}>
+                        {catMeta ? catMeta.label : tx.category}
+                      </Text>
+                    </View>
+
+                    <M3Badge
+                      label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'REVIEW'}
+                      variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
+                    />
+                  </View>
+                </Pressable>
+              );
+            })
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="file-tray-outline" size={44} color={EmeraldTokens.textSubtle} />
+              <Text style={styles.emptyTitle}>No matching transactions</Text>
+              <Text style={styles.emptySub}>
+                Try adjusting your search terms or filter selection.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Edit / Review Transaction Modal */}
+      <Modal
+        visible={!!selectedTx}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSelectedTx(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Transaction Details</Text>
+              <Pressable onPress={() => setSelectedTx(null)} style={styles.closeBtn}>
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
+              </Pressable>
+            </View>
+
+            {selectedTx && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.modalAmountBox}>
+                  <Text style={styles.modalAmountLabel}>Total Amount</Text>
+                  <Text
+                    style={[
+                      styles.modalAmountValue,
+                      {
+                        color:
+                          selectedTx.direction === 'inflow'
+                            ? EmeraldTokens.pastelMintText
+                            : EmeraldTokens.pastelRoseText,
+                      },
+                    ]}
+                  >
+                    {selectedTx.direction === 'inflow' ? '+' : '-'}
+                    {formatMoney(selectedTx.amount, selectedTx.currency)}
+                  </Text>
+                  <Text style={styles.modalDesc}>{selectedTx.description}</Text>
+                </View>
+
+                {/* Category Selection Carousel */}
+                <Text style={styles.inputHeading}>Reclassify Category</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catChipsRow}>
+                  {Object.entries(CATEGORIES).map(([catId, cat]) => {
+                    const isSelected = editCategory === catId;
+                    return (
+                      <Pressable
+                        key={catId}
+                        onPress={() => setEditCategory(catId)}
+                        style={[
+                          styles.catChoiceChip,
+                          {
+                            backgroundColor: isSelected
+                              ? EmeraldTokens.deepPine
+                              : '#F1F5F3',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.catChoiceText,
+                            { color: isSelected ? '#FFFFFF' : EmeraldTokens.textSlate },
+                          ]}
+                        >
+                          {cat.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </ScrollView>
 
                 <M3Input
-                  label="Notes"
-                  placeholder="Additional merchant notes..."
+                  label="Merchant / Notes"
+                  placeholder="Add notes about supplier, receipt or terms..."
                   value={editNotes}
                   onChangeText={setEditNotes}
+                  style={{ marginTop: 12 }}
                 />
 
-                <View style={styles.modalFooter}>
-                  <M3Button
-                    label="Delete"
-                    variant="text"
-                    onPress={() => handleDelete(selectedTx.id)}
-                    style={{ flex: 1, marginRight: 8 }}
-                  />
-                  <M3Button
-                    label="Save"
-                    variant="filled"
-                    onPress={handleSaveEdit}
-                    style={{ flex: 1 }}
-                  />
-                </View>
-              </View>
+                <M3Button
+                  label="SAVE & CONFIRM"
+                  variant="mint"
+                  size="lg"
+                  onPress={handleSaveEdit}
+                  style={{ marginTop: 16 }}
+                />
+
+                <Pressable
+                  onPress={() => selectedTx && handleDelete(selectedTx.id)}
+                  style={styles.deleteRow}
+                >
+                  <Ionicons name="trash-outline" size={16} color="#E11D48" />
+                  <Text style={styles.deleteText}>Delete Record Permanently</Text>
+                </Pressable>
+              </ScrollView>
             )}
           </View>
         </View>
@@ -341,151 +396,271 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenWrapper: {
     flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
-  header: {
-    paddingHorizontal: DesignTokens.spacing.gutter,
-    paddingTop: 12,
+  emeraldHeader: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  filterSection: {
-    paddingHorizontal: DesignTokens.spacing.gutter,
-    marginBottom: 8,
-  },
-  directionRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    height: 32,
-    borderRadius: DesignTokens.shapes.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  catCarousel: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  catChip: {
-    paddingHorizontal: 12,
-    height: 30,
-    borderRadius: DesignTokens.shapes.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
-    borderWidth: 1,
-  },
-  listContent: {
-    paddingHorizontal: DesignTokens.spacing.gutter,
-    paddingBottom: 30,
-  },
-  card: {
-    marginVertical: 4,
-    padding: 14,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  iconBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  descCol: {
-    flex: 1,
-  },
-  descText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  metaText: {
-    fontSize: 10,
-    marginTop: 2,
-  },
-  refText: {
-    fontSize: 9,
-    fontFamily: 'System',
-    marginTop: 1,
-  },
-  cardRight: {
-    alignItems: 'flex-end',
-    marginLeft: 8,
-  },
-  amountText: {
-    fontSize: 14,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  emptyBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 12,
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    borderTopLeftRadius: DesignTokens.shapes.sheet,
-    borderTopRightRadius: DesignTokens.shapes.sheet,
-    padding: DesignTokens.spacing.gutter,
-    paddingBottom: 40,
-  },
-  modalHeader: {
+  topNavRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 14,
   },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: DesignTokens.shapes.pill,
+    paddingHorizontal: 14,
+    height: 42,
+    marginBottom: 14,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 13,
+    marginLeft: 8,
+  },
+  filterPillRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  filterPillText: {
+    fontSize: 12,
+  },
+
+  // Curved Sheet
+  sheetContainer: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.canvasLight,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  sheetHeader: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 8,
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  countBadge: {
+    fontSize: 14,
+    color: EmeraldTokens.textMuted,
+    fontWeight: '500',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+
+  // Transaction Cards (Matching Screen 3)
+  txCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cardRefGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardRefCode: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.textSubtle,
+    letterSpacing: 0.4,
+  },
+  timeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  cardTimeText: {
+    fontSize: 11,
+    color: EmeraldTokens.textSubtle,
+  },
+  cardAmountBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  cardAmountText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  cardDescription: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: EmeraldTokens.textSlate,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatarGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  miniAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: EmeraldTokens.pastelMint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: EmeraldTokens.textMuted,
+  },
+
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginTop: 10,
+  },
+  emptySub: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: EmeraldTokens.textSlate,
   },
-  modalBody: {
-    gap: 10,
+  closeBtn: {
+    padding: 4,
   },
-  detailsBox: {
-    padding: 12,
-    borderRadius: DesignTokens.shapes.medium,
+  modalAmountBox: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    backgroundColor: '#F8FAF9',
+    borderRadius: 18,
+    marginBottom: 16,
   },
-  detailsDesc: {
+  modalAmountLabel: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    fontWeight: '600',
+  },
+  modalAmountValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginVertical: 4,
+  },
+  modalDesc: {
+    fontSize: 13,
+    color: EmeraldTokens.textSlate,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+  },
+  inputHeading: {
     fontSize: 13,
     fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginBottom: 8,
   },
-  detailsAmount: {
+  catChipsRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  catChoiceChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: DesignTokens.shapes.pill,
+    marginRight: 8,
+  },
+  catChoiceText: {
     fontSize: 12,
     fontWeight: '600',
-    marginTop: 4,
   },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  modalCatRow: {
+  deleteRow: {
     flexDirection: 'row',
-    maxHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 18,
+    paddingVertical: 10,
   },
-  modalFooter: {
-    flexDirection: 'row',
-    marginTop: 14,
+  deleteText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#E11D48',
   },
 });

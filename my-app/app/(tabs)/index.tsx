@@ -8,10 +8,11 @@ import {
   Modal,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import Colors from '@/constants/Colors';
+import { useFocusEffect, router } from 'expo-router';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -23,7 +24,6 @@ import {
   sortTransactionsByDateDesc,
   CATEGORIES,
 } from '@/services/storage';
-import { M3Card } from '@/components/M3/M3Card';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
@@ -66,8 +66,7 @@ export default function OverviewScreen() {
 
   const currency = business?.currency || 'USD';
   const summary = MobileStorageService.calculateSummary(transactions, { period, currency });
-  const recentTransactions = sortTransactionsByDateDesc(transactions).slice(0, 5);
-  const topExpense = summary.categoryBreakdown[0];
+  const recentTransactions = sortTransactionsByDateDesc(transactions).slice(0, 4);
 
   const handleCreateTransaction = async () => {
     const amt = parseFloat(amount);
@@ -104,358 +103,520 @@ export default function OverviewScreen() {
     await loadData();
   };
 
+  const openNewTransaction = (dir: 'inflow' | 'outflow') => {
+    setDirection(dir);
+    setCategory(dir === 'inflow' ? 'sales_goods' : 'stock_purchase');
+    setIsModalOpen(true);
+  };
+
+  // Format today's date nicely for the top header
+  const todayFormatted = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date());
+
+  const pendingCount = transactions.filter((t) => t.reviewStatus === 'pending_review').length;
+  const inflowCount = transactions.filter((t) => t.direction === 'inflow').length;
+  const outflowCount = transactions.filter((t) => t.direction === 'outflow').length;
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.tint} />}
-    >
-      {/* Header Context Bar */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.businessName, { color: theme.text }]}>
-            {business?.name || 'Mbare Fresh Produce'}
-          </Text>
-          <Text style={[styles.subhead, { color: theme.tabIconDefault }]}>
-            Cash-Flow Intelligence &bull; Harare, Zimbabwe
-          </Text>
+    <View style={styles.screenWrapper}>
+      {/* 1. Top Emerald Hero Header (Inspired by Screen 1) */}
+      <View style={styles.emeraldHeader}>
+        {/* Top App Bar Row */}
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.greetingTitle}>
+              Hello, {business?.name ? business.name.split(' ')[0] : 'Mr Q'}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {todayFormatted} &bull; Harare, Zimbabwe
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/modal')}
+            accessibilityRole="button"
+            accessibilityLabel="Open settings and profile"
+            style={styles.bellButton}
+          >
+            <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
+            {pendingCount > 0 && <View style={styles.bellBadge} />}
+          </Pressable>
         </View>
-        <M3Badge label={business?.currency || 'USD'} variant="primary" />
+
+        {/* 3-Column Stat Bar (Directly from Reference Screen 1) */}
+        <View style={styles.statBar}>
+          <View style={styles.statCol}>
+            <Text style={styles.statNumber}>
+              {String(inflowCount).padStart(2, '0')}
+            </Text>
+            <Text style={styles.statLabel}>Inflows Recorded</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statCol}>
+            <Text style={styles.statNumber}>
+              {String(outflowCount).padStart(2, '0')}
+            </Text>
+            <Text style={styles.statLabel}>Outflows Recorded</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statCol}>
+            <Text style={[styles.statNumber, { color: EmeraldTokens.mintCta }]}>
+              {summary.netCashFlow >= 0 ? '+' : ''}
+              {formatMoney(summary.netCashFlow, currency)}
+            </Text>
+            <Text style={styles.statLabel}>Net Cash Flow</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Period Selector Chips (Pinterest Continuous Pill Style) */}
-      <View style={styles.periodRow}>
-        {[
-          { id: 'this_month', label: 'This Month' },
-          { id: 'last_month', label: 'Last Month' },
-          { id: 'all', label: 'All Records' },
-        ].map((item) => {
-          const isActive = period === item.id;
-          return (
-            <Pressable
-              key={item.id}
-              onPress={() => setPeriod(item.id as any)}
-              accessibilityRole="button"
-              accessibilityLabel={`Filter by ${item.label}`}
-              accessibilityState={{ selected: isActive }}
-              style={[
-                styles.periodChip,
-                {
-                  backgroundColor: isActive ? theme.primary : theme.surfaceContainer,
-                  borderColor: isActive ? theme.primary : theme.outlineVariant,
-                },
-              ]}
-            >
-              <Text style={[styles.periodText, { color: isActive ? '#FFFFFF' : theme.text }]}>
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* 2. White Curved Body Sheet */}
+      <ScrollView
+        style={styles.sheetContainer}
+        contentContainerStyle={styles.sheetContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={EmeraldTokens.deepPine}
+          />
+        }
+      >
+        {/* Period Selector Tabs */}
+        <View style={styles.periodRow}>
+          {[
+            { id: 'this_month', label: 'This Month' },
+            { id: 'last_month', label: 'Last Month' },
+            { id: 'all', label: 'All Records' },
+          ].map((item) => {
+            const isActive = period === item.id;
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => setPeriod(item.id as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${item.label}`}
+                style={[
+                  styles.periodChip,
+                  {
+                    backgroundColor: isActive ? EmeraldTokens.deepPine : '#F1F5F3',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.periodText,
+                    { color: isActive ? '#FFFFFF' : EmeraldTokens.textMuted },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      {/* 4 Financial KPI Cards */}
-      <View style={styles.kpiGrid}>
-        {/* Inflows */}
-        <M3Card variant="kpi" style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>Recorded Inflows</Text>
-            <View style={[styles.kpiIcon, { backgroundColor: theme.inflowContainer }]}>
-              <Ionicons name="arrow-down" size={15} color={theme.inflow} />
-            </View>
-          </View>
-          <Text style={[styles.kpiValue, { color: theme.inflow }]}>
-            {formatMoney(summary.recordedInflows, business?.currency)}
-          </Text>
-          <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Trading sales & receipts</Text>
-        </M3Card>
-
-        {/* Outflows */}
-        <M3Card variant="kpi" style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>Recorded Outflows</Text>
-            <View style={[styles.kpiIcon, { backgroundColor: theme.outflowContainer }]}>
-              <Ionicons name="arrow-up" size={15} color={theme.outflow} />
-            </View>
-          </View>
-          <Text style={[styles.kpiValue, { color: theme.outflow }]}>
-            {formatMoney(summary.recordedOutflows, business?.currency)}
-          </Text>
-          <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Stock purchases & rent</Text>
-        </M3Card>
-
-        {/* Net Cash Flow */}
-        <M3Card variant="kpi" style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>Net Cash Flow</Text>
-            <View style={[styles.kpiIcon, { backgroundColor: theme.primaryContainer }]}>
-              <Ionicons name="swap-vertical" size={15} color={theme.primary} />
-            </View>
-          </View>
-          <Text
-            style={[
-              styles.kpiValue,
-              { color: summary.netCashFlow >= 0 ? theme.primary : theme.outflow },
+        {/* 3. 2x2 Quick Action Cards (Directly from Screen 1) */}
+        <View style={styles.actionGrid}>
+          {/* Action 1: Record Sale (Inflow) */}
+          <Pressable
+            onPress={() => openNewTransaction('inflow')}
+            style={({ pressed }) => [
+              styles.actionCard,
+              { transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
-            {summary.netCashFlow >= 0 ? '+' : ''}
-            {formatMoney(summary.netCashFlow, business?.currency)}
-          </Text>
-          <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Total in minus total out</Text>
-        </M3Card>
+            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
+              <Ionicons name="arrow-down" size={20} color={EmeraldTokens.pastelIndigoText} />
+            </View>
+            <Text style={styles.actionTitle}>Record Sale</Text>
+            <Text style={styles.actionSubtitle}>
+              {formatMoney(summary.recordedInflows, currency)} in
+            </Text>
+          </Pressable>
 
-        {/* Estimated Operating Profit */}
-        <M3Card variant="kpi" style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <Pressable
-              onPress={() => setShowProfitDisclosure(!showProfitDisclosure)}
-              style={styles.profitHeader}
-            >
-              <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>Estimated Profit</Text>
-              <Ionicons name="information-circle-outline" size={13} color={theme.tabIconDefault} />
-            </Pressable>
-            <View style={[styles.kpiIcon, { backgroundColor: theme.tertiaryContainer }]}>
-              <Ionicons name="checkmark-done" size={15} color={theme.tertiary} />
+          {/* Action 2: Record Expense (Outflow) */}
+          <Pressable
+            onPress={() => openNewTransaction('outflow')}
+            style={({ pressed }) => [
+              styles.actionCard,
+              { transform: [{ scale: pressed ? 0.97 : 1 }] },
+            ]}
+          >
+            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
+              <Ionicons name="cart-outline" size={20} color={EmeraldTokens.pastelMintText} />
+            </View>
+            <Text style={styles.actionTitle}>Record Expense</Text>
+            <Text style={styles.actionSubtitle}>
+              {formatMoney(summary.recordedOutflows, currency)} out
+            </Text>
+          </Pressable>
+
+          {/* Action 3: Debts & Credit */}
+          <Pressable
+            onPress={() => router.push('/(tabs)/debts')}
+            style={({ pressed }) => [
+              styles.actionCard,
+              { transform: [{ scale: pressed ? 0.97 : 1 }] },
+            ]}
+          >
+            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+              <Ionicons name="people-outline" size={20} color={EmeraldTokens.pastelAmberText} />
+            </View>
+            <Text style={styles.actionTitle}>Customer Credit</Text>
+            <Text style={styles.actionSubtitle}>Track who owes you</Text>
+          </Pressable>
+
+          {/* Action 4: Profile & License */}
+          <Pressable
+            onPress={() => router.push('/modal')}
+            style={({ pressed }) => [
+              styles.actionCard,
+              { transform: [{ scale: pressed ? 0.97 : 1 }] },
+            ]}
+          >
+            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={EmeraldTokens.pastelSkyText} />
+            </View>
+            <Text style={styles.actionTitle}>Trader Profile</Text>
+            <Text style={styles.actionSubtitle}>Active Pro license</Text>
+          </Pressable>
+        </View>
+
+        {/* Operating Profit Quick Banner */}
+        <Pressable
+          onPress={() => setShowProfitDisclosure(!showProfitDisclosure)}
+          style={styles.profitBanner}
+        >
+          <View style={styles.profitLeft}>
+            <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelMint }]}>
+              <Ionicons name="trending-up" size={16} color={EmeraldTokens.pastelMintText} />
+            </View>
+            <View>
+              <Text style={styles.profitLabel}>Estimated Operating Profit</Text>
+              <Text style={styles.profitSub}>Excludes mukando loans & drawings</Text>
             </View>
           </View>
-          <Text style={[styles.kpiValue, { color: theme.tertiary }]}>
-            {formatMoney(summary.estimatedOperatingProfit, business?.currency)}
-          </Text>
-          <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Excludes loans & drawings</Text>
-        </M3Card>
-      </View>
-
-      {/* Profit Disclosure Modal Banner */}
-      {showProfitDisclosure && (
-        <View style={[styles.disclosureBox, { backgroundColor: theme.surfaceContainer, borderColor: theme.outline }]}>
-          <Text style={[styles.disclosureText, { color: theme.text }]}>
-            <Text style={{ fontWeight: '700', color: theme.primary }}>Accounting Assumption: </Text>
-            Operating profit estimate calculates trading sales minus day-to-day operating overhead. Mukando loans, owner drawings, and internal till float shifts are strictly excluded.
-          </Text>
-        </View>
-      )}
-
-      {/* Actionable AI Grounded Banner */}
-      <M3Card variant="elevated" style={styles.aiBanner}>
-        <View style={styles.aiHeader}>
-          <View style={[styles.aiBadgeIcon, { backgroundColor: theme.primaryContainer }]}>
-            <Ionicons name="sparkles" size={16} color={theme.primary} />
+          <View style={styles.profitRight}>
+            <Text style={styles.profitAmount}>
+              {formatMoney(summary.estimatedOperatingProfit, currency)}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.textSubtle} />
           </View>
-          <Text style={[styles.aiTitle, { color: theme.text }]}>Cash-Flow Intelligence</Text>
-        </View>
-        <Text style={[styles.aiBody, { color: theme.text }]}>
-          {topExpense
-            ? `Your trading sales generated ${formatMoney(summary.operatingRevenue, currency)}. Your largest recorded expense category was ${topExpense.label} at ${formatMoney(topExpense.amount, currency)} (${topExpense.percentage}% of outflows).`
-            : `Your trading sales generated ${formatMoney(summary.operatingRevenue, currency)}. No operating expenses were recorded for ${summary.periodLabel.toLowerCase()}.`}
-        </Text>
-      </M3Card>
+        </Pressable>
 
-      {/* Expense Category Breakdown */}
-      <M3Card variant="elevated">
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Top Expense Categories</Text>
-        <View style={styles.categoryList}>
-          {summary.categoryBreakdown.slice(0, 4).map((item) => (
-            <View key={item.category} style={styles.categoryItem}>
-              <View style={styles.categoryRow}>
-                <Text style={[styles.categoryName, { color: theme.text }]}>{item.label}</Text>
-                <Text style={[styles.categoryAmount, { color: theme.text }]}>
-                  {formatMoney(item.amount, business?.currency)} ({item.percentage}%)
-                </Text>
-              </View>
-              <View style={[styles.progressBarBg, { backgroundColor: theme.surfaceContainer }]}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { backgroundColor: theme.primary, width: `${Math.min(item.percentage, 100)}%` },
-                  ]}
-                />
-              </View>
-            </View>
-          ))}
-        </View>
-      </M3Card>
+        {showProfitDisclosure && (
+          <View style={styles.disclosureCard}>
+            <Text style={styles.disclosureText}>
+              <Text style={{ fontWeight: '700', color: EmeraldTokens.deepPine }}>Accounting Guardrail: </Text>
+              Operating profit estimate calculates trading sales minus day-to-day operating overhead. Mukando loans, owner drawings, and internal till float shifts are strictly excluded.
+            </Text>
+          </View>
+        )}
 
-      {/* Recent Transactions List */}
-      <View style={styles.recentSection}>
-        <View style={styles.recentHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Transactions</Text>
-          <M3Button
-            label="Add"
-            size="sm"
-            variant="tonal"
-            icon={<Ionicons name="add" size={14} color={theme.text} />}
-            onPress={() => setIsModalOpen(true)}
-          />
+        {/* 4. Recent Transactions Section (Directly from Screen 3) */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/transactions')}
+            accessibilityRole="button"
+            accessibilityLabel="View all transactions"
+          >
+            <Text style={styles.seeAllText}>See all ({transactions.length})</Text>
+          </Pressable>
         </View>
 
-        {recentTransactions.map((tx) => {
-          const isIncome = tx.direction === 'inflow';
-          const isOutflow = tx.direction === 'outflow';
+        {recentTransactions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="receipt-outline" size={40} color={EmeraldTokens.textSubtle} />
+            <Text style={styles.emptyTitle}>No transactions recorded</Text>
+            <Text style={styles.emptySub}>
+              Tap the button below or import a statement to populate your cash book.
+            </Text>
+          </View>
+        ) : (
+          recentTransactions.map((tx) => {
+            const isInflow = tx.direction === 'inflow';
+            const catMeta = CATEGORIES[tx.category];
+            return (
+              <View key={tx.id} style={styles.transactionCard}>
+                {/* Top Row: Ref & Date + Amount Chip */}
+                <View style={styles.txTopRow}>
+                  <View style={styles.txRefRow}>
+                    <Text style={styles.txRefText}>
+                      REF: {tx.id.substring(0, 8).toUpperCase()}
+                    </Text>
+                    <Text style={styles.txDateText}>
+                      &bull; {tx.transactionDate}
+                    </Text>
+                  </View>
 
-          return (
-            <M3Card key={tx.id} variant="elevated" style={styles.txCard}>
-              <View style={styles.txRow}>
-                <View style={styles.txLeft}>
+                  {/* Amount Circle / Chip */}
                   <View
                     style={[
-                      styles.txIconCircle,
+                      styles.amountBadge,
                       {
-                        backgroundColor: isIncome
-                          ? theme.inflowContainer
-                          : isOutflow
-                          ? theme.outflowContainer
-                          : theme.neutralContainer,
+                        backgroundColor: isInflow
+                          ? EmeraldTokens.pastelMint
+                          : EmeraldTokens.pastelRose,
                       },
                     ]}
                   >
-                    <Ionicons
-                      name={isIncome ? 'arrow-down' : isOutflow ? 'arrow-up' : 'swap-horizontal'}
-                      size={16}
-                      color={isIncome ? theme.inflow : isOutflow ? theme.outflow : theme.neutral}
-                    />
-                  </View>
-                  <View style={styles.txInfo}>
-                    <Text style={[styles.txDesc, { color: theme.text }]} numberOfLines={1}>
-                      {tx.description}
-                    </Text>
-                    <Text style={[styles.txMeta, { color: theme.tabIconDefault }]}>
-                      {tx.transactionDate} &bull; {CATEGORIES[tx.category]?.label || tx.category}
+                    <Text
+                      style={[
+                        styles.amountBadgeText,
+                        {
+                          color: isInflow
+                            ? EmeraldTokens.pastelMintText
+                            : EmeraldTokens.pastelRoseText,
+                        },
+                      ]}
+                    >
+                      {isInflow ? '+' : '-'}
+                      {formatMoney(tx.amount, tx.currency)}
                     </Text>
                   </View>
                 </View>
+
+                {/* Middle Row: Description */}
+                <Text style={styles.txDescription} numberOfLines={2}>
+                  {tx.description}
+                </Text>
+
+                {/* Bottom Row: Category & Status */}
+                <View style={styles.txBottomRow}>
+                  <View style={styles.txCategoryChip}>
+                    <Ionicons
+                      name={isInflow ? 'arrow-down-circle' : 'arrow-up-circle'}
+                      size={13}
+                      color={isInflow ? EmeraldTokens.pastelMintText : EmeraldTokens.pastelRoseText}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text style={styles.txCategoryText}>
+                      {catMeta ? catMeta.label : tx.category}
+                    </Text>
+                  </View>
+
+                  <M3Badge
+                    label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'PENDING'}
+                    variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
+                  />
+                </View>
+              </View>
+            );
+          })
+        )}
+
+        {/* 5. Bottom Mint CTA Button (Directly from Screen 1) */}
+        <View style={styles.bottomCtaContainer}>
+          <M3Button
+            label="CREATE TRANSACTION"
+            variant="mint"
+            size="lg"
+            icon={<Ionicons name="add" size={20} color={EmeraldTokens.mintDarkText} />}
+            onPress={() => openNewTransaction('inflow')}
+          />
+        </View>
+      </ScrollView>
+
+      {/* New Transaction Bottom Sheet / Modal */}
+      <Modal
+        visible={isModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {direction === 'inflow' ? 'Record Cash In' : 'Record Cash Out'}
+              </Text>
+              <Pressable
+                onPress={() => setIsModalOpen(false)}
+                hitSlop={10}
+                style={styles.closeBtn}
+              >
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
+              </Pressable>
+            </View>
+
+            {/* Inflow / Outflow Direction Switcher */}
+            <View style={styles.directionToggle}>
+              <Pressable
+                onPress={() => {
+                  setDirection('inflow');
+                  setCategory('sales_goods');
+                }}
+                style={[
+                  styles.toggleBtn,
+                  direction === 'inflow' && { backgroundColor: EmeraldTokens.deepPine },
+                ]}
+              >
                 <Text
                   style={[
-                    styles.txAmount,
-                    {
-                      color: isIncome ? theme.inflow : isOutflow ? theme.outflow : theme.neutral,
-                    },
+                    styles.toggleBtnText,
+                    direction === 'inflow' && { color: '#FFFFFF', fontWeight: '700' },
                   ]}
                 >
-                  {isIncome ? '+' : isOutflow ? '-' : ''}
-                  {formatMoney(tx.amount, tx.currency)}
-                </Text>
-              </View>
-            </M3Card>
-          );
-        })}
-      </View>
-
-      {/* Add Transaction Modal */}
-      <Modal visible={isModalOpen} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Record Transaction</Text>
-              <Pressable
-                onPress={() => setIsModalOpen(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Close transaction modal"
-                hitSlop={12}
-              >
-                <Ionicons name="close" size={22} color={theme.tabIconDefault} />
-              </Pressable>
-            </View>
-
-            {/* Inflow vs Outflow toggle buttons */}
-            <View style={styles.toggleRow}>
-              <Pressable
-                onPress={() => setDirection('inflow')}
-                accessibilityRole="button"
-                accessibilityLabel="Income Inflow"
-                accessibilityState={{ selected: direction === 'inflow' }}
-                style={[
-                  styles.toggleBtn,
-                  {
-                    backgroundColor: direction === 'inflow' ? theme.inflowContainer : theme.surfaceContainer,
-                    borderColor: direction === 'inflow' ? theme.inflow : 'transparent',
-                  },
-                ]}
-              >
-                <Text style={{ color: direction === 'inflow' ? theme.inflow : theme.text, fontWeight: '700' }}>
-                  + Income Inflow
+                  Cash In (Income)
                 </Text>
               </Pressable>
 
               <Pressable
-                onPress={() => setDirection('outflow')}
-                accessibilityRole="button"
-                accessibilityLabel="Expense Outflow"
-                accessibilityState={{ selected: direction === 'outflow' }}
+                onPress={() => {
+                  setDirection('outflow');
+                  setCategory('stock_purchase');
+                }}
                 style={[
                   styles.toggleBtn,
-                  {
-                    backgroundColor: direction === 'outflow' ? theme.outflowContainer : theme.surfaceContainer,
-                    borderColor: direction === 'outflow' ? theme.outflow : 'transparent',
-                  },
+                  direction === 'outflow' && { backgroundColor: EmeraldTokens.deepPine },
                 ]}
               >
-                <Text style={{ color: direction === 'outflow' ? theme.outflow : theme.text, fontWeight: '700' }}>
-                  - Expense Outflow
+                <Text
+                  style={[
+                    styles.toggleBtnText,
+                    direction === 'outflow' && { color: '#FFFFFF', fontWeight: '700' },
+                  ]}
+                >
+                  Cash Out (Expense)
                 </Text>
               </Pressable>
             </View>
 
             <M3Input
-              label="Description / Trader Purpose"
-              placeholder="e.g. Bakers Inn bread stock, Counter cash sale"
-              value={desc}
-              onChangeText={setDesc}
-            />
-
-            <M3Input
-              label={`Amount (${business?.currency || 'USD'})`}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
+              label="Amount"
               value={amount}
               onChangeText={setAmount}
+              placeholder="0.00"
+              keyboardType="numeric"
+              prefix={`${currency} `}
             />
 
-            <View style={styles.modalActions}>
-              <M3Button
-                label="Cancel"
-                variant="text"
-                onPress={() => setIsModalOpen(false)}
-                style={{ flex: 1, marginRight: 8 }}
-              />
-              <M3Button
-                label="Save Record"
-                variant="filled"
-                onPress={handleCreateTransaction}
-                style={{ flex: 1 }}
-              />
-            </View>
+            <M3Input
+              label="Description"
+              value={desc}
+              onChangeText={setDesc}
+              placeholder="e.g. Tomato boxes, Tuck shop bread, Transport"
+            />
+
+            <M3Button
+              label={direction === 'inflow' ? 'CONFIRM INFLOW' : 'CONFIRM OUTFLOW'}
+              variant="mint"
+              size="lg"
+              onPress={handleCreateTransaction}
+              style={{ marginTop: 14 }}
+            />
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenWrapper: {
     flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
-  content: {
-    paddingHorizontal: DesignTokens.spacing.gutter,
-    paddingTop: 16,
-    paddingBottom: 40,
+  // Top Emerald Hero Header
+  emeraldHeader: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingHorizontal: 22,
+    paddingBottom: 24,
   },
-  header: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  businessName: {
-    fontSize: 20,
-    fontWeight: '800',
+  greetingTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
-  subhead: {
-    fontSize: 12,
+  headerSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.72)',
     marginTop: 2,
     fontWeight: '500',
   },
+  bellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: EmeraldTokens.mintCta,
+  },
+
+  // 3-Column Stat Bar (Directly from Screen 1)
+  statBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  statCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 3,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+  },
+
+  // Curved Sheet Container
+  sheetContainer: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.canvasLight,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  sheetContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+
+  // Period Selector Chips
   periodRow: {
     flexDirection: 'row',
     gap: 8,
@@ -463,184 +624,242 @@ const styles = StyleSheet.create({
   },
   periodChip: {
     paddingHorizontal: 16,
-    height: DesignTokens.buttonHeights.chip,
+    paddingVertical: 8,
     borderRadius: DesignTokens.shapes.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
   },
   periodText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  kpiGrid: {
+
+  // 2x2 Action Cards Grid (Directly from Screen 1)
+  actionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
+    marginBottom: 16,
   },
-  kpiCard: {
+  actionCard: {
     width: '48%',
-    marginBottom: 0,
-  },
-  kpiHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  profitHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  kpiLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  kpiIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kpiValue: {
-    fontSize: 19,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  kpiSub: {
-    fontSize: 10,
-    marginTop: 4,
-  },
-  disclosureBox: {
-    padding: 12,
-    borderRadius: DesignTokens.shapes.medium,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
-    marginVertical: 10,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  disclosureText: {
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  aiBanner: {
-    marginTop: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: '#155A8A',
-  },
-  aiHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  aiBadgeIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  iconSquircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  aiTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  aiBody: {
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
     marginBottom: 12,
   },
-  categoryList: {
-    gap: 12,
+  actionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginBottom: 2,
   },
-  categoryItem: {
+  actionSubtitle: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    fontWeight: '500',
+  },
+
+  // Operating Profit Banner
+  profitBanner: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  profitLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  miniIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profitLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  profitSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+  },
+  profitRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
-  categoryRow: {
+  profitAmount: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: EmeraldTokens.pastelMintText,
+  },
+  disclosureCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.1)',
+  },
+  disclosureText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: EmeraldTokens.textSlate,
+  },
+
+  // Section Header
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 12,
   },
-  categoryName: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  categoryAmount: {
-    fontSize: 12,
+  sectionTitle: {
+    fontSize: 17,
     fontWeight: '700',
-    fontVariant: ['tabular-nums'],
+    color: EmeraldTokens.textSlate,
+    letterSpacing: -0.2,
   },
-  progressBarBg: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
+  seeAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: EmeraldTokens.deepPine,
   },
-  progressBarFill: {
-    height: 6,
-    borderRadius: 3,
+
+  // Transaction Cards (Inspired by Screen 3)
+  transactionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  recentSection: {
-    marginTop: 18,
-  },
-  recentHeader: {
+  txTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  txCard: {
-    marginVertical: 4,
-    padding: 14,
-  },
-  txRow: {
+  txRefRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  txRefText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.textSubtle,
+    letterSpacing: 0.4,
+  },
+  txDateText: {
+    fontSize: 11,
+    color: EmeraldTokens.textSubtle,
+    marginLeft: 4,
+  },
+  amountBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  amountBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  txDescription: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: EmeraldTokens.textSlate,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  txBottomRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  txLeft: {
+  txCategoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    flex: 1,
+    backgroundColor: '#F8FAF9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  txIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  txCategoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: EmeraldTokens.textMuted,
+  },
+
+  emptyContainer: {
+    padding: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  txInfo: {
-    flex: 1,
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginTop: 10,
   },
-  txDesc: {
-    fontSize: 13,
-    fontWeight: '600',
+  emptySub: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
   },
-  txMeta: {
-    fontSize: 10,
-    marginTop: 2,
+
+  // Bottom CTA
+  bottomCtaContainer: {
+    marginTop: 14,
+    marginBottom: 20,
   },
-  txAmount: {
-    fontSize: 14,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-    marginLeft: 8,
-  },
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
-  modalSheet: {
-    borderTopLeftRadius: DesignTokens.shapes.sheet,
-    borderTopRightRadius: DesignTokens.shapes.sheet,
-    padding: DesignTokens.spacing.gutter,
-    paddingBottom: 40,
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -651,22 +870,27 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: EmeraldTokens.textSlate,
   },
-  toggleRow: {
+  closeBtn: {
+    padding: 4,
+  },
+  directionToggle: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
+    backgroundColor: '#F1F5F3',
+    borderRadius: DesignTokens.shapes.pill,
+    padding: 4,
+    marginBottom: 16,
   },
   toggleBtn: {
     flex: 1,
-    height: 44,
+    paddingVertical: 10,
     borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1.5,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  modalActions: {
-    flexDirection: 'row',
-    marginTop: 18,
+  toggleBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: EmeraldTokens.textMuted,
   },
 });

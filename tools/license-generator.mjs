@@ -2,7 +2,12 @@
 /**
  * CashFlow Mate - CLI License Generator & Validator (HMAC-SHA256)
  * -------------------------------------------------------------
- * Generates and validates cryptographically signed license keys using HMAC-SHA256.
+ * Generates and validates HMAC-signed offline license keys.
+ *
+ * SECURITY NOTE: HMAC is symmetric, so the same secret below ships in the app.
+ * These keys stop casual editing but are forgeable by anyone who reads the
+ * bundle. For production, switch to Ed25519/RSA signing with the private key
+ * kept off-device, and treat the app's tier as a UX hint only.
  *
  * Usage:
  *   node tools/license-generator.mjs --name "MrQ" --tier pro
@@ -14,6 +19,8 @@
 import crypto from 'node:crypto';
 
 const LICENSE_SIGNING_SECRET = 'CFM_ZIMBABWE_2026_HMAC_SHA256_OFFLINE_SECRET_KEY';
+const MIN_YEAR = 2026;
+const MAX_YEAR = 2035;
 
 function computeSignature(payload) {
   return crypto
@@ -24,15 +31,25 @@ function computeSignature(payload) {
     .toUpperCase();
 }
 
+function constantTimeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
+function localDateString(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function generateLicenseKey({ traderName, tier = 'pro', expiresYear = 2028 }) {
   const tierCode = tier === 'enterprise' ? 'ENT' : tier === 'pro' ? 'PRO' : 'COMM';
   const cleanName = traderName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'TRADER';
-  const payload = `${tierCode}-${cleanName}-${expiresYear}`;
+  const year = Math.min(Math.max(parseInt(expiresYear, 10) || 2028, MIN_YEAR), MAX_YEAR);
+  const payload = `${tierCode}-${cleanName}-${year}`;
   const signature = computeSignature(payload);
   return `CFM-${tierCode}-${cleanName}-${signature}`;
 }
 
-function verifyLicenseKey(rawKey) {
+function verifyLicenseKey(rawKey, now = new Date()) {
   const clean = rawKey.trim().toUpperCase().replace(/\s+/g, '');
   const parts = clean.split('-');
 
@@ -44,17 +61,26 @@ function verifyLicenseKey(rawKey) {
   const tier = tierCode === 'ENT' ? 'enterprise' : tierCode === 'PRO' ? 'pro' : 'starter';
 
   let matchedYear = 0;
-  for (let y = 2026; y <= 2035; y++) {
-    if (computeSignature(`${tierCode}-${cleanName}-${y}`) === providedSig) {
+  for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
+    if (constantTimeEqual(computeSignature(`${tierCode}-${cleanName}-${y}`), providedSig)) {
       matchedYear = y;
       break;
     }
   }
 
-  const isPerpetual = computeSignature(`${tierCode}-${cleanName}-NEVER`) === providedSig;
+  const isPerpetual = constantTimeEqual(
+    computeSignature(`${tierCode}-${cleanName}-NEVER`),
+    providedSig
+  );
 
   if (matchedYear === 0 && !isPerpetual) {
     return { isValid: false, error: 'Invalid license signature or forged key.' };
+  }
+
+  const expiresAt = isPerpetual ? 'Perpetual' : `${matchedYear}-12-31`;
+
+  if (!isPerpetual && expiresAt < localDateString(now)) {
+    return { isValid: false, key: clean, tier, traderName: cleanName, expiresAt, error: `License expired on ${expiresAt}.` };
   }
 
   return {
@@ -62,7 +88,7 @@ function verifyLicenseKey(rawKey) {
     key: clean,
     tier,
     traderName: cleanName,
-    expiresAt: isPerpetual ? 'Perpetual' : `${matchedYear}-12-31`,
+    expiresAt,
   };
 }
 

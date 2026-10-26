@@ -1,34 +1,46 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import Colors from '@/constants/Colors';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export interface M3InputProps extends TextInputProps {
   label: string;
   error?: string;
+  prefix?: string;
 }
 
-export const M3Input: React.FC<M3InputProps> = ({ label, error, style, ...props }) => {
+export const M3Input: React.FC<M3InputProps> = ({ label, error, prefix, style, ...props }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
-      <TextInput
+      <Text style={[styles.label, { color: EmeraldTokens.textSlate }]}>{label}</Text>
+      <View
         style={[
-          styles.input,
+          styles.inputWrapper,
           {
-            backgroundColor: theme.surfaceContainer,
-            color: theme.text,
-            borderColor: error ? theme.outflow : theme.outline,
+            backgroundColor: '#F8FAF9',
+            borderColor: error ? theme.outflow : 'rgba(12, 62, 53, 0.12)',
           },
-          style,
         ]}
-        placeholderTextColor={theme.tabIconDefault}
-        {...props}
-      />
+      >
+        {prefix ? (
+          <Text style={styles.prefixText}>{prefix}</Text>
+        ) : null}
+        <TextInput
+          style={[
+            styles.input,
+            {
+              color: EmeraldTokens.textSlate,
+            },
+            style,
+          ]}
+          placeholderTextColor={EmeraldTokens.textSubtle}
+          {...props}
+        />
+      </View>
       {error ? (
         <Text style={[styles.error, { color: theme.outflow }]}>{error}</Text>
       ) : null}
@@ -43,15 +55,27 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 6,
     letterSpacing: 0.2,
   },
-  input: {
-    height: 50, // Standard 50px input height
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
     borderRadius: DesignTokens.shapes.input,
     paddingHorizontal: 14,
     borderWidth: 1,
+  },
+  prefixText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: EmeraldTokens.textMuted,
+    marginRight: 6,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
     fontSize: 14,
   },
   error: {

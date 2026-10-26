@@ -1,18 +1,19 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
-import Colors from '@/constants/Colors';
+import { Pressable, Text, StyleSheet, ViewStyle, ActivityIndicator, TextStyle } from 'react-native';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export interface M3ButtonProps {
   label: string;
   onPress: () => void;
-  variant?: 'filled' | 'tonal' | 'outlined' | 'text';
+  variant?: 'filled' | 'mint' | 'tonal' | 'outlined' | 'text';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   isLoading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
+  labelStyle?: TextStyle;
   accessibilityLabel?: string;
   accessibilityRole?: 'button' | 'radio' | 'tab';
 }
@@ -20,12 +21,13 @@ export interface M3ButtonProps {
 export const M3Button: React.FC<M3ButtonProps> = ({
   label,
   onPress,
-  variant = 'filled',
-  size = 'md',
+  variant = 'mint',
+  size = 'lg',
   icon,
   isLoading = false,
   disabled = false,
   style,
+  labelStyle,
   accessibilityLabel,
   accessibilityRole = 'button',
 }) => {
@@ -36,18 +38,20 @@ export const M3Button: React.FC<M3ButtonProps> = ({
 
   const getBackgroundColor = (pressed: boolean) => {
     if (disabled) return theme.surfaceVariant;
-    if (variant === 'filled') return pressed ? theme.tint : theme.primary;
+    if (variant === 'mint') return pressed ? EmeraldTokens.mintHover : EmeraldTokens.mintCta;
+    if (variant === 'filled') return pressed ? theme.primaryDark : theme.primary;
     if (variant === 'tonal') return pressed ? theme.secondaryContainer : theme.secondaryContainer;
     if (variant === 'outlined' || variant === 'text') return pressed ? theme.primaryContainer : 'transparent';
-    return theme.primary;
+    return EmeraldTokens.mintCta;
   };
 
   const getTextColor = () => {
     if (disabled) return theme.tabIconDefault;
+    if (variant === 'mint') return EmeraldTokens.mintDarkText;
     if (variant === 'filled') return '#FFFFFF';
     if (variant === 'tonal') return theme.text;
     if (variant === 'outlined' || variant === 'text') return theme.primary;
-    return '#FFFFFF';
+    return EmeraldTokens.mintDarkText;
   };
 
   const getBorderStyle = () => {
@@ -67,32 +71,35 @@ export const M3Button: React.FC<M3ButtonProps> = ({
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel || label}
       accessibilityState={{ disabled: disabled || isLoading }}
-      hitSlop={size === 'sm' ? { top: 6, bottom: 6, left: 6, right: 6 } : undefined}
       style={({ pressed }) => [
-        styles.base,
+        styles.buttonBase,
         {
           height,
           backgroundColor: getBackgroundColor(pressed),
-          transform: [{ scale: pressed ? 0.96 : 1 }],
-          opacity: disabled ? 0.5 : 1,
+          borderRadius: DesignTokens.shapes.pill,
+          transform: [{ scale: pressed ? 0.98 : 1.0 }],
         },
         getBorderStyle(),
+        variant === 'mint' && !disabled ? DesignTokens.shadows.floatingCta : {},
         style,
       ]}
     >
       {isLoading ? (
-        <ActivityIndicator size="small" color={getTextColor()} />
+        <ActivityIndicator color={getTextColor()} size="small" />
       ) : (
         <>
           {icon}
           <Text
             style={[
-              styles.text,
+              styles.buttonText,
               {
                 color: getTextColor(),
-                fontSize: size === 'sm' ? 12 : size === 'lg' ? 16 : 14,
-                marginLeft: icon ? 8 : 0,
+                fontSize: size === 'sm' ? 12 : size === 'md' ? 14 : 14,
+                letterSpacing: 0.6,
+                fontWeight: '700',
               },
+              icon ? { marginLeft: 8 } : {},
+              labelStyle,
             ]}
           >
             {label}
@@ -104,15 +111,13 @@ export const M3Button: React.FC<M3ButtonProps> = ({
 };
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: DesignTokens.shapes.pill, // Pinterest continuous full pill
-    paddingHorizontal: 20,
+  buttonBase: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
-  text: {
-    fontWeight: '600',
+  buttonText: {
     textAlign: 'center',
   },
 });

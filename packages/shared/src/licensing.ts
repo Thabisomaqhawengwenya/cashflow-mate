@@ -1,9 +1,15 @@
 /**
  * CashFlow Mate - Software Licensing & Activation Engine
  * ------------------------------------------------------
- * Offline cryptographic license verification using HMAC-SHA256 signatures.
- * Enables Zimbabwean small merchants and informal traders to activate Pro
- * & Enterprise features offline without requiring continuous cloud telemetry.
+ * Offline HMAC-SHA256 license verification for activating Pro & Enterprise
+ * features without continuous cloud telemetry.
+ *
+ * SECURITY NOTE: HMAC is a *symmetric* primitive, so the signing secret ships
+ * inside this client bundle. It prevents casual key editing but is NOT
+ * forgery-proof against a determined attacker who inspects the app. Production
+ * issuance should use asymmetric signatures (e.g. Ed25519) with the private key
+ * kept off-device. Keep tier checks authoritative server-side where money is
+ * involved.
  */
 
 import { hmacSha256 } from './crypto';
@@ -29,6 +35,22 @@ function computeSignature(payload: string): string {
   return hmacSha256(LICENSE_SIGNING_SECRET, payload).slice(0, 8).toUpperCase();
 }
 
+/** Constant-time string comparison to avoid leaking signature matches by timing. */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i++) {
+    difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return difference === 0;
+}
+
+function localDateString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+}
+
 /**
  * Generate a cryptographically verifiable license key with HMAC-SHA256 signature
  */
@@ -48,9 +70,10 @@ export function generateLicenseKey(options: {
 }
 
 /**
- * Verify a license key offline using HMAC-SHA256 signature check
+ * Verify a license key offline using HMAC-SHA256 signature check.
+ * `now` is injectable so expiry rules are testable.
  */
-export function verifyLicenseKey(rawKey: string): LicenseInfo {
+export function verifyLicenseKey(rawKey: string, now: Date = new Date()): LicenseInfo {
   const clean = rawKey.trim().toUpperCase().replace(/\s+/g, '');
   const parts = clean.split('-');
 
@@ -74,7 +97,7 @@ export function verifyLicenseKey(rawKey: string): LicenseInfo {
   let matchedYear = 0;
   for (let y = 2026; y <= 2035; y++) {
     const candidatePayload = `${tierCode}-${cleanName}-${y}`;
-    if (computeSignature(candidatePayload) === providedSig) {
+    if (constantTimeEqual(computeSignature(candidatePayload), providedSig)) {
       matchedYear = y;
       break;
     }
@@ -82,7 +105,7 @@ export function verifyLicenseKey(rawKey: string): LicenseInfo {
 
   // Also support perpetual license with fixed seed
   const perpetualPayload = `${tierCode}-${cleanName}-NEVER`;
-  const isPerpetual = computeSignature(perpetualPayload) === providedSig;
+  const isPerpetual = constantTimeEqual(computeSignature(perpetualPayload), providedSig);
 
   if (matchedYear === 0 && !isPerpetual) {
     return {
@@ -98,6 +121,19 @@ export function verifyLicenseKey(rawKey: string): LicenseInfo {
   }
 
   const expiresAt = isPerpetual ? 'never' : `${matchedYear}-12-31`;
+
+  if (!isPerpetual && expiresAt < localDateString(now)) {
+    return {
+      key: clean,
+      tier,
+      traderName: cleanName,
+      issuedAt: '2026-10-01',
+      expiresAt,
+      features: ['Basic Cash Till'],
+      isValid: false,
+      errorMessage: `License expired on ${expiresAt}. Please renew to keep ${tier} features.`,
+    };
+  }
 
   const features =
     tier === 'enterprise'

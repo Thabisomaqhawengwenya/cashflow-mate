@@ -1,3 +1,12 @@
+/**
+ * Mobile offline activation.
+ *
+ * SECURITY NOTE: this is a symmetric HMAC scheme, so the signing secret ships in
+ * the app bundle. It stops casual key editing but is not forgery-proof against a
+ * determined reverse-engineer. Production issuance should use asymmetric
+ * signatures (e.g. Ed25519) and keep the private key off-device.
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hmacSha256 } from './crypto';
 
@@ -20,6 +29,21 @@ function computeSignature(payload: string): string {
   return hmacSha256(LICENSE_SIGNING_SECRET, payload).slice(0, 8).toUpperCase();
 }
 
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i++) {
+    difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return difference === 0;
+}
+
+function localDateString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+}
+
 export function generateLicenseKey(options: {
   traderName: string;
   tier: LicenseTier;
@@ -33,7 +57,7 @@ export function generateLicenseKey(options: {
   return `CFM-${tierCode}-${cleanName}-${signature}`;
 }
 
-export function verifyLicenseKey(rawKey: string): LicenseInfo {
+export function verifyLicenseKey(rawKey: string, now: Date = new Date()): LicenseInfo {
   const clean = rawKey.trim().toUpperCase().replace(/\s+/g, '');
   const parts = clean.split('-');
 
@@ -54,13 +78,16 @@ export function verifyLicenseKey(rawKey: string): LicenseInfo {
 
   let matchedYear = 0;
   for (let y = 2026; y <= 2035; y++) {
-    if (computeSignature(`${tierCode}-${cleanName}-${y}`) === providedSig) {
+    if (constantTimeEqual(computeSignature(`${tierCode}-${cleanName}-${y}`), providedSig)) {
       matchedYear = y;
       break;
     }
   }
 
-  const isPerpetual = computeSignature(`${tierCode}-${cleanName}-NEVER`) === providedSig;
+  const isPerpetual = constantTimeEqual(
+    computeSignature(`${tierCode}-${cleanName}-NEVER`),
+    providedSig
+  );
 
   if (matchedYear === 0 && !isPerpetual) {
     return {
@@ -75,6 +102,18 @@ export function verifyLicenseKey(rawKey: string): LicenseInfo {
   }
 
   const expiresAt = isPerpetual ? 'Perpetual' : `${matchedYear}-12-31`;
+
+  if (!isPerpetual && expiresAt < localDateString(now)) {
+    return {
+      key: clean,
+      tier,
+      traderName: cleanName,
+      expiresAt,
+      features: ['Basic Cash Till'],
+      isValid: false,
+      errorMessage: `License expired on ${expiresAt}. Please renew to keep ${tier} features.`,
+    };
+  }
 
   const features =
     tier === 'enterprise'
@@ -133,9 +172,17 @@ export class MobileLicenseService {
       }
     } catch {}
 
-    // Default pre-activated Trader Pro license for Mr Q's demo
-    const defaultProKey = SAMPLE_WORKING_LICENSES[0].key;
-    return verifyLicenseKey(defaultProKey);
+    // No stored license -> Starter tier. Do not silently auto-activate Pro:
+    // licensing must be explicit for the tiers to mean anything.
+    return {
+      key: '',
+      tier: 'starter',
+      traderName: 'Unregistered',
+      expiresAt: 'never',
+      features: ['Basic Cash Till (Single USD)'],
+      isValid: false,
+      errorMessage: 'No license activated. Enter a Pro or Enterprise key to unlock more.',
+    };
   }
 
   static async activateLicense(key: string): Promise<LicenseInfo> {

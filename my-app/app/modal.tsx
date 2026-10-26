@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Platform, Alert, ScrollView, Pressable } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import Colors from '@/constants/Colors';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  Alert,
+  ScrollView,
+  Pressable,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { MobileStorageService, BusinessProfile } from '@/services/storage';
@@ -10,11 +19,9 @@ import {
   LicenseInfo,
   SAMPLE_WORKING_LICENSES,
 } from '@/services/licensing';
-import { M3Card } from '@/components/M3/M3Card';
-import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
+import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
@@ -24,6 +31,8 @@ export default function ModalScreen() {
   const [license, setLicense] = useState<LicenseInfo | null>(null);
   const [keyInput, setKeyInput] = useState('');
   const [isActivating, setIsActivating] = useState(false);
+  const [showLicenseInput, setShowLicenseInput] = useState(false);
+  const [language, setLanguage] = useState<'EN' | 'SN'>('EN');
 
   useEffect(() => {
     MobileStorageService.getBusiness().then(setBusiness);
@@ -47,295 +56,440 @@ export default function ModalScreen() {
     if (result.isValid) {
       setLicense(result);
       setKeyInput(result.key);
-      Alert.alert('License Activated! 🎉', `${result.tier.toUpperCase()} tier unlocked for ${result.traderName} until ${result.expiresAt}.`);
+      Alert.alert(
+        'License Activated! 🎉',
+        `${result.tier.toUpperCase()} tier unlocked for ${result.traderName} until ${result.expiresAt}.`
+      );
     } else {
       Alert.alert('Activation Failed', result.errorMessage || 'Invalid license key.');
     }
   };
 
   const handleReset = () => {
-    Alert.alert('Reset Demo Data', 'Restore the synthetic Harare tuckshop dataset?', [
+    Alert.alert('Restore Demo Data', 'Restore the synthetic Harare tuckshop records?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Reset',
+        text: 'Restore',
         style: 'destructive',
         onPress: async () => {
           await MobileStorageService.resetDemoData();
-          Alert.alert('Restored', 'Demo data restored successfully.');
+          Alert.alert('Restored', 'Harare demo dataset restored successfully.');
         },
       },
     ]);
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={[styles.logoIcon, { backgroundColor: theme.primary }]}>
-          <Text style={styles.logoText}>CM</Text>
+    <View style={styles.screenWrapper}>
+      {/* 1. Top Emerald Header (Directly from Screen 2) */}
+      <View style={styles.emeraldHeader}>
+        <View style={styles.topNavRow}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={10}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <View style={styles.iconButton}>
+            <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
+          </View>
         </View>
-        <Text style={[styles.appName, { color: theme.text }]}>CashFlow Mate 🇿🇼</Text>
-        <Text style={[styles.appSub, { color: theme.tabIconDefault }]}>
-          Mobile Money & Cash-Flow Assistant for Small Traders
-        </Text>
       </View>
 
-      {/* Business Profile */}
-      <M3Card variant="elevated" style={styles.card}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Active Business Profile</Text>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.tabIconDefault }]}>Business Name:</Text>
-          <Text style={[styles.infoVal, { color: theme.text }]}>{business?.name || 'Mbare Fresh Produce'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.tabIconDefault }]}>Business Type:</Text>
-          <Text style={[styles.infoVal, { color: theme.text }]}>{business?.businessType}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.tabIconDefault }]}>Currency:</Text>
-          <M3Badge label={business?.currency || 'USD'} variant="primary" />
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.tabIconDefault }]}>Country:</Text>
-          <Text style={[styles.infoVal, { color: theme.text }]}>Zimbabwe</Text>
-        </View>
-      </M3Card>
-
-      {/* Software Licensing & Activation Card */}
-      <M3Card variant="elevated" style={styles.card}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>App License & Activation</Text>
-          {license?.isValid ? (
-            <M3Badge
-              label={`${license.tier.toUpperCase()} ACTIVE`}
-              variant={license.tier === 'enterprise' ? 'inflow' : 'primary'}
-            />
-          ) : (
-            <M3Badge label="STARTER TIER" variant="neutral" />
-          )}
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.tabIconDefault }]}>Licensed To:</Text>
-          <Text style={[styles.infoVal, { color: theme.text }]}>{license?.traderName || 'Unregistered'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.tabIconDefault }]}>Expires:</Text>
-          <Text style={[styles.infoVal, { color: theme.text }]}>{license?.expiresAt || 'Never'}</Text>
-        </View>
-
-        <Text style={[styles.featureHeading, { color: theme.text }]}>Active Tier Features:</Text>
-        {license?.features.map((feat, i) => (
-          <View key={i} style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={16} color={theme.inflow} />
-            <Text style={[styles.featureText, { color: theme.text }]}>{feat}</Text>
+      <ScrollView
+        style={styles.sheetContainer}
+        contentContainerStyle={styles.sheetContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 2. Overlapping Hero Profile Card (Directly from Screen 2) */}
+        <View style={styles.heroProfileCard}>
+          {/* Centered Circular Avatar */}
+          <View style={styles.avatarWrapper}>
+            <View style={styles.avatarCircle}>
+              <Ionicons name="person" size={32} color={EmeraldTokens.deepPine} />
+            </View>
           </View>
-        ))}
 
-        {/* License Key Input & Activation */}
-        <View style={styles.activateBox}>
-          <M3Input
-            label="Software License Key"
-            placeholder="CFM-PRO-XXXX-XXXX"
-            value={keyInput}
-            onChangeText={setKeyInput}
-          />
-          <View style={{ marginTop: 8 }}>
-            <M3Button
-              label={isActivating ? 'Verifying...' : 'Activate License'}
-              icon={<Ionicons name="key-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />}
-              variant="filled"
-              size="md"
-              onPress={() => handleActivate()}
-            />
-          </View>
-        </View>
-
-        {/* Sample Working License Keys to Test */}
-        <Text style={[styles.sampleTitle, { color: theme.tabIconDefault }]}>
-          Try a Working Test License:
-        </Text>
-        <View style={styles.sampleRow}>
-          {SAMPLE_WORKING_LICENSES.map((lic, idx) => (
-            <Pressable
-              key={idx}
-              onPress={() => {
-                setKeyInput(lic.key);
-                handleActivate(lic.key);
-              }}
-              style={[
-                styles.sampleChip,
-                { backgroundColor: theme.surfaceContainer, borderColor: theme.outlineVariant },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Activate ${lic.label}`}
-            >
-              <Ionicons name="ribbon-outline" size={14} color={theme.primary} />
-              <Text style={[styles.sampleText, { color: theme.primary }]}>{lic.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </M3Card>
-
-      {/* Design & Architecture */}
-      <M3Card variant="elevated" style={styles.card}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Design & Architecture</Text>
-        <Text style={[styles.bodyText, { color: theme.tabIconDefault }]}>
-          Built strictly following Google Material 3 Expressive guidelines and Mr Q's Pinterest 'app' board geometry: continuous full pill actions, 22px squircle KPI containers, and deterministic zero-drift accounting rules.
-        </Text>
-        <View style={[styles.legalRow, { borderTopColor: theme.outlineVariant }]}>
-          <Ionicons name="shield-checkmark-outline" size={18} color={theme.inflow} />
-          <Text style={[styles.legalText, { color: theme.tabIconDefault }]}>
-            Licensed under the MIT License • Copyright &copy; 2026 Maqhawe T Ngwenya
+          <Text style={styles.profileName}>
+            Hello, {business?.name || 'Mr Q'}
           </Text>
+          <Text style={styles.profileContact}>
+            +263 77 123 4567 &bull; Harare, Zimbabwe
+          </Text>
+
+          <View style={styles.badgeRow}>
+            <View style={styles.mintChip}>
+              <Text style={styles.mintChipText}>
+                {license?.isValid
+                  ? `${license.tier.toUpperCase()} TIER &bull; HARARE`
+                  : 'STARTER TIER'}
+              </Text>
+            </View>
+          </View>
         </View>
-      </M3Card>
 
-      <View style={styles.actionSection}>
-        <M3Button
-          label="Reset Harare Tuckshop Demo Data"
-          variant="outlined"
-          onPress={handleReset}
-          icon={<Ionicons name="refresh-outline" size={16} color={theme.primary} />}
-          style={{ width: '100%' }}
-        />
-      </View>
+        {/* 3. "General" Settings Section (Directly from Screen 2) */}
+        <Text style={styles.sectionHeading}>General</Text>
 
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-    </ScrollView>
+        <View style={styles.settingsGroup}>
+          {/* Item 1: Language Setup */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
+                <Ionicons name="language-outline" size={18} color={EmeraldTokens.pastelMintText} />
+              </View>
+              <Text style={styles.settingLabel}>Language Setup</Text>
+            </View>
+            <View style={styles.langToggle}>
+              <Pressable
+                onPress={() => setLanguage('SN')}
+                style={[styles.langChip, language === 'SN' && styles.langChipActive]}
+              >
+                <Text style={[styles.langText, language === 'SN' && styles.langTextActive]}>
+                  SN
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setLanguage('EN')}
+                style={[styles.langChip, language === 'EN' && styles.langChipActive]}
+              >
+                <Text style={[styles.langText, language === 'EN' && styles.langTextActive]}>
+                  EN
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Item 2: License Activation */}
+          <Pressable
+            onPress={() => setShowLicenseInput(!showLicenseInput)}
+            style={styles.settingItem}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
+                <Ionicons name="key-outline" size={18} color={EmeraldTokens.pastelRoseText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>License & Activation</Text>
+                <Text style={styles.settingSub}>
+                  {license?.isValid ? `${license.tier.toUpperCase()} Valid` : 'Starter'}
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showLicenseInput ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
+          </Pressable>
+
+          {/* Expandable License Activation Section */}
+          {showLicenseInput && (
+            <View style={styles.expandedLicenseBox}>
+              <M3Input
+                label="Software Activation Key"
+                value={keyInput}
+                onChangeText={setKeyInput}
+                placeholder="CFM-PRO-XXXX-XXXX"
+              />
+              <M3Button
+                label={isActivating ? 'Verifying...' : 'ACTIVATE KEY'}
+                variant="mint"
+                size="md"
+                onPress={() => handleActivate()}
+                style={{ marginTop: 8 }}
+              />
+
+              <Text style={styles.sampleHeader}>One-Tap Test Working Licenses:</Text>
+              <View style={styles.sampleGrid}>
+                {SAMPLE_WORKING_LICENSES.slice(0, 3).map((lic, idx) => (
+                  <Pressable
+                    key={idx}
+                    onPress={() => {
+                      setKeyInput(lic.key);
+                      handleActivate(lic.key);
+                    }}
+                    style={styles.sampleBadge}
+                  >
+                    <Text style={styles.sampleBadgeText}>{lic.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Item 3: Currency & Float */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+                <Ionicons name="cash-outline" size={18} color={EmeraldTokens.pastelAmberText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Primary Currency</Text>
+                <Text style={styles.settingSub}>USD &bull; United States Dollar</Text>
+              </View>
+            </View>
+            <M3Badge label={business?.currency || 'USD'} variant="mint" />
+          </View>
+
+          {/* Item 4: Privacy & MIT Licensing */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
+                <Ionicons name="shield-checkmark-outline" size={18} color={EmeraldTokens.pastelSkyText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Privacy & Copyright</Text>
+                <Text style={styles.settingSub}>MIT License &bull; Mr Q</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </View>
+
+          {/* Item 5: Restore Demo Data */}
+          <Pressable onPress={handleReset} style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
+                <Ionicons name="refresh-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Reset Harare Demo Data</Text>
+                <Text style={styles.settingSub}>Restore synthetic sample records</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+        </View>
+
+        {/* 4. Bottom Full Pill Mint Action Button (Directly from Screen 2) */}
+        <View style={styles.bottomCtaContainer}>
+          <M3Button
+            label="DONE & RETURN"
+            variant="mint"
+            size="lg"
+            onPress={() => router.back()}
+          />
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenWrapper: {
     flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
-  content: {
-    padding: DesignTokens.spacing.gutter,
+  emeraldHeader: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingHorizontal: 20,
+    paddingBottom: 48, // generous space for overlapping card
+  },
+  topNavRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+
+  sheetContainer: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.canvasLight,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  sheetContent: {
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  header: {
+
+  // Overlapping Hero Profile Card (Screen 2)
+  heroProfileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
     alignItems: 'center',
-    marginVertical: DesignTokens.spacing.gapLg,
+    marginTop: -32,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  logoIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: DesignTokens.shapes.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  logoText: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 22,
-    letterSpacing: 1,
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  appSub: {
-    fontSize: 12,
-    marginTop: 4,
-    textAlign: 'center',
-    paddingHorizontal: 16,
-  },
-  card: {
-    width: '100%',
-    padding: DesignTokens.spacing.cardPadding,
-    marginBottom: DesignTokens.spacing.gapMd,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  avatarWrapper: {
+    marginTop: -38,
     marginBottom: 12,
   },
-  cardTitle: {
+  avatarCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginBottom: 3,
+  },
+  profileContact: {
+    fontSize: 13,
+    color: EmeraldTokens.textMuted,
+    marginBottom: 12,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+  },
+  mintChip: {
+    backgroundColor: EmeraldTokens.pastelMint,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  mintChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.pastelMintText,
+    letterSpacing: 0.4,
+  },
+
+  // General Settings Section
+  sectionHeading: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 10,
+    color: EmeraldTokens.textSlate,
+    marginBottom: 12,
+    marginLeft: 4,
   },
-  infoRow: {
+  settingsGroup: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  settingItem: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(15, 23, 42, 0.05)',
   },
-  infoLabel: {
-    fontSize: 13,
-  },
-  infoVal: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  featureHeading: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  featureItem: {
+  settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 3,
+    gap: 12,
   },
-  featureText: {
+  iconSquircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: EmeraldTokens.textSlate,
+  },
+  settingSub: {
     fontSize: 12,
-    fontWeight: '500',
+    color: EmeraldTokens.textMuted,
+    marginTop: 2,
   },
-  activateBox: {
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E022',
+
+  // Language Toggle
+  langToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F3',
+    borderRadius: DesignTokens.shapes.pill,
+    padding: 3,
   },
-  sampleTitle: {
+  langChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  langChipActive: {
+    backgroundColor: EmeraldTokens.deepPine,
+  },
+  langText: {
     fontSize: 11,
     fontWeight: '600',
-    marginTop: 12,
+    color: EmeraldTokens.textMuted,
+  },
+  langTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  // Expanded License Box
+  expandedLicenseBox: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(15, 23, 42, 0.05)',
+  },
+  sampleHeader: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+    marginTop: 10,
     marginBottom: 6,
+    fontWeight: '600',
   },
-  sampleRow: {
+  sampleGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 6,
+    flexWrap: 'wrap',
   },
-  sampleChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  sampleBadge: {
+    backgroundColor: '#F1F5F3',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1,
   },
-  sampleText: {
+  sampleBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    color: EmeraldTokens.deepPine,
+    fontWeight: '600',
   },
-  bodyText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  legalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 14,
-    paddingTop: 10,
-    borderTopWidth: 1,
-  },
-  legalText: {
-    fontSize: 11,
-    fontWeight: '500',
-    flex: 1,
-  },
-  actionSection: {
-    width: '100%',
-    marginTop: DesignTokens.spacing.gapSm,
+
+  bottomCtaContainer: {
+    marginTop: 24,
   },
 });

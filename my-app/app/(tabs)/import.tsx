@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { useFocusEffect, useRouter } from 'expo-router';
-import Colors from '@/constants/Colors';
+import { useFocusEffect, router } from 'expo-router';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -27,15 +27,15 @@ import {
   convertCsvRowsToTransactions,
   CsvImportResult,
 } from '@/services/csvImporter';
-import { M3Card } from '@/components/M3/M3Card';
-import { M3Button } from '@/components/M3/M3Button';
+import { MobileLicenseService, LicenseInfo } from '@/services/licensing';
 import { M3Badge } from '@/components/M3/M3Badge';
+import { M3Button } from '@/components/M3/M3Button';
 
 const SAMPLE_CSV_PRESETS = [
   {
     id: 'ecocash',
     name: 'EcoCash Merchant CSV',
-    description: 'Weekly customer till payments and IMTT tax levies',
+    description: 'Weekly customer till payments and IMTT tax deductions',
     csv: `Date,Description,Amount,Reference,Currency
 2026-10-25,"EcoCash Merchant: Cooking oil & sugar payment",22.00,MP261025.101,USD
 2026-10-25,"EcoCash IMTT & Cashout Fee Deduction",-2.10,EC-TXF-1025,USD
@@ -46,7 +46,7 @@ const SAMPLE_CSV_PRESETS = [
   {
     id: 'innbucks',
     name: 'InnBucks Statement',
-    description: 'Fast food & counter customer transfers via InnBucks',
+    description: 'Counter customer transfers and logistics via InnBucks',
     csv: `Date,Description,Amount,Reference,Currency
 2026-10-25,"InnBucks: Chicken cuts & cold drinks",38.50,IB-902199,USD
 2026-10-26,"Kombi Haulage from Mbare Musika",-8.00,TR-1026-09,USD
@@ -68,10 +68,10 @@ const SAMPLE_CSV_PRESETS = [
 export default function ImportScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
-  const router = useRouter();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [existingTransactions, setExistingTransactions] = useState<MobileTransaction[]>([]);
+  const [license, setLicense] = useState<LicenseInfo | null>(null);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   // Import State
@@ -82,18 +82,20 @@ export default function ImportScreen() {
   const [successReport, setSuccessReport] = useState<{ count: number } | null>(null);
 
   const currency = business?.currency || 'USD';
+  const isProUnlocked = license?.tier === 'pro' || license?.tier === 'enterprise';
 
-  // Always refresh latest transactions and business profile on focus
   useFocusEffect(
     useCallback(() => {
       let active = true;
       Promise.all([
         MobileStorageService.getBusiness(),
         MobileStorageService.getTransactions(),
-      ]).then(([biz, txs]) => {
+        MobileLicenseService.getActiveLicense(),
+      ]).then(([biz, txs, lic]) => {
         if (!active) return;
         setBusiness(biz);
         setExistingTransactions(txs);
+        setLicense(lic);
       });
       return () => {
         active = false;
@@ -101,8 +103,14 @@ export default function ImportScreen() {
     }, [])
   );
 
-  // Handle picking real CSV file from device or browser
   const handlePickDocument = async () => {
+    if (!isProUnlocked) {
+      Alert.alert(
+        'Pro Feature',
+        'CSV statement import is available on Pro and Enterprise. Activate a license key to continue.'
+      );
+      return;
+    }
     try {
       setIsReadingFile(true);
       setSuccessReport(null);
@@ -132,20 +140,12 @@ export default function ImportScreen() {
       if (Platform.OS === 'web' && (asset as any).file) {
         text = await (asset as any).file.text();
       } else {
-        // Native file:// and content:// URIs are not readable with fetch().
-        // Import lazily so the web bundle never touches the native module.
         const { File } = await import('expo-file-system');
         text = await new File(asset.uri).text();
       }
 
       if (!text || text.trim().length === 0) {
         Alert.alert('Empty File', 'The selected file contains no readable text.');
-        setIsReadingFile(false);
-        return;
-      }
-
-      if (text.length > MAX_BYTES) {
-        Alert.alert('File Too Large', 'The statement exceeds the 5 MB parser limit.');
         setIsReadingFile(false);
         return;
       }
@@ -159,7 +159,6 @@ export default function ImportScreen() {
     }
   };
 
-  // Load one of the preset sample statements
   const handleSelectPreset = (preset: (typeof SAMPLE_CSV_PRESETS)[0]) => {
     setActivePresetId(preset.id);
     setSuccessReport(null);
@@ -167,8 +166,11 @@ export default function ImportScreen() {
     setImportResult(parsed);
   };
 
-  // Commit parsed rows into storage
   const handleCommitImport = async () => {
+    if (!isProUnlocked) {
+      Alert.alert('Pro Feature', 'Activate a Pro or Enterprise license before importing statements.');
+      return;
+    }
     if (!importResult || importResult.rows.length === 0) return;
 
     setIsCommitting(true);
@@ -187,7 +189,6 @@ export default function ImportScreen() {
         count++;
       }
 
-      // Refresh existing transactions
       const refreshed = await MobileStorageService.getTransactions();
       setExistingTransactions(refreshed);
 
@@ -202,85 +203,109 @@ export default function ImportScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.content}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>Import Statements</Text>
-        <Text style={[styles.subhead, { color: theme.tabIconDefault }]}>
-          Upload bank, EcoCash, or InnBucks CSV statements. Automatically categorizes transactions and detects duplicates.
+    <View style={styles.screenWrapper}>
+      {/* 1. Deep Forest Emerald Header */}
+      <View style={styles.emeraldHeader}>
+        <View style={styles.topNavRow}>
+          <Pressable onPress={() => router.push('/(tabs)')} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Import Statements</Text>
+          <Pressable onPress={() => router.push('/modal')} style={styles.backButton}>
+            <Ionicons name="key-outline" size={20} color="#FFFFFF" />
+          </Pressable>
+        </View>
+
+        <Text style={styles.headerSubtitle}>
+          Import EcoCash, InnBucks, and bank CSV records directly into your till.
         </Text>
       </View>
 
-      {/* Success Banner */}
-      {successReport && (
-        <M3Card style={[styles.successBanner, { backgroundColor: theme.primaryContainer }]}>
-          <View style={styles.successRow}>
-            <Ionicons name="checkmark-circle" size={28} color={theme.primary} />
-            <View style={styles.successTextCol}>
-              <Text style={[styles.successTitle, { color: theme.onPrimaryContainer }]}>
-                Import Succeeded!
-              </Text>
-              <Text style={[styles.successSub, { color: theme.onPrimaryContainer }]}>
-                {successReport.count} transaction{successReport.count === 1 ? '' : 's'} added to your till.
-              </Text>
+      {/* 2. White Curved Body Sheet */}
+      <ScrollView
+        style={styles.sheetContainer}
+        contentContainerStyle={styles.sheetContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Pro Gate Banner if Starter */}
+        {!isProUnlocked && (
+          <View style={styles.gateCard}>
+            <View style={styles.gateLeft}>
+              <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+                <Ionicons name="lock-closed" size={16} color={EmeraldTokens.pastelAmberText} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.gateTitle}>Pro Feature</Text>
+                <Text style={styles.gateSub}>
+                  CSV import requires a Pro or Enterprise license key.
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={{ marginTop: 12 }}>
             <M3Button
-              label="View in Transactions"
-              variant="filled"
+              label="ACTIVATE"
               size="sm"
-              onPress={() => router.push('/(tabs)/transactions')}
+              variant="mint"
+              onPress={() => router.push('/modal')}
             />
           </View>
-        </M3Card>
-      )}
+        )}
 
-      {/* Main File Upload Action Card */}
-      <M3Card style={styles.uploadCard}>
-        <View style={styles.uploadCardInner}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: theme.primaryContainer },
-            ]}
-          >
-            <Ionicons name="cloud-upload" size={32} color={theme.primary} />
+        {/* Success Banner */}
+        {successReport && (
+          <View style={styles.successCard}>
+            <View style={styles.gateLeft}>
+              <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelMint }]}>
+                <Ionicons name="checkmark-done" size={18} color={EmeraldTokens.pastelMintText} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.successTitle}>Import Succeeded!</Text>
+                <Text style={styles.successSub}>
+                  {successReport.count} transactions successfully committed to your till.
+                </Text>
+              </View>
+            </View>
+            <M3Button
+              label="VIEW RECORDS"
+              size="sm"
+              variant="mint"
+              onPress={() => router.push('/(tabs)/transactions')}
+              style={{ marginTop: 10 }}
+            />
           </View>
-          <Text style={[styles.uploadHeading, { color: theme.text }]}>
-            Upload Statement File
-          </Text>
-          <Text style={[styles.uploadDescription, { color: theme.tabIconDefault }]}>
-            Select a .csv or .txt statement file from your phone storage or computer.
+        )}
+
+        {/* Main Upload Box */}
+        <View style={styles.uploadCard}>
+          <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
+            <Ionicons name="cloud-upload-outline" size={26} color={EmeraldTokens.pastelSkyText} />
+          </View>
+          <Text style={styles.uploadTitle}>Upload CSV Statement</Text>
+          <Text style={styles.uploadSub}>
+            Select a .csv or .txt statement from your phone or device storage.
           </Text>
 
           <M3Button
-            label={isReadingFile ? 'Reading File...' : 'Choose CSV File'}
-            icon={<Ionicons name="document-attach-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />}
-            variant="filled"
+            label={
+              !isProUnlocked
+                ? 'PRO LICENSE REQUIRED'
+                : isReadingFile
+                ? 'READING FILE...'
+                : 'CHOOSE CSV FILE'
+            }
+            variant="mint"
             size="lg"
-            disabled={isReadingFile}
-            style={styles.pickButton}
+            disabled={isReadingFile || !isProUnlocked}
             onPress={handlePickDocument}
+            style={{ marginTop: 14, width: '100%' }}
           />
-
           {isReadingFile && (
-            <ActivityIndicator size="small" color={theme.primary} style={{ marginTop: 12 }} />
+            <ActivityIndicator size="small" color={EmeraldTokens.deepPine} style={{ marginTop: 10 }} />
           )}
         </View>
-      </M3Card>
 
-      {/* Presets Row */}
-      <View style={styles.presetsSection}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Or Try a Sample Statement:</Text>
-        <Text style={[styles.sectionSubtitle, { color: theme.tabIconDefault }]}>
-          Test with realistic Zimbabwean mobile money & retail statements.
-        </Text>
-
-        <View style={styles.presetsRow}>
+        {/* Presets Row */}
+        <Text style={styles.sectionHeading}>Or Test with a Preset Statement</Text>
+        <View style={styles.presetGrid}>
           {SAMPLE_CSV_PRESETS.map((p) => {
             const isSelected = activePresetId === p.id;
             return (
@@ -288,375 +313,318 @@ export default function ImportScreen() {
                 key={p.id}
                 onPress={() => handleSelectPreset(p)}
                 style={[
-                  styles.presetChip,
-                  {
-                    backgroundColor: isSelected ? theme.primaryContainer : theme.surface,
-                    borderColor: isSelected ? theme.primary : theme.outlineVariant,
+                  styles.presetCard,
+                  isSelected && {
+                    borderColor: EmeraldTokens.mintCta,
+                    backgroundColor: '#F0FDF4',
                   },
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Select sample statement: ${p.name}`}
               >
-                <Ionicons
-                  name="receipt-outline"
-                  size={18}
-                  color={isSelected ? theme.onPrimaryContainer : theme.tabIconDefault}
-                />
-                <Text
-                  style={[
-                    styles.presetName,
-                    { color: isSelected ? theme.onPrimaryContainer : theme.text },
-                  ]}
-                >
-                  {p.name}
+                <View style={styles.presetTop}>
+                  <Text style={styles.presetName}>{p.name}</Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={16} color={EmeraldTokens.mintDarkText} />
+                  )}
+                </View>
+                <Text style={styles.presetSub} numberOfLines={2}>
+                  {p.description}
                 </Text>
               </Pressable>
             );
           })}
         </View>
-      </View>
 
-      {/* Interactive Staged Mapping & Duplicate Preview */}
-      {importResult && (
-        <View style={styles.previewSection}>
-          <View style={styles.previewHeader}>
-            <View>
-              <Text style={[styles.previewTitle, { color: theme.text }]}>
-                Statement Preview
+        {/* Parsed Preview Section */}
+        {importResult && (
+          <View style={styles.previewSection}>
+            <Text style={styles.sectionHeading}>Preview Statement Records</Text>
+
+            <View style={styles.summaryBar}>
+              <Text style={styles.summaryText}>
+                Total Rows: <Text style={{ fontWeight: '700' }}>{importResult.totalRows}</Text>
               </Text>
-              <Text style={[styles.previewMeta, { color: theme.tabIconDefault }]}>
-                {importResult.fileName} • {importResult.validRows} valid rows
-                {importResult.invalidRows > 0 ? ` • ${importResult.invalidRows} invalid skipped` : ''}
+              <Text style={styles.summaryText}>
+                Duplicates: <Text style={{ fontWeight: '700', color: EmeraldTokens.pastelRoseText }}>{importResult.duplicateCount}</Text>
+              </Text>
+              <Text style={styles.summaryText}>
+                Valid Rows: <Text style={{ fontWeight: '700', color: EmeraldTokens.pastelMintText }}>{importResult.validRows}</Text>
               </Text>
             </View>
 
-            {importResult.duplicateCount > 0 && (
-              <M3Badge
-                label={`${importResult.duplicateCount} duplicate${importResult.duplicateCount === 1 ? '' : 's'}`}
-                variant="review"
-              />
-            )}
-          </View>
-
-          {/* Stats Summary Pill Bar */}
-          <M3Card style={styles.statsCard}>
-            <View style={styles.statCol}>
-              <Text style={[styles.statNum, { color: theme.text }]}>{importResult.totalRows}</Text>
-              <Text style={[styles.statLabel, { color: theme.tabIconDefault }]}>Total Rows</Text>
-            </View>
-            <View style={[styles.statDivider, { backgroundColor: theme.outlineVariant }]} />
-            <View style={styles.statCol}>
-              <Text style={[styles.statNum, { color: theme.inflow }]}>
-                {importResult.newRows}
-              </Text>
-              <Text style={[styles.statLabel, { color: theme.tabIconDefault }]}>New</Text>
-            </View>
-            <View style={[styles.statDivider, { backgroundColor: theme.outlineVariant }]} />
-            <View style={styles.statCol}>
-              <Text
-                style={[
-                  styles.statNum,
-                  { color: importResult.duplicateCount > 0 ? theme.review : theme.tabIconDefault },
-                ]}
-              >
-                {importResult.duplicateCount}
-              </Text>
-              <Text style={[styles.statLabel, { color: theme.tabIconDefault }]}>Duplicates</Text>
-            </View>
-          </M3Card>
-
-          {/* Duplicate Filter Toggle */}
-          {importResult.duplicateCount > 0 && (
-            <Pressable
-              onPress={() => setSkipDuplicates(!skipDuplicates)}
-              style={styles.toggleRow}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: skipDuplicates }}
-              accessibilityLabel="Skip detected duplicates toggle"
-            >
-              <Ionicons
-                name={skipDuplicates ? 'checkbox' : 'square-outline'}
-                size={22}
-                color={skipDuplicates ? theme.primary : theme.tabIconDefault}
-              />
-              <Text style={[styles.toggleText, { color: theme.text }]}>
-                Skip {importResult.duplicateCount} detected duplicate transaction{importResult.duplicateCount === 1 ? '' : 's'} (recommended)
-              </Text>
-            </Pressable>
-          )}
-
-          {/* Parsed Rows List */}
-          <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 16 }]}>
-            Mapped Records:
-          </Text>
-
-          {importResult.rows.map((row, idx) => {
-            const isDup = row.isDuplicate;
-            const willImport = !(isDup && skipDuplicates);
-            const catInfo = CATEGORIES[row.category] || CATEGORIES.uncategorized;
-
-            return (
-              <M3Card
-                key={`${row.fingerprint}_${idx}`}
-                style={[
-                  styles.rowCard,
-                  {
-                    opacity: willImport ? 1 : 0.45,
-                    borderLeftColor: row.direction === 'inflow' ? theme.inflow : theme.outflow,
-                    borderLeftWidth: 4,
-                  },
-                ]}
-              >
-                <View style={styles.rowTop}>
-                  <View style={styles.rowDateCol}>
-                    <Text style={[styles.rowDate, { color: theme.tabIconDefault }]}>
-                      {row.date}
+            {/* Rows list */}
+            {importResult.rows.map((row, idx) => {
+              const catMeta = CATEGORIES[row.category];
+              return (
+                <View key={idx} style={styles.previewRowCard}>
+                  <View style={styles.previewTop}>
+                    <Text style={styles.previewDate}>{row.date}</Text>
+                    <Text
+                      style={[
+                        styles.previewAmount,
+                        {
+                          color:
+                            row.direction === 'inflow'
+                              ? EmeraldTokens.pastelMintText
+                              : EmeraldTokens.pastelRoseText,
+                        },
+                      ]}
+                    >
+                      {row.direction === 'inflow' ? '+' : '-'}
+                      {formatMoney(row.amount, currency)}
                     </Text>
-                    {isDup ? (
-                      <M3Badge label="Duplicate" variant="review" />
-                    ) : (
-                      <M3Badge label={catInfo.label} variant="neutral" />
+                  </View>
+                  <Text style={styles.previewDesc}>{row.description}</Text>
+                  <View style={styles.previewBottom}>
+                    <M3Badge
+                      label={catMeta ? catMeta.label : row.category}
+                      variant="purple"
+                    />
+                    {row.isDuplicate && (
+                      <M3Badge label="DUPLICATE (SKIP)" variant="amber" />
                     )}
                   </View>
-
-                  <Text
-                    style={[
-                      styles.rowAmount,
-                      { color: row.direction === 'inflow' ? theme.inflow : theme.outflow },
-                    ]}
-                  >
-                    {row.direction === 'inflow' ? '+' : '-'}
-                    {formatMoney(row.amount, row.currency)}
-                  </Text>
                 </View>
+              );
+            })}
 
-                <Text style={[styles.rowDesc, { color: theme.text }]} numberOfLines={2}>
-                  {row.description}
-                </Text>
-
-                {row.reference && (
-                  <Text style={[styles.rowRef, { color: theme.tabIconDefault }]}>
-                    Ref: {row.reference}
-                  </Text>
-                )}
-              </M3Card>
-            );
-          })}
-
-          {/* Commit Action Button */}
-          <View style={styles.commitBar}>
             <M3Button
-              label={
-                isCommitting
-                  ? 'Importing...'
-                  : `Import ${skipDuplicates ? importResult.newRows : importResult.validRows} Transactions`
-              }
-              icon={<Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />}
-              variant="filled"
+              label={isCommitting ? 'COMMITTING...' : `IMPORT ${importResult.rows.length} TRANSACTIONS`}
+              variant="mint"
               size="lg"
-              disabled={isCommitting || (skipDuplicates && importResult.newRows === 0)}
+              disabled={isCommitting}
               onPress={handleCommitImport}
+              style={{ marginTop: 14 }}
             />
           </View>
-        </View>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenWrapper: {
     flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
-  content: {
-    padding: DesignTokens.spacing.gutter,
-    paddingBottom: 40,
+  emeraldHeader: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
   },
-  header: {
-    marginBottom: DesignTokens.spacing.gapLg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  subhead: {
-    fontSize: 14,
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  successBanner: {
-    marginBottom: DesignTokens.spacing.gapLg,
-    padding: DesignTokens.spacing.cardPadding,
-  },
-  successRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  successTextCol: {
-    flex: 1,
-  },
-  successTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  successSub: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  uploadCard: {
-    padding: 24,
-    marginBottom: DesignTokens.spacing.gapLg,
-    alignItems: 'center',
-  },
-  uploadCardInner: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  iconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  uploadHeading: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  uploadDescription: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 18,
-    paddingHorizontal: 12,
-    lineHeight: 18,
-  },
-  pickButton: {
-    width: '100%',
-    minHeight: DesignTokens.buttonHeights.lg,
-  },
-  presetsSection: {
-    marginBottom: DesignTokens.spacing.gapLg,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    marginBottom: 10,
-  },
-  presetsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  presetChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1,
-    minHeight: 44,
-  },
-  presetName: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  previewSection: {
-    marginTop: 8,
-  },
-  previewHeader: {
+  topNavRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  previewTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  previewMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    marginBottom: 12,
-  },
-  statCol: {
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  statNum: {
+  headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+  headerSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.72)',
     marginTop: 2,
+    lineHeight: 18,
   },
-  statDivider: {
-    width: 1,
-    height: '100%',
+
+  sheetContainer: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.canvasLight,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
   },
-  toggleRow: {
+  sheetContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+
+  gateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+  },
+  gateLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 8,
-    minHeight: 44,
-    marginBottom: 8,
-  },
-  toggleText: {
-    fontSize: 13,
-    fontWeight: '600',
     flex: 1,
   },
-  rowCard: {
-    padding: 14,
-    marginBottom: 10,
+  miniIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  rowTop: {
+  gateTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  gateSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+  },
+
+  successCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: EmeraldTokens.pastelMintText,
+  },
+  successTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: EmeraldTokens.pastelMintText,
+  },
+  successSub: {
+    fontSize: 12,
+    color: EmeraldTokens.textSlate,
+  },
+
+  uploadCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 22,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  iconSquircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  uploadTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginBottom: 4,
+  },
+  uploadSub: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 20,
+  },
+
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  presetGrid: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  presetCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  presetTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 6,
-  },
-  rowDateCol: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 4,
   },
-  rowDate: {
+  presetName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  presetSub: {
     fontSize: 12,
-    fontWeight: '600',
+    color: EmeraldTokens.textMuted,
   },
-  rowAmount: {
-    fontSize: 15,
-    fontWeight: '800',
+
+  previewSection: {
+    marginTop: 10,
   },
-  rowDesc: {
+  summaryBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
+  summaryText: {
+    fontSize: 12,
+    color: EmeraldTokens.textSlate,
+  },
+  previewRowCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.05)',
+  },
+  previewTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  previewDate: {
+    fontSize: 11,
+    color: EmeraldTokens.textSubtle,
+  },
+  previewAmount: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  previewDesc: {
     fontSize: 14,
     fontWeight: '600',
-    lineHeight: 18,
+    color: EmeraldTokens.textSlate,
+    marginBottom: 8,
   },
-  rowRef: {
-    fontSize: 11,
-    marginTop: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  commitBar: {
-    marginTop: 18,
-    marginBottom: 20,
+  previewBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

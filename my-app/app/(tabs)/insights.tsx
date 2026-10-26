@@ -5,11 +5,13 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
+  ActivityIndicator,
+  Platform,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import Colors from '@/constants/Colors';
+import { useFocusEffect, router } from 'expo-router';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -19,10 +21,8 @@ import {
   formatMoney,
   CATEGORIES,
 } from '@/services/storage';
-import { M3Card } from '@/components/M3/M3Card';
-import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
-import { M3Input } from '@/components/M3/M3Input';
+import { M3Button } from '@/components/M3/M3Button';
 
 const QUICK_QUESTIONS = [
   'What did I spend the most money on this month?',
@@ -149,281 +149,343 @@ export default function InsightsScreen() {
       setAnswer(ans);
       setObservations(obs);
       setIsThinking(false);
-    }, 400);
-  };
-
-  const handleResetDemo = () => {
-    Alert.alert('Reset Demo Data', 'Restore the synthetic Harare tuckshop dataset to original records?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reset',
-        style: 'destructive',
-        onPress: async () => {
-          await MobileStorageService.resetDemoData();
-          await loadData();
-          setAnswer(null);
-          Alert.alert('Restored', 'Demo records restored successfully.');
-        },
-      },
-    ]);
+    }, 300);
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: theme.text }]}>Grounded Business Assistant</Text>
-          <Text style={[styles.subhead, { color: theme.tabIconDefault }]}>
-            Deterministic answers from your recorded {currency} transactions
-          </Text>
-        </View>
-        <M3Badge label="Grounded Rules" variant="primary" />
-      </View>
-
-      {/* Language Switcher */}
-      <View style={styles.langRow}>
-        {[
-          { id: 'en', label: 'English' },
-          { id: 'sn', label: 'ChiShona' },
-          { id: 'nd', label: 'isiNdebele' },
-        ].map((item) => {
-          const isActive = language === item.id;
-          return (
-            <Pressable
-              key={item.id}
-              onPress={() => setLanguage(item.id as any)}
-              accessibilityRole="button"
-              accessibilityLabel={`Switch language to ${item.label}`}
-              accessibilityState={{ selected: isActive }}
-              style={[
-                styles.langChip,
-                {
-                  backgroundColor: isActive ? theme.primary : theme.surfaceContainer,
-                  borderColor: isActive ? theme.primary : theme.outlineVariant,
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 11, fontWeight: '700', color: isActive ? '#FFFFFF' : theme.text }}>
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Suggested Questions */}
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Common Trader Questions:</Text>
-      <View style={styles.pillsCol}>
-        {QUICK_QUESTIONS.map((q, idx) => (
-          <Pressable
-            key={idx}
-            onPress={() => {
-              setQuestion(q);
-              handleAsk(q);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={`Ask question: ${q}`}
-            style={[styles.questionPill, { backgroundColor: theme.surfaceContainer, borderColor: theme.outlineVariant }]}
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={15} color={theme.primary} />
-            <Text style={[styles.questionText, { color: theme.text }]}>{q}</Text>
+    <View style={styles.screenWrapper}>
+      {/* 1. Deep Forest Emerald Header */}
+      <View style={styles.emeraldHeader}>
+        <View style={styles.topNavRow}>
+          <Pressable onPress={() => router.push('/(tabs)')} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
-        ))}
+          <Text style={styles.headerTitle}>Financial Assistant</Text>
+          <Pressable onPress={() => router.push('/modal')} style={styles.backButton}>
+            <Ionicons name="sparkles-outline" size={20} color="#FFFFFF" />
+          </Pressable>
+        </View>
+
+        <Text style={styles.headerSubtitle}>
+          Ask plain-language questions about your business cash flow, stock, and profit.
+        </Text>
+
+        {/* Language Selection Pills in Header */}
+        <View style={styles.langPillsRow}>
+          {[
+            { id: 'en', label: 'English' },
+            { id: 'sn', label: 'ChiShona' },
+            { id: 'nd', label: 'SiNdebele' },
+          ].map((item) => {
+            const isActive = language === item.id;
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => setLanguage(item.id as any)}
+                style={[
+                  styles.langPill,
+                  {
+                    backgroundColor: isActive
+                      ? EmeraldTokens.mintCta
+                      : 'rgba(255, 255, 255, 0.14)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.langPillText,
+                    {
+                      color: isActive ? EmeraldTokens.mintDarkText : '#FFFFFF',
+                      fontWeight: isActive ? '700' : '500',
+                    },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
-      {/* Custom Question Input */}
-      <M3Card variant="elevated" style={styles.inputCard}>
-        <M3Input
-          label="Ask a Custom Question"
-          placeholder="e.g. How much did I spend on kombi haulage?"
-          value={question}
-          onChangeText={setQuestion}
-        />
-        <View style={{ marginTop: 8 }}>
+      {/* 2. White Curved Body Sheet */}
+      <ScrollView
+        style={styles.sheetContainer}
+        contentContainerStyle={styles.sheetContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Question Input Card */}
+        <View style={styles.askCard}>
+          <View style={styles.inputRow}>
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color={EmeraldTokens.deepPine} />
+            <TextInput
+              value={question}
+              onChangeText={setQuestion}
+              placeholder="Ask about your sales, bread expenses, rent..."
+              placeholderTextColor={EmeraldTokens.textSubtle}
+              style={styles.textInput}
+              onSubmitEditing={() => handleAsk()}
+            />
+          </View>
           <M3Button
-            label="Explain Finances"
-            variant="filled"
+            label={isThinking ? 'ANALYZING...' : 'ASK ASSISTANT'}
+            variant="mint"
+            size="md"
+            disabled={isThinking || !question.trim()}
             onPress={() => handleAsk()}
-            isLoading={isThinking}
-            icon={<Ionicons name="sparkles-outline" size={16} color="#FFFFFF" />}
-            style={{ width: '100%' }}
+            style={{ marginTop: 10 }}
           />
         </View>
-      </M3Card>
 
-      {/* Answer Output */}
-      {answer && (
-        <M3Card variant="elevated" style={[styles.answerCard, { borderColor: theme.primary }]}>
-          <View style={styles.answerHeader}>
-            <View style={[styles.aiIcon, { backgroundColor: theme.primaryContainer }]}>
-              <Ionicons name="sparkles" size={16} color={theme.primary} />
-            </View>
-            <Text style={[styles.answerTitle, { color: theme.text }]}>Verified Financial Analysis</Text>
+        {/* Common Quick Questions */}
+        <Text style={styles.sectionHeading}>Quick Questions</Text>
+        <View style={styles.quickGrid}>
+          {QUICK_QUESTIONS.map((q, idx) => (
+            <Pressable
+              key={idx}
+              onPress={() => {
+                setQuestion(q);
+                handleAsk(q);
+              }}
+              style={({ pressed }) => [
+                styles.quickChip,
+                { transform: [{ scale: pressed ? 0.98 : 1 }] },
+              ]}
+            >
+              <Ionicons name="help-circle-outline" size={16} color={EmeraldTokens.deepPine} />
+              <Text style={styles.quickChipText}>{q}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Response Card */}
+        {isThinking && (
+          <View style={styles.thinkingBox}>
+            <ActivityIndicator size="small" color={EmeraldTokens.deepPine} />
+            <Text style={styles.thinkingText}>Calculating deterministic financial response...</Text>
           </View>
+        )}
 
-          <Text style={[styles.answerBody, { color: theme.text }]}>{answer}</Text>
-
-          <View style={styles.obsSection}>
-            <Text style={[styles.obsHeading, { color: theme.text }]}>Key Verified Facts:</Text>
-            {observations.map((obs, idx) => (
-              <View key={idx} style={styles.obsItem}>
-                <View style={[styles.bullet, { backgroundColor: theme.primary }]} />
-                <Text style={[styles.obsText, { color: theme.tabIconDefault }]}>{obs}</Text>
+        {answer && (
+          <View style={styles.answerCard}>
+            <View style={styles.answerHeader}>
+              <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelMint }]}>
+                <Ionicons name="sparkles" size={16} color={EmeraldTokens.pastelMintText} />
               </View>
-            ))}
-          </View>
+              <Text style={styles.answerTitle}>Financial Explanation</Text>
+            </View>
 
-          {/* Completeness Disclosure */}
-          <View style={[styles.disclosureBox, { backgroundColor: theme.surfaceContainer }]}>
-            <Text style={[styles.disclosureText, { color: theme.tabIconDefault }]}>
-              <Text style={{ fontWeight: '700', color: theme.text }}>Completeness Disclosure: </Text>
-              This explanation reflects only recorded transactions. Unrecorded cash handovers or uncollected credit are not calculated.
-            </Text>
-          </View>
-        </M3Card>
-      )}
+            <Text style={styles.answerBody}>{answer}</Text>
 
-      {/* Demo Controls */}
-      <View style={styles.demoSection}>
-        <M3Button
-          label="Reset Harare Tuckshop Demo Data"
-          variant="outlined"
-          size="sm"
-          onPress={handleResetDemo}
-          icon={<Ionicons name="refresh-outline" size={14} color={theme.primary} />}
-          style={{ width: '100%' }}
-        />
-      </View>
-    </ScrollView>
+            {observations.length > 0 && (
+              <View style={styles.obsList}>
+                <Text style={styles.obsHeading}>Verified Accounting Observations:</Text>
+                {observations.map((obs, i) => (
+                  <View key={i} style={styles.obsItem}>
+                    <Ionicons name="checkmark-circle" size={14} color={EmeraldTokens.pastelMintText} />
+                    <Text style={styles.obsText}>{obs}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenWrapper: {
     flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
-  content: {
-    paddingHorizontal: DesignTokens.spacing.gutter,
-    paddingTop: 16,
-    paddingBottom: 40,
+  emeraldHeader: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
   },
-  header: {
+  topNavRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  subhead: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  langRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  langChip: {
-    paddingHorizontal: 14,
-    height: 32,
-    borderRadius: DesignTokens.shapes.pill,
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
-  sectionTitle: {
-    fontSize: 13,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 8,
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
-  pillsCol: {
+  headerSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.72)',
+    marginTop: 2,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+
+  langPillsRow: {
+    flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
   },
-  questionPill: {
+  langPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  langPillText: {
+    fontSize: 12,
+  },
+
+  sheetContainer: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.canvasLight,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  sheetContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+
+  askCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
+    backgroundColor: '#F8FAF9',
+    borderRadius: 14,
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1,
+    gap: 8,
   },
-  questionText: {
-    fontSize: 12,
+  textInput: {
+    flex: 1,
+    fontSize: 13,
+    color: EmeraldTokens.textSlate,
+  },
+
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  quickGrid: {
+    gap: 8,
+    marginBottom: 20,
+  },
+  quickChip: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+  },
+  quickChipText: {
+    fontSize: 13,
     fontWeight: '600',
+    color: EmeraldTokens.textSlate,
     flex: 1,
   },
-  inputCard: {
-    padding: DesignTokens.spacing.cardPadding,
-    marginBottom: 14,
+
+  thinkingBox: {
+    padding: 20,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
   },
+  thinkingText: {
+    fontSize: 13,
+    color: EmeraldTokens.textMuted,
+  },
+
   answerCard: {
-    padding: DesignTokens.spacing.cardPadding,
-    borderWidth: 1.5,
-    marginBottom: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   answerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 12,
   },
-  aiIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  miniIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   answerTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
+    color: EmeraldTokens.textSlate,
   },
   answerBody: {
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 12,
+    fontSize: 14,
+    lineHeight: 22,
+    color: EmeraldTokens.textSlate,
+    marginBottom: 14,
   },
-  obsSection: {
+  obsList: {
+    backgroundColor: '#F8FAF9',
+    borderRadius: 14,
+    padding: 12,
     gap: 6,
-    marginVertical: 8,
   },
   obsHeading: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    marginBottom: 2,
+    color: EmeraldTokens.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
   },
   obsItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
-  },
-  bullet: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginTop: 6,
+    gap: 6,
   },
   obsText: {
-    fontSize: 11,
+    fontSize: 12,
+    color: EmeraldTokens.textSlate,
     flex: 1,
-    lineHeight: 16,
-  },
-  disclosureBox: {
-    padding: 10,
-    borderRadius: DesignTokens.shapes.medium,
-    marginTop: 10,
-  },
-  disclosureText: {
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  demoSection: {
-    marginTop: 10,
+    lineHeight: 18,
   },
 });

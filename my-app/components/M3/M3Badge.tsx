@@ -1,41 +1,46 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import Colors from '@/constants/Colors';
+import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export interface M3BadgeProps {
   label: string;
-  variant?: 'inflow' | 'outflow' | 'neutral' | 'review' | 'primary';
-  icon?: React.ReactNode;
+  variant?: 'primary' | 'mint' | 'inflow' | 'outflow' | 'review' | 'neutral' | 'purple' | 'amber';
   style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
 export const M3Badge: React.FC<M3BadgeProps> = ({
   label,
-  variant = 'primary',
-  icon,
+  variant = 'neutral',
   style,
+  textStyle,
 }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
 
   const getColors = () => {
     switch (variant) {
+      case 'mint':
       case 'inflow':
-        return { bg: theme.inflowContainer, text: theme.inflow, border: theme.inflow + '33' };
+        return { bg: EmeraldTokens.pastelMint, text: EmeraldTokens.pastelMintText };
       case 'outflow':
-        return { bg: theme.outflowContainer, text: theme.outflow, border: theme.outflow + '33' };
-      case 'neutral':
-        return { bg: theme.neutralContainer, text: theme.neutral, border: theme.neutral + '33' };
+        return { bg: EmeraldTokens.pastelRose, text: EmeraldTokens.pastelRoseText };
+      case 'purple':
+        return { bg: EmeraldTokens.pastelIndigo, text: EmeraldTokens.pastelIndigoText };
+      case 'amber':
       case 'review':
-        return { bg: theme.reviewContainer, text: theme.review, border: theme.review + '33' };
+        return { bg: EmeraldTokens.pastelAmber, text: EmeraldTokens.pastelAmberText };
+      case 'primary':
+        return { bg: theme.primaryContainer, text: theme.onPrimaryContainer };
+      case 'neutral':
       default:
-        return { bg: theme.primaryContainer, text: theme.onPrimaryContainer, border: 'transparent' };
+        return { bg: theme.neutralContainer, text: theme.neutral };
     }
   };
 
-  const { bg, text, border } = getColors();
+  const { bg, text } = getColors();
 
   return (
     <View
@@ -43,29 +48,38 @@ export const M3Badge: React.FC<M3BadgeProps> = ({
         styles.badge,
         {
           backgroundColor: bg,
-          borderColor: border,
+          borderRadius: DesignTokens.shapes.pill,
         },
         style,
       ]}
     >
-      {icon}
-      <Text style={[styles.text, { color: text, marginLeft: icon ? 4 : 0 }]}>{label}</Text>
+      <Text
+        style={[
+          styles.label,
+          {
+            color: text,
+          },
+          textStyle,
+        ]}
+      >
+        {label}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: DesignTokens.shapes.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  text: {
+  label: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
 });

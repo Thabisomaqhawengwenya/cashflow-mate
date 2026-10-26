@@ -1,3 +1,4 @@
+/* eslint-disable import/first */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // In-memory mock for AsyncStorage before importing storage

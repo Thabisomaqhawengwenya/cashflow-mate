@@ -101,11 +101,27 @@ export function sha256Bytes(data: Uint8Array): Uint8Array {
 }
 
 function stringToBytes(str: string): Uint8Array {
-  const bytes = new Uint8Array(str.length);
+  // Manual UTF-8 encoder (Hermes/React Native do not always ship TextEncoder).
+  const bytes: number[] = [];
   for (let i = 0; i < str.length; i++) {
-    bytes[i] = str.charCodeAt(i) & 0xff;
+    let code = str.codePointAt(i) ?? 0;
+    if (code > 0xffff) i++; // consume the low surrogate of a surrogate pair
+    if (code < 0x80) {
+      bytes.push(code);
+    } else if (code < 0x800) {
+      bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+    } else if (code < 0x10000) {
+      bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    } else {
+      bytes.push(
+        0xf0 | (code >> 18),
+        0x80 | ((code >> 12) & 0x3f),
+        0x80 | ((code >> 6) & 0x3f),
+        0x80 | (code & 0x3f)
+      );
+    }
   }
-  return bytes;
+  return Uint8Array.from(bytes);
 }
 
 export function hmacSha256(key: string, message: string): string {

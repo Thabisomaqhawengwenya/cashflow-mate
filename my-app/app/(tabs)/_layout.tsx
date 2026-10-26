@@ -1,58 +1,65 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '@/constants/Colors';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
 
+  const getColor = (c: any, focused: boolean) =>
+    focused ? EmeraldTokens.deepPine : typeof c === 'string' ? c : '#94A3B8';
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.tint,
-        tabBarInactiveTintColor: theme.tabIconDefault,
+        headerShown: false,
+        tabBarActiveTintColor: EmeraldTokens.deepPine,
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarStyle: {
-          backgroundColor: theme.surface,
-          borderTopColor: theme.outlineVariant,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 6,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: 'rgba(12, 62, 53, 0.08)',
+          borderTopWidth: 1,
+          height: 64,
+          paddingBottom: 10,
+          paddingTop: 8,
+          shadowColor: '#0C3E35',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 4,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-        },
-        headerStyle: {
-          backgroundColor: theme.surface,
-        },
-        headerTintColor: theme.text,
-        headerTitleStyle: {
+          fontSize: 11,
           fontWeight: '700',
-          fontSize: 17,
+          letterSpacing: 0.2,
         },
-        headerShown: useClientOnlyValue(false, true),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Overview',
-          headerTitle: 'CashFlow Mate 🇿🇼',
+          title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={typeof color === 'string' ? color : theme.tint} />
+            <Ionicons
+              name={focused ? 'grid' : 'grid-outline'}
+              size={22}
+              color={getColor(color, focused)}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Transactions',
-          headerTitle: 'Transactions & Till',
+          title: 'Records',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={typeof color === 'string' ? color : theme.tint} />
+            <Ionicons
+              name={focused ? 'receipt' : 'receipt-outline'}
+              size={22}
+              color={getColor(color, focused)}
+            />
           ),
         }}
       />
@@ -60,9 +67,12 @@ export default function TabLayout() {
         name="import"
         options={{
           title: 'Import',
-          headerTitle: 'Import Statements',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'cloud-upload' : 'cloud-upload-outline'} size={22} color={typeof color === 'string' ? color : theme.tint} />
+            <Ionicons
+              name={focused ? 'cloud-upload' : 'cloud-upload-outline'}
+              size={22}
+              color={getColor(color, focused)}
+            />
           ),
         }}
       />
@@ -70,19 +80,25 @@ export default function TabLayout() {
         name="debts"
         options={{
           title: 'Debts',
-          headerTitle: 'Debts & Customer Credit',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={typeof color === 'string' ? color : theme.tint} />
+            <Ionicons
+              name={focused ? 'people' : 'people-outline'}
+              size={22}
+              color={getColor(color, focused)}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="insights"
         options={{
-          title: 'Insights',
-          headerTitle: 'AI Financial Assistant',
+          title: 'Assistant',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={22} color={typeof color === 'string' ? color : theme.tint} />
+            <Ionicons
+              name={focused ? 'sparkles' : 'sparkles-outline'}
+              size={22}
+              color={getColor(color, focused)}
+            />
           ),
         }}
       />

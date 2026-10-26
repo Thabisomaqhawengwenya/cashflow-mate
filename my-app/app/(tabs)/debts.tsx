@@ -7,10 +7,11 @@ import {
   Pressable,
   Modal,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import Colors from '@/constants/Colors';
+import { useFocusEffect, router } from 'expo-router';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -20,9 +21,8 @@ import {
   formatMoney,
   getLocalDateString,
 } from '@/services/storage';
-import { M3Card } from '@/components/M3/M3Card';
-import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
+import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 
 export default function DebtsScreen() {
@@ -84,7 +84,10 @@ export default function DebtsScreen() {
 
     const applied = await MobileStorageService.recordDebtPayment(selectedDebt.id, p);
     if (applied < p) {
-      Alert.alert('Payment Capped', `Only ${formatMoney(applied, selectedDebt.currency)} was outstanding; the balance is now settled.`);
+      Alert.alert(
+        'Payment Capped',
+        `Only ${formatMoney(applied, selectedDebt.currency)} was outstanding; the balance is now settled.`
+      );
     }
     setSelectedDebt(null);
     setPayAmount('');
@@ -108,7 +111,7 @@ export default function DebtsScreen() {
   const handleCreateDebt = async () => {
     const t = parseFloat(totalAmount);
     if (isNaN(t) || t <= 0 || !personName.trim()) {
-      Alert.alert('Invalid Input', 'Please enter the person name and valid total amount.');
+      Alert.alert('Invalid Input', 'Please enter person name and valid total amount.');
       return;
     }
 
@@ -129,433 +132,653 @@ export default function DebtsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: theme.text }]}>Debts & Credit</Text>
-          <Text style={[styles.subhead, { color: theme.tabIconDefault }]}>
-            Customer store credit and supplier payables
+    <View style={styles.screenWrapper}>
+      {/* 1. Deep Forest Emerald Header */}
+      <View style={styles.emeraldHeader}>
+        <View style={styles.topNavRow}>
+          <Pressable
+            onPress={() => router.push('/(tabs)')}
+            hitSlop={10}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Customer & Supplier Credit</Text>
+          <Pressable
+            onPress={() => setIsAddOpen(true)}
+            hitSlop={10}
+            style={styles.backButton}
+          >
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+          </Pressable>
+        </View>
+
+        {/* 2-Stat Hero Row (Receivables vs Payables) */}
+        <View style={styles.statHeroBar}>
+          <View style={styles.statHeroCol}>
+            <Text style={styles.statHeroAmount}>
+              {formatMoney(totalOwedToBusiness, currency)}
+            </Text>
+            <Text style={styles.statHeroLabel}>Customers Owe You</Text>
+          </View>
+          <View style={styles.statHeroDivider} />
+          <View style={styles.statHeroCol}>
+            <Text style={[styles.statHeroAmount, { color: EmeraldTokens.pastelRose }]}>
+              {formatMoney(totalOwedByBusiness, currency)}
+            </Text>
+            <Text style={styles.statHeroLabel}>You Owe Suppliers</Text>
+          </View>
+        </View>
+
+        {/* Filter Capsules */}
+        <View style={styles.filterPillsRow}>
+          {[
+            { id: 'all', label: 'All Records' },
+            { id: 'owed_to_business', label: 'Owed to Me' },
+            { id: 'owed_by_business', label: 'I Owe Others' },
+          ].map((item) => {
+            const isActive = filter === item.id;
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => setFilter(item.id as any)}
+                style={[
+                  styles.filterPill,
+                  {
+                    backgroundColor: isActive
+                      ? EmeraldTokens.mintCta
+                      : 'rgba(255, 255, 255, 0.14)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    {
+                      color: isActive ? EmeraldTokens.mintDarkText : '#FFFFFF',
+                      fontWeight: isActive ? '700' : '500',
+                    },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* 2. White Curved Body Sheet */}
+      <View style={styles.sheetContainer}>
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>
+            Credit Ledgers <Text style={styles.countBadge}>({filteredDebts.length})</Text>
           </Text>
         </View>
-        <M3Button
-          label="Add"
-          size="sm"
-          variant="filled"
-          icon={<Ionicons name="add" size={14} color="#FFFFFF" />}
-          onPress={() => setIsAddOpen(true)}
-        />
-      </View>
 
-      {/* KPI Cards: Receivables vs Payables */}
-      <View style={styles.kpiRow}>
-        <M3Card variant="kpi" style={styles.kpiCard}>
-          <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>Customers Owe You</Text>
-          <Text style={[styles.kpiValue, { color: theme.inflow }]}>
-            {formatMoney(totalOwedToBusiness, currency)}
-          </Text>
-          <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Market customer credit</Text>
-        </M3Card>
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredDebts.length > 0 ? (
+            filteredDebts.map((debt) => {
+              const isOwedToMe = debt.direction === 'owed_to_business';
+              const remaining = debt.totalAmount - debt.paidAmount;
+              const isSettled = debt.status === 'settled';
 
-        <M3Card variant="kpi" style={styles.kpiCard}>
-          <Text style={[styles.kpiLabel, { color: theme.tabIconDefault }]}>You Owe Others</Text>
-          <Text style={[styles.kpiValue, { color: theme.outflow }]}>
-            {formatMoney(totalOwedByBusiness, currency)}
-          </Text>
-          <Text style={[styles.kpiSub, { color: theme.tabIconDefault }]}>Stock / Mukando loans</Text>
-        </M3Card>
-      </View>
+              return (
+                <View key={debt.id} style={styles.debtCard}>
+                  {/* Top Row: Person Name + Remaining Badge */}
+                  <View style={styles.cardTopRow}>
+                    <View style={styles.personGroup}>
+                      <View
+                        style={[
+                          styles.miniAvatar,
+                          {
+                            backgroundColor: isOwedToMe
+                              ? EmeraldTokens.pastelMint
+                              : EmeraldTokens.pastelRose,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={isOwedToMe ? 'arrow-down' : 'arrow-up'}
+                          size={13}
+                          color={
+                            isOwedToMe
+                              ? EmeraldTokens.pastelMintText
+                              : EmeraldTokens.pastelRoseText
+                          }
+                        />
+                      </View>
+                      <View>
+                        <Text style={styles.personName}>{debt.personName}</Text>
+                        <Text style={styles.recordedDate}>
+                          Recorded: {debt.recordedDate}
+                        </Text>
+                      </View>
+                    </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        {[
-          { id: 'all', label: 'All Records' },
-          { id: 'owed_to_business', label: 'Owed to Me' },
-          { id: 'owed_by_business', label: 'I Owe' },
-        ].map((item) => {
-          const isActive = filter === item.id;
-          return (
-            <Pressable
-              key={item.id}
-              onPress={() => setFilter(item.id as any)}
-              style={[
-                styles.filterChip,
-                {
-                  backgroundColor: isActive ? theme.primary : theme.surfaceContainer,
-                  borderColor: isActive ? theme.primary : theme.outlineVariant,
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 11, fontWeight: '600', color: isActive ? '#FFFFFF' : theme.text }}>
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+                    <View
+                      style={[
+                        styles.remainingBadge,
+                        {
+                          backgroundColor: isSettled
+                            ? '#F1F5F3'
+                            : isOwedToMe
+                            ? EmeraldTokens.pastelMint
+                            : EmeraldTokens.pastelRose,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.remainingBadgeText,
+                          {
+                            color: isSettled
+                              ? EmeraldTokens.textMuted
+                              : isOwedToMe
+                              ? EmeraldTokens.pastelMintText
+                              : EmeraldTokens.pastelRoseText,
+                          },
+                        ]}
+                      >
+                        {isSettled
+                          ? 'SETTLED'
+                          : `${formatMoney(remaining, debt.currency)} DUE`}
+                      </Text>
+                    </View>
+                  </View>
 
-      {/* Debts List */}
-      <View style={styles.list}>
-        {filteredDebts.map((debt) => {
-          const isOwedToMe = debt.direction === 'owed_to_business';
-          const remaining = Math.max(0, debt.totalAmount - debt.paidAmount);
+                  {/* Progress Bar */}
+                  <View style={styles.progressBarTrack}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          width: `${Math.min(
+                            100,
+                            Math.round((debt.paidAmount / debt.totalAmount) * 100)
+                          )}%`,
+                          backgroundColor: isSettled
+                            ? EmeraldTokens.deepPine
+                            : EmeraldTokens.mintCta,
+                        },
+                      ]}
+                    />
+                  </View>
 
-          return (
-            <M3Card key={debt.id} variant="elevated" style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View>
-                  <Text style={[styles.personName, { color: theme.text }]}>{debt.personName}</Text>
-                  <Text style={[styles.debtSub, { color: theme.tabIconDefault }]}>
-                    {isOwedToMe ? 'Owes your business' : 'You owe them'} &bull; {debt.recordedDate}
-                  </Text>
-                </View>
-                <View style={styles.cardHeaderRight}>
-                  {debt.status === 'settled' ? (
-                    <M3Badge label="Settled" variant="inflow" />
-                  ) : debt.status === 'partially_paid' ? (
-                    <M3Badge label="Partial" variant="neutral" />
-                  ) : (
-                    <M3Badge label="Outstanding" variant="review" />
+                  {/* Subtext info */}
+                  <View style={styles.balanceRow}>
+                    <Text style={styles.balanceSub}>
+                      Paid: {formatMoney(debt.paidAmount, debt.currency)} of{' '}
+                      {formatMoney(debt.totalAmount, debt.currency)}
+                    </Text>
+                    {debt.notes && (
+                      <Text style={styles.notesText} numberOfLines={1}>
+                        {debt.notes}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Action buttons */}
+                  {!isSettled && (
+                    <View style={styles.actionRow}>
+                      <Pressable
+                        onPress={() => setSelectedDebt(debt)}
+                        style={styles.payChip}
+                      >
+                        <Ionicons name="cash-outline" size={14} color={EmeraldTokens.mintDarkText} />
+                        <Text style={styles.payChipText}>Record Repayment</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => handleDeleteDebt(debt)}
+                        style={styles.delBtn}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#E11D48" />
+                      </Pressable>
+                    </View>
                   )}
-                  <Pressable
-                    onPress={() => handleDeleteDebt(debt)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Delete debt record for ${debt.personName}`}
-                    hitSlop={8}
-                    style={{ marginLeft: 6 }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={theme.tabIconDefault} />
-                  </Pressable>
                 </View>
-              </View>
+              );
+            })
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={44} color={EmeraldTokens.textSubtle} />
+              <Text style={styles.emptyTitle}>No credit records</Text>
+              <Text style={styles.emptySub}>
+                Tap the button below to add store credit or a supplier loan.
+              </Text>
+            </View>
+          )}
 
-              <View style={[styles.summaryBox, { backgroundColor: theme.surfaceContainer }]}>
-                <View style={styles.summaryLine}>
-                  <Text style={[styles.summaryLabel, { color: theme.tabIconDefault }]}>Total Amount:</Text>
-                  <Text style={[styles.summaryVal, { color: theme.text }]}>{formatMoney(debt.totalAmount, debt.currency)}</Text>
-                </View>
-                <View style={styles.summaryLine}>
-                  <Text style={[styles.summaryLabel, { color: theme.tabIconDefault }]}>Paid So Far:</Text>
-                  <Text style={[styles.summaryVal, { color: theme.inflow }]}>{formatMoney(debt.paidAmount, debt.currency)}</Text>
-                </View>
-                <View style={[styles.summaryLine, { borderTopWidth: 1, borderTopColor: theme.outlineVariant, paddingTop: 4 }]}>
-                  <Text style={[styles.summaryLabel, { fontWeight: '700', color: theme.text }]}>Remaining Balance:</Text>
-                  <Text style={[styles.summaryVal, { fontWeight: '800', color: isOwedToMe ? theme.inflow : theme.outflow }]}>
-                    {formatMoney(remaining, debt.currency)}
-                  </Text>
-                </View>
-              </View>
-
-              {debt.notes && (
-                <Text style={[styles.notesText, { color: theme.tabIconDefault }]}>"{debt.notes}"</Text>
-              )}
-
-              {debt.status !== 'settled' && (
-                <View style={styles.actionRow}>
-                  <M3Button
-                    label="Record Payment"
-                    variant="tonal"
-                    size="sm"
-                    onPress={() => {
-                      setSelectedDebt(debt);
-                      setPayAmount(remaining.toFixed(2));
-                    }}
-                    style={{ width: '100%' }}
-                  />
-                </View>
-              )}
-            </M3Card>
-          );
-        })}
+          <View style={{ marginTop: 14, marginBottom: 24 }}>
+            <M3Button
+              label="ADD CREDIT RECORD"
+              variant="mint"
+              size="lg"
+              icon={<Ionicons name="add" size={20} color={EmeraldTokens.mintDarkText} />}
+              onPress={() => setIsAddOpen(true)}
+            />
+          </View>
+        </ScrollView>
       </View>
 
-      {/* Record Payment Modal */}
-      <Modal visible={selectedDebt !== null} animationType="slide" transparent>
+      {/* Record Repayment Modal */}
+      <Modal
+        visible={!!selectedDebt}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSelectedDebt(null)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Record Payment</Text>
-              <Pressable
-                onPress={() => setSelectedDebt(null)}
-                accessibilityRole="button"
-                accessibilityLabel="Close payment modal"
-                hitSlop={12}
-              >
-                <Ionicons name="close" size={22} color={theme.tabIconDefault} />
+              <Text style={styles.modalTitle}>Record Repayment</Text>
+              <Pressable onPress={() => setSelectedDebt(null)}>
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
               </Pressable>
             </View>
 
             {selectedDebt && (
-              <View style={{ gap: 12 }}>
-                <Text style={{ fontSize: 13, color: theme.tabIconDefault }}>
-                  Payment for <Text style={{ fontWeight: '700', color: theme.text }}>{selectedDebt.personName}</Text>
+              <View>
+                <Text style={styles.debtModalName}>{selectedDebt.personName}</Text>
+                <Text style={styles.debtModalSub}>
+                  Remaining Outstanding:{' '}
+                  <Text style={{ fontWeight: '800', color: EmeraldTokens.deepPine }}>
+                    {formatMoney(
+                      selectedDebt.totalAmount - selectedDebt.paidAmount,
+                      selectedDebt.currency
+                    )}
+                  </Text>
                 </Text>
 
                 <M3Input
-                  label={`Payment Amount (${selectedDebt.currency})`}
-                  keyboardType="decimal-pad"
+                  label="Repayment Amount"
+                  placeholder="0.00"
                   value={payAmount}
                   onChangeText={setPayAmount}
+                  keyboardType="numeric"
+                  prefix={`${selectedDebt.currency} `}
                 />
 
-                <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                  <M3Button
-                    label="Cancel"
-                    variant="text"
-                    onPress={() => setSelectedDebt(null)}
-                    style={{ flex: 1, marginRight: 8 }}
-                  />
-                  <M3Button
-                    label="Confirm Payment"
-                    variant="filled"
-                    onPress={handleRecordPayment}
-                    style={{ flex: 1 }}
-                  />
-                </View>
+                <M3Button
+                  label="CONFIRM PAYMENT"
+                  variant="mint"
+                  size="lg"
+                  onPress={handleRecordPayment}
+                  style={{ marginTop: 16 }}
+                />
               </View>
             )}
           </View>
         </View>
       </Modal>
 
-      {/* Add Debt Modal */}
-      <Modal visible={isAddOpen} animationType="slide" transparent>
+      {/* Add New Debt Modal */}
+      <Modal
+        visible={isAddOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsAddOpen(false)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>New Debt / Credit</Text>
-              <Pressable
-                onPress={() => setIsAddOpen(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Close new debt modal"
-                hitSlop={12}
-              >
-                <Ionicons name="close" size={22} color={theme.tabIconDefault} />
+              <Text style={styles.modalTitle}>New Credit Ledger</Text>
+              <Pressable onPress={() => setIsAddOpen(false)}>
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
               </Pressable>
             </View>
 
-            <View style={styles.toggleRow}>
+            <View style={styles.directionToggle}>
               <Pressable
                 onPress={() => setDirection('owed_to_business')}
-                accessibilityRole="button"
-                accessibilityLabel="Customer Owes Me"
-                accessibilityState={{ selected: direction === 'owed_to_business' }}
                 style={[
                   styles.toggleBtn,
-                  {
-                    backgroundColor: direction === 'owed_to_business' ? theme.inflowContainer : theme.surfaceContainer,
-                    borderColor: direction === 'owed_to_business' ? theme.inflow : 'transparent',
-                  },
+                  direction === 'owed_to_business' && { backgroundColor: EmeraldTokens.deepPine },
                 ]}
               >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: direction === 'owed_to_business' ? theme.inflow : theme.text }}>
+                <Text
+                  style={[
+                    styles.toggleBtnText,
+                    direction === 'owed_to_business' && { color: '#FFFFFF', fontWeight: '700' },
+                  ]}
+                >
                   Customer Owes Me
                 </Text>
               </Pressable>
 
               <Pressable
                 onPress={() => setDirection('owed_by_business')}
-                accessibilityRole="button"
-                accessibilityLabel="I Owe Supplier"
-                accessibilityState={{ selected: direction === 'owed_by_business' }}
                 style={[
                   styles.toggleBtn,
-                  {
-                    backgroundColor: direction === 'owed_by_business' ? theme.outflowContainer : theme.surfaceContainer,
-                    borderColor: direction === 'owed_by_business' ? theme.outflow : 'transparent',
-                  },
+                  direction === 'owed_by_business' && { backgroundColor: EmeraldTokens.deepPine },
                 ]}
               >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: direction === 'owed_by_business' ? theme.outflow : theme.text }}>
+                <Text
+                  style={[
+                    styles.toggleBtnText,
+                    direction === 'owed_by_business' && { color: '#FFFFFF', fontWeight: '700' },
+                  ]}
+                >
                   I Owe Supplier
                 </Text>
               </Pressable>
             </View>
 
             <M3Input
-              label="Person / Vendor Name"
-              placeholder="e.g. Mai Panashe, Baba Kevin"
+              label="Contact / Person Name"
+              placeholder="e.g. Mai Ruvimbo, Mbare Veg Supplier"
               value={personName}
               onChangeText={setPersonName}
             />
 
             <M3Input
-              label={`Total Debt Amount (${currency})`}
+              label="Total Credit Amount"
               placeholder="0.00"
-              keyboardType="decimal-pad"
               value={totalAmount}
               onChangeText={setTotalAmount}
+              keyboardType="numeric"
+              prefix={`${currency} `}
             />
 
             <M3Input
-              label="Notes / Items"
-              placeholder="e.g. 2x boxes cooking oil, sugar"
+              label="Notes (Optional)"
+              placeholder="e.g. 2 boxes of cooking oil on credit"
               value={notes}
               onChangeText={setNotes}
             />
 
-            <View style={{ flexDirection: 'row', marginTop: 14 }}>
-              <M3Button
-                label="Cancel"
-                variant="text"
-                onPress={() => setIsAddOpen(false)}
-                style={{ flex: 1, marginRight: 8 }}
-              />
-              <M3Button
-                label="Save Record"
-                variant="filled"
-                onPress={handleCreateDebt}
-                style={{ flex: 1 }}
-              />
-            </View>
+            <M3Button
+              label="SAVE RECORD"
+              variant="mint"
+              size="lg"
+              onPress={handleCreateDebt}
+              style={{ marginTop: 14 }}
+            />
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenWrapper: {
     flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
-  content: {
-    paddingHorizontal: DesignTokens.spacing.gutter,
-    paddingTop: 16,
-    paddingBottom: 40,
+  emeraldHeader: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  header: {
+  topNavRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  subhead: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  kpiRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  kpiCard: {
-    flex: 1,
-    marginBottom: 0,
-  },
-  kpiLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  kpiValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginVertical: 4,
-    fontVariant: ['tabular-nums'],
-  },
-  kpiSub: {
-    fontSize: 10,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    height: 32,
-    borderRadius: DesignTokens.shapes.pill,
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
-  list: {
-    gap: 10,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
-  card: {
-    padding: 14,
-    marginVertical: 4,
-  },
-  cardHeader: {
+
+  statHeroBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginBottom: 14,
   },
-  cardHeaderRight: {
-    flexDirection: 'row',
+  statHeroCol: {
+    flex: 1,
     alignItems: 'center',
   },
-  personName: {
-    fontSize: 14,
-    fontWeight: '700',
+  statHeroAmount: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
-  debtSub: {
-    fontSize: 10,
+  statHeroLabel: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.75)',
     marginTop: 2,
+    fontWeight: '500',
   },
-  summaryBox: {
-    padding: 10,
-    borderRadius: DesignTokens.shapes.medium,
-    gap: 4,
-    marginBottom: 8,
+  statHeroDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
-  summaryLine: {
+
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  filterPillText: {
+    fontSize: 12,
+  },
+
+  sheetContainer: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.canvasLight,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  sheetHeader: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 8,
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  countBadge: {
+    fontSize: 14,
+    color: EmeraldTokens.textMuted,
+    fontWeight: '500',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+
+  debtCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  summaryLabel: {
+  personGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  miniAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  personName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  recordedDate: {
     fontSize: 11,
+    color: EmeraldTokens.textSubtle,
+    marginTop: 1,
   },
-  summaryVal: {
+  remainingBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  remainingBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  progressBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#F1F5F3',
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  balanceSub: {
     fontSize: 12,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
+    color: EmeraldTokens.textMuted,
+    fontWeight: '500',
   },
   notesText: {
     fontSize: 11,
-    fontStyle: 'italic',
-    marginBottom: 8,
+    color: EmeraldTokens.textSubtle,
+    maxWidth: '45%',
   },
+
   actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(15, 23, 42, 0.05)',
+    paddingTop: 10,
     marginTop: 4,
   },
+  payChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: EmeraldTokens.pastelMint,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: DesignTokens.shapes.pill,
+  },
+  payChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: EmeraldTokens.mintDarkText,
+  },
+  delBtn: {
+    padding: 6,
+  },
+
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+    marginTop: 10,
+  },
+  emptySub: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
-  modalSheet: {
-    borderTopLeftRadius: DesignTokens.shapes.sheet,
-    borderTopRightRadius: DesignTokens.shapes.sheet,
-    padding: DesignTokens.spacing.gutter,
-    paddingBottom: 40,
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: EmeraldTokens.textSlate,
   },
-  toggleRow: {
+  debtModalName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  debtModalSub: {
+    fontSize: 13,
+    color: EmeraldTokens.textMuted,
+    marginVertical: 8,
+  },
+  directionToggle: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
+    backgroundColor: '#F1F5F3',
+    borderRadius: DesignTokens.shapes.pill,
+    padding: 4,
+    marginBottom: 16,
   },
   toggleBtn: {
     flex: 1,
-    height: 42,
+    paddingVertical: 10,
     borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1.5,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  toggleBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: EmeraldTokens.textMuted,
   },
 });

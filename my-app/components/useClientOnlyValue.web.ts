@@ -5,6 +5,9 @@ import { useEffect, useState } from 'react';
 export function useClientOnlyValue<S, C>(server: S, client: C): S | C {
   const [value, setValue] = useState<S | C>(server);
   useEffect(() => {
+    // Intentional hydration guard: the server snapshot must render first, then
+    // the client value replaces it after mount. Confined to this template hook.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(client);
   }, [client]);
 
