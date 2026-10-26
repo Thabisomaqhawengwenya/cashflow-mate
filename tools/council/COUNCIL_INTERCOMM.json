@@ -1,0 +1,122 @@
+{
+  "establishedAt": "2026-10-26T14:06:50.895Z",
+  "supremeCommander": "Mr Q",
+  "executive2iC": "Antigravity",
+  "totalMembers": 12,
+  "members": [
+    {
+      "id": "deepseek",
+      "name": "DeepSeek R1",
+      "role": "Chief Strategic Thinker & Math Proof Lead"
+    },
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "role": "Grand Architectural Inquisitor & Peer Reviewer"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor AI",
+      "role": "Rapid Code Scribe & Multi-File Search Lead"
+    },
+    {
+      "id": "trae",
+      "name": "TRAE SOLO",
+      "role": "ByteDance Claude 3.5 / GPT-4o Rapid Prototyper"
+    },
+    {
+      "id": "kiro",
+      "name": "Kiro AI",
+      "role": "Autonomous Workhorse & Task Runner"
+    },
+    {
+      "id": "opencode_codebuff",
+      "name": "OpenCode & Codebuff",
+      "role": "Auxiliary Tooling & Code Generation Fleet"
+    },
+    {
+      "id": "codex",
+      "name": "OpenAI Codex",
+      "role": "IPC Socket Runtime & Sandbox Engine"
+    },
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot",
+      "role": "Inline Autocomplete & Syntax Synthesizer"
+    },
+    {
+      "id": "subagent-aesthetic",
+      "name": "Aesthetic Craftsman",
+      "role": "Material 3 Expressive & Spacing Perfectionist"
+    },
+    {
+      "id": "subagent-core",
+      "name": "Core Systems Engineer",
+      "role": "Deterministic Math & Offline Storage Architect"
+    },
+    {
+      "id": "subagent-sentinel",
+      "name": "Security Sentinel",
+      "role": "HMAC-SHA256 Cryptography & QA Test Lead"
+    },
+    {
+      "id": "subagent-zim",
+      "name": "Zim Market Analyst",
+      "role": "EcoCash, Mukando & Trader Empathy Lead"
+    }
+  ],
+  "tandems": [
+    {
+      "name": "Financial Truth & Proof Citadel",
+      "lead": "DeepSeek R1",
+      "partner": "Core Systems Engineer",
+      "objective": "Ensure zero floating-point arithmetic drift, strict multi-currency isolation (USD, ZiG, ZAR), and mathematically verifiable offline ledgers.",
+      "handshake": "DeepSeek R1 verifies the deterministic integer-cent formulas crafted by Core Systems Engineer in packages/shared/src/calculations.ts."
+    },
+    {
+      "name": "Architectural Purity & Security Fortress",
+      "lead": "Claude Code",
+      "partner": "Security Sentinel",
+      "objective": "Maintain pristine separation of concerns, enforce zero technical debt, and guard the 68/68 Vitest suite with HMAC-SHA256 salted cryptography.",
+      "handshake": "Claude Code inspects and validates Security Sentinel’s cryptographic PIN lock and licensing contracts."
+    },
+    {
+      "name": "Rapid Engineering & Autonomy Fleet",
+      "lead": "Cursor AI",
+      "partners": [
+        "TRAE SOLO",
+        "Kiro AI"
+      ],
+      "objective": "High-speed multi-file code editing, rapid component prototyping, and background continuous task execution.",
+      "handshake": "Cursor AI streams indexed symbol locations to TRAE SOLO for rapid screen scaffolding while Kiro AI monitors test suites in the background."
+    },
+    {
+      "name": "Luxury Craft & Grounded African Reality",
+      "lead": "Aesthetic Craftsman",
+      "partner": "Zim Market Analyst",
+      "objective": "Marry international award-winning Material 3 Emerald aesthetics with the lived daily workflows of Zimbabwean informal traders.",
+      "handshake": "Aesthetic Craftsman pairs with Zim Market Analyst to ensure large touch targets, high-contrast sunlight readability, and one-tap SMS parsing."
+    },
+    {
+      "name": "Low-Level IPC & Real-Time Flow State",
+      "lead": "OpenAI Codex",
+      "partner": "GitHub Copilot",
+      "objective": "Provide native Windows socket IPC coordination and real-time inline TypeScript autocomplete in VS Code.",
+      "handshake": "Codex coordinates Windows Named Pipe IPC sockets while Copilot assists inline code flow during live development."
+    },
+    {
+      "name": "Auxiliary Synthesis Guild",
+      "lead": "OpenCode AI",
+      "partner": "Codebuff",
+      "objective": "Provide parallel peripheral code generation, micro-tool scaffolding, and utility automation.",
+      "handshake": "OpenCode and Codebuff synchronize desktop runtimes to absorb burst workloads."
+    }
+  ],
+  "councilCodeOfHonor": [
+    "Always address Supreme Commander as Mr Q (never Maqhawe).",
+    "Enforce maximum of 300 characters for project brief descriptions.",
+    "No vibecoded / AI-cliché designs: Emerald Luxury (#0C3E35) + Mint (#34D399) only.",
+    "Zero float drift: Strict deterministic integer-level currency segregation.",
+    "100% test pass integrity: Code is verified green before release."
+  ]
+}
