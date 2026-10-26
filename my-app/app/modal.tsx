@@ -19,6 +19,10 @@ import {
   LicenseInfo,
   SAMPLE_WORKING_LICENSES,
 } from '@/services/licensing';
+import {
+  MobileSecurityService,
+  SecuritySettings,
+} from '@/services/security';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
@@ -29,10 +33,16 @@ export default function ModalScreen() {
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [license, setLicense] = useState<LicenseInfo | null>(null);
+  const [security, setSecurity] = useState<SecuritySettings | null>(null);
   const [keyInput, setKeyInput] = useState('');
   const [isActivating, setIsActivating] = useState(false);
   const [showLicenseInput, setShowLicenseInput] = useState(false);
+  const [showPinSection, setShowPinSection] = useState(false);
   const [language, setLanguage] = useState<'EN' | 'SN'>('EN');
+
+  // PIN Form State
+  const [newPin, setNewPin] = useState('');
+  const [currentPin, setCurrentPin] = useState('');
 
   useEffect(() => {
     MobileStorageService.getBusiness().then(setBusiness);
@@ -40,6 +50,7 @@ export default function ModalScreen() {
       setLicense(lic);
       setKeyInput(lic.key);
     });
+    MobileSecurityService.getSecuritySettings().then(setSecurity);
   }, []);
 
   const handleActivate = async (keyToUse?: string) => {
@@ -62,6 +73,47 @@ export default function ModalScreen() {
       );
     } else {
       Alert.alert('Activation Failed', result.errorMessage || 'Invalid license key.');
+    }
+  };
+
+  const handleTogglePrivacy = async () => {
+    const updatedVal = await MobileSecurityService.togglePrivacyMask();
+    setSecurity((prev) => prev ? { ...prev, isPrivacyMaskActive: updatedVal } : null);
+  };
+
+  const handleSavePin = async () => {
+    if (!/^\d{4}$/.test(newPin.trim())) {
+      Alert.alert('Invalid PIN', 'Please enter exactly 4 numbers (0-9).');
+      return;
+    }
+
+    try {
+      await MobileSecurityService.setPin(newPin.trim());
+      const updated = await MobileSecurityService.getSecuritySettings();
+      setSecurity(updated);
+      setNewPin('');
+      setShowPinSection(false);
+      Alert.alert('PIN Locked! 🔒', 'Your market till is now secured with a 4-digit master PIN.');
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Could not set PIN.');
+    }
+  };
+
+  const handleRemovePin = async () => {
+    if (!currentPin.trim()) {
+      Alert.alert('Verification Required', 'Enter your current 4-digit PIN to remove protection.');
+      return;
+    }
+
+    const removed = await MobileSecurityService.removePin(currentPin.trim());
+    if (removed) {
+      const updated = await MobileSecurityService.getSecuritySettings();
+      setSecurity(updated);
+      setCurrentPin('');
+      setShowPinSection(false);
+      Alert.alert('PIN Removed', 'Market till PIN protection has been disabled.');
+    } else {
+      Alert.alert('Incorrect PIN', 'The current PIN you entered is not correct.');
     }
   };
 
@@ -93,7 +145,7 @@ export default function ModalScreen() {
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>Profile & Security</Text>
           <View style={styles.iconButton}>
             <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
           </View>
@@ -133,7 +185,7 @@ export default function ModalScreen() {
         </View>
 
         {/* 3. "General" Settings Section (Directly from Screen 2) */}
-        <Text style={styles.sectionHeading}>General</Text>
+        <Text style={styles.sectionHeading}>General & Security</Text>
 
         <View style={styles.settingsGroup}>
           {/* Item 1: Language Setup */}
@@ -164,7 +216,107 @@ export default function ModalScreen() {
             </View>
           </View>
 
-          {/* Item 2: License Activation */}
+          {/* Item 2: Till Master PIN Protection */}
+          <Pressable
+            onPress={() => setShowPinSection(!showPinSection)}
+            style={styles.settingItem}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: security?.isPinSet ? EmeraldTokens.pastelMint : EmeraldTokens.pastelRose }]}>
+                <Ionicons
+                  name={security?.isPinSet ? "lock-closed" : "lock-open-outline"}
+                  size={18}
+                  color={security?.isPinSet ? EmeraldTokens.pastelMintText : EmeraldTokens.pastelRoseText}
+                />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Market Till Master PIN</Text>
+                <Text style={styles.settingSub}>
+                  {security?.isPinSet ? '4-Digit PIN Lock Engaged' : 'Not protected &bull; Tap to lock'}
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showPinSection ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
+          </Pressable>
+
+          {/* Expandable PIN Setup Box */}
+          {showPinSection && (
+            <View style={styles.expandedSectionBox}>
+              <Text style={styles.pinExplanation}>
+                Protect your cash records from market bystanders and unapproved counter staff.
+              </Text>
+              
+              <M3Input
+                label={security?.isPinSet ? 'Set New 4-Digit PIN' : 'Enter 4-Digit PIN'}
+                value={newPin}
+                onChangeText={setNewPin}
+                placeholder="e.g. 1984"
+                keyboardType="numeric"
+                maxLength={4}
+                secureTextEntry
+              />
+
+              <M3Button
+                label={security?.isPinSet ? "UPDATE MASTER PIN" : "LOCK TILL WITH PIN"}
+                variant="mint"
+                size="md"
+                onPress={handleSavePin}
+                style={{ marginTop: 8 }}
+              />
+
+              {security?.isPinSet && (
+                <View style={styles.removePinBox}>
+                  <Text style={styles.removePinHeader}>Disable PIN Protection:</Text>
+                  <M3Input
+                    label="Current PIN"
+                    value={currentPin}
+                    onChangeText={setCurrentPin}
+                    placeholder="Enter current PIN"
+                    keyboardType="numeric"
+                    maxLength={4}
+                    secureTextEntry
+                  />
+                  <M3Button
+                    label="REMOVE PIN"
+                    variant="outlined"
+                    size="sm"
+                    onPress={handleRemovePin}
+                    style={{ marginTop: 6 }}
+                  />
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Item 3: Counter Privacy Shield */}
+          <Pressable onPress={handleTogglePrivacy} style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+                <Ionicons
+                  name={security?.isPrivacyMaskActive ? "eye-off" : "eye-outline"}
+                  size={18}
+                  color={EmeraldTokens.pastelAmberText}
+                />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Counter Privacy Shield</Text>
+                <Text style={styles.settingSub}>
+                  {security?.isPrivacyMaskActive ? 'Hiding figures (••••)' : 'Displaying real amounts'}
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.statusToggleBadge, security?.isPrivacyMaskActive && styles.statusToggleBadgeActive]}>
+              <Text style={[styles.statusToggleText, security?.isPrivacyMaskActive && styles.statusToggleTextActive]}>
+                {security?.isPrivacyMaskActive ? 'ON' : 'OFF'}
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* Item 4: License Activation */}
           <Pressable
             onPress={() => setShowLicenseInput(!showLicenseInput)}
             style={styles.settingItem}
@@ -189,7 +341,7 @@ export default function ModalScreen() {
 
           {/* Expandable License Activation Section */}
           {showLicenseInput && (
-            <View style={styles.expandedLicenseBox}>
+            <View style={styles.expandedSectionBox}>
               <M3Input
                 label="Software Activation Key"
                 value={keyInput}
@@ -222,25 +374,25 @@ export default function ModalScreen() {
             </View>
           )}
 
-          {/* Item 3: Currency & Float */}
-          <View style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
-                <Ionicons name="cash-outline" size={18} color={EmeraldTokens.pastelAmberText} />
-              </View>
-              <View>
-                <Text style={styles.settingLabel}>Primary Currency</Text>
-                <Text style={styles.settingSub}>USD &bull; United States Dollar</Text>
-              </View>
-            </View>
-            <M3Badge label={business?.currency || 'USD'} variant="mint" />
-          </View>
-
-          {/* Item 4: Privacy & MIT Licensing */}
+          {/* Item 5: Multi-Currency Till Drawers */}
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
-                <Ionicons name="shield-checkmark-outline" size={18} color={EmeraldTokens.pastelSkyText} />
+                <Ionicons name="wallet-outline" size={18} color={EmeraldTokens.pastelSkyText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Active Till Drawers</Text>
+                <Text style={styles.settingSub}>USD Cash &bull; EcoCash ZiG &bull; ZAR Rand</Text>
+              </View>
+            </View>
+            <M3Badge label="3 CURRENCIES" variant="mint" />
+          </View>
+
+          {/* Item 6: Privacy & MIT Licensing */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
+                <Ionicons name="shield-checkmark-outline" size={18} color={EmeraldTokens.pastelMintText} />
               </View>
               <View>
                 <Text style={styles.settingLabel}>Privacy & Copyright</Text>
@@ -250,7 +402,7 @@ export default function ModalScreen() {
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
           </View>
 
-          {/* Item 5: Restore Demo Data */}
+          {/* Item 7: Restore Demo Data */}
           <Pressable onPress={handleReset} style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
@@ -459,12 +611,50 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Expanded License Box
-  expandedLicenseBox: {
-    paddingVertical: 12,
+  // Status Toggle Badge (e.g. for Privacy Mask)
+  statusToggleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: DesignTokens.shapes.pill,
+    backgroundColor: '#F1F5F3',
+  },
+  statusToggleBadgeActive: {
+    backgroundColor: EmeraldTokens.mintCta,
+  },
+  statusToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.textMuted,
+  },
+  statusToggleTextActive: {
+    color: EmeraldTokens.deepPine,
+  },
+
+  // Expanded Section Box
+  expandedSectionBox: {
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(15, 23, 42, 0.05)',
   },
+  pinExplanation: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    marginBottom: 10,
+    lineHeight: 16,
+  },
+  removePinBox: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(15, 23, 42, 0.05)',
+  },
+  removePinHeader: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: EmeraldTokens.textMuted,
+    marginBottom: 6,
+  },
+
   sampleHeader: {
     fontSize: 11,
     color: EmeraldTokens.textMuted,

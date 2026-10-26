@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Alert,
   Platform,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
@@ -23,10 +24,33 @@ import {
   getLocalDateString,
   sortTransactionsByDateDesc,
   CATEGORIES,
+  CurrencyCode,
+  MultiCurrencyCashbox,
 } from '@/services/storage';
+import { parseZimbabweSms, ParsedSmsResult } from '@/services/smsParser';
+import { MobileSecurityService } from '@/services/security';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
+
+const SAMPLE_SMS_CHIPS = [
+  {
+    label: 'EcoCash $15 In',
+    sms: 'Transfer Confirmation: USD 15.00 received from TAFADZWA CHIDZERO (0772123456) on 26/10/2026 at 14:22:10. TxId: MP261026.002. New balance: USD 84.50',
+  },
+  {
+    label: 'Bakers Inn $35 Out',
+    sms: 'Transfer Confirmation: USD 35.00 paid to BAKERS INN (Merchant Code: 19821) on 26/10/2026. TxId: MP261026.044. Fee: USD 0.70',
+  },
+  {
+    label: 'EcoCash ZiG 250 In',
+    sms: 'Transfer Confirmation: ZiG 250.00 received from MAI RUVIMBO (0781234567) on 26/10/2026. TxId: MP261026.115',
+  },
+  {
+    label: 'InnBucks $25 In',
+    sms: 'InnBucks: You have received US$25.00 from Simba Moyo (0712345678). Ref: IB-883921 on 26-10-2026. Dial *569# to view balance.',
+  },
+];
 
 export default function OverviewScreen() {
   const colorScheme = useColorScheme();
@@ -34,9 +58,17 @@ export default function OverviewScreen() {
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
+  const [activeCurrency, setActiveCurrency] = useState<CurrencyCode>('USD');
   const [period, setPeriod] = useState<'this_month' | 'last_month' | 'all'>('this_month');
   const [refreshing, setRefreshing] = useState(false);
   const [showProfitDisclosure, setShowProfitDisclosure] = useState(false);
+  const [isMasked, setIsMasked] = useState(false);
+  const [isPinSet, setIsPinSet] = useState(false);
+
+  // Till PIN Unlock Modal State
+  const [isPinUnlockOpen, setIsPinUnlockOpen] = useState(false);
+  const [pinAttempt, setPinAttempt] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
 
   // New Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,11 +77,22 @@ export default function OverviewScreen() {
   const [direction, setDirection] = useState<'inflow' | 'outflow'>('inflow');
   const [category, setCategory] = useState('sales_goods');
 
+  // SMS Quick-Paste Modal State
+  const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+  const [rawSmsInput, setRawSmsInput] = useState('');
+  const [parsedSms, setParsedSms] = useState<ParsedSmsResult | null>(null);
+
   const loadData = useCallback(async () => {
     const biz = await MobileStorageService.getBusiness();
     const txs = await MobileStorageService.getTransactions();
+    const sec = await MobileSecurityService.getSecuritySettings();
     setBusiness(biz);
     setTransactions(txs);
+    setIsMasked(sec.isPrivacyMaskActive);
+    setIsPinSet(sec.isPinSet);
+    if (biz?.currency) {
+      setActiveCurrency(biz.currency);
+    }
   }, []);
 
   useFocusEffect(
@@ -64,10 +107,38 @@ export default function OverviewScreen() {
     setRefreshing(false);
   };
 
-  const currency = business?.currency || 'USD';
-  const summary = MobileStorageService.calculateSummary(transactions, { period, currency });
-  const recentTransactions = sortTransactionsByDateDesc(transactions).slice(0, 4);
+  const handleToggleMask = async () => {
+    if (isMasked && isPinSet) {
+      setPinAttempt('');
+      setPinError(null);
+      setIsPinUnlockOpen(true);
+      return;
+    }
+    const next = await MobileSecurityService.togglePrivacyMask();
+    setIsMasked(next);
+  };
 
+  const handleVerifyPinAndUnmask = async () => {
+    const isValid = await MobileSecurityService.verifyPin(pinAttempt);
+    if (isValid) {
+      const next = await MobileSecurityService.togglePrivacyMask();
+      setIsMasked(next);
+      setIsPinUnlockOpen(false);
+      setPinAttempt('');
+      setPinError(null);
+    } else {
+      setPinError('Incorrect 4-digit PIN. Try again.');
+    }
+  };
+
+  const currency = activeCurrency;
+  const summary = MobileStorageService.calculateSummary(transactions, { period, currency });
+  const multiDrawer: MultiCurrencyCashbox = MobileStorageService.calculateMultiCurrencyCashbox(transactions);
+  const recentTransactions = sortTransactionsByDateDesc(
+    transactions.filter((t) => t.currency === currency)
+  ).slice(0, 4);
+
+  // Manual Transaction creation
   const handleCreateTransaction = async () => {
     const amt = parseFloat(amount);
     if (isNaN(amt) || amt <= 0 || !desc.trim()) {
@@ -109,7 +180,49 @@ export default function OverviewScreen() {
     setIsModalOpen(true);
   };
 
-  // Format today's date nicely for the top header
+  // SMS Live Parser handler
+  const handleSmsChange = (text: string) => {
+    setRawSmsInput(text);
+    if (text.trim().length > 10) {
+      const parsed = parseZimbabweSms(text);
+      setParsedSms(parsed);
+    } else {
+      setParsedSms(null);
+    }
+  };
+
+  const handleApplySampleSms = (sample: string) => {
+    setRawSmsInput(sample);
+    const parsed = parseZimbabweSms(sample);
+    setParsedSms(parsed);
+  };
+
+  const handleSaveParsedSms = async () => {
+    if (!parsedSms || !parsedSms.isValid) {
+      Alert.alert('Cannot Save', 'Please ensure a valid SMS transaction is parsed.');
+      return;
+    }
+
+    await MobileStorageService.saveTransaction({
+      transactionDate: parsedSms.date,
+      description: `${parsedSms.provider.toUpperCase()}: ${parsedSms.counterparty}`,
+      amount: parsedSms.amount,
+      currency: parsedSms.currency,
+      direction: parsedSms.direction,
+      type: parsedSms.suggestedType,
+      category: parsedSms.suggestedCategory,
+      originalReference: parsedSms.reference,
+      reviewStatus: 'confirmed',
+      notes: `Imported via SMS Parser: ${parsedSms.rawText.slice(0, 80)}...`,
+    });
+
+    setIsSmsModalOpen(false);
+    setRawSmsInput('');
+    setParsedSms(null);
+    await loadData();
+    Alert.alert('Transaction Recorded! 🎉', `${parsedSms.direction === 'inflow' ? 'Sale' : 'Payment'} saved to till.`);
+  };
+
   const todayFormatted = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     day: 'numeric',
@@ -118,12 +231,18 @@ export default function OverviewScreen() {
   }).format(new Date());
 
   const pendingCount = transactions.filter((t) => t.reviewStatus === 'pending_review').length;
-  const inflowCount = transactions.filter((t) => t.direction === 'inflow').length;
-  const outflowCount = transactions.filter((t) => t.direction === 'outflow').length;
+  const filteredTxs = transactions.filter((t) => t.currency === currency);
+  const inflowCount = filteredTxs.filter((t) => t.direction === 'inflow').length;
+  const outflowCount = filteredTxs.filter((t) => t.direction === 'outflow').length;
+
+  const displayMoney = (val: number, cur: CurrencyCode) => {
+    if (isMasked) return '••••';
+    return formatMoney(val, cur);
+  };
 
   return (
     <View style={styles.screenWrapper}>
-      {/* 1. Top Emerald Hero Header (Inspired by Screen 1) */}
+      {/* 1. Top Emerald Hero Header */}
       <View style={styles.emeraldHeader}>
         {/* Top App Bar Row */}
         <View style={styles.topBar}>
@@ -135,15 +254,65 @@ export default function OverviewScreen() {
               {todayFormatted} &bull; Harare, Zimbabwe
             </Text>
           </View>
-          <Pressable
-            onPress={() => router.push('/modal')}
-            accessibilityRole="button"
-            accessibilityLabel="Open settings and profile"
-            style={styles.bellButton}
-          >
-            <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
-            {pendingCount > 0 && <View style={styles.bellBadge} />}
-          </Pressable>
+          <View style={styles.topRightActions}>
+            {/* Privacy Mask Toggle Button */}
+            <Pressable
+              onPress={handleToggleMask}
+              accessibilityRole="button"
+              accessibilityLabel="Toggle privacy mask for sensitive numbers"
+              style={[
+                styles.iconButton,
+                isMasked && { backgroundColor: 'rgba(52, 211, 153, 0.25)' },
+              ]}
+            >
+              <Ionicons
+                name={isMasked ? 'eye-off-outline' : 'eye-outline'}
+                size={19}
+                color={isMasked ? EmeraldTokens.mintCta : '#FFFFFF'}
+              />
+            </Pressable>
+
+            {/* Profile & Notifications Bell */}
+            <Pressable
+              onPress={() => router.push('/modal')}
+              accessibilityRole="button"
+              accessibilityLabel="Open settings and profile"
+              style={styles.iconButton}
+            >
+              <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
+              {pendingCount > 0 && <View style={styles.bellBadge} />}
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Multi-Currency Cashbox Drawer Switcher Chips */}
+        <View style={styles.currencyDrawerRow}>
+          {[
+            { id: 'USD', label: 'USD Cash' },
+            { id: 'ZWG', label: 'ZiG / EcoCash' },
+            { id: 'ZAR', label: 'ZAR Rand' },
+          ].map((item) => {
+            const isCurActive = activeCurrency === item.id;
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => setActiveCurrency(item.id as CurrencyCode)}
+                style={[
+                  styles.currencyDrawerChip,
+                  isCurActive && styles.currencyDrawerChipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.currencyDrawerChipText,
+                    isCurActive && styles.currencyDrawerChipTextActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* 3-Column Stat Bar (Directly from Reference Screen 1) */}
@@ -152,7 +321,7 @@ export default function OverviewScreen() {
             <Text style={styles.statNumber}>
               {String(inflowCount).padStart(2, '0')}
             </Text>
-            <Text style={styles.statLabel}>Inflows Recorded</Text>
+            <Text style={styles.statLabel}>{currency} Inflows</Text>
           </View>
 
           <View style={styles.statDivider} />
@@ -161,17 +330,18 @@ export default function OverviewScreen() {
             <Text style={styles.statNumber}>
               {String(outflowCount).padStart(2, '0')}
             </Text>
-            <Text style={styles.statLabel}>Outflows Recorded</Text>
+            <Text style={styles.statLabel}>{currency} Outflows</Text>
           </View>
 
           <View style={styles.statDivider} />
 
           <View style={styles.statCol}>
             <Text style={[styles.statNumber, { color: EmeraldTokens.mintCta }]}>
-              {summary.netCashFlow >= 0 ? '+' : ''}
-              {formatMoney(summary.netCashFlow, currency)}
+              {isMasked
+                ? '••••'
+                : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
             </Text>
-            <Text style={styles.statLabel}>Net Cash Flow</Text>
+            <Text style={styles.statLabel}>Net Till Balance</Text>
           </View>
         </View>
       </View>
@@ -189,6 +359,61 @@ export default function OverviewScreen() {
           />
         }
       >
+        {/* 3-Drawer Cashbox Breakdown Card */}
+        <View style={styles.multiDrawerCard}>
+          <View style={styles.multiDrawerHeader}>
+            <Ionicons name="wallet-outline" size={17} color={EmeraldTokens.deepPine} />
+            <Text style={styles.multiDrawerTitle}>3-Drawer Till Float Breakdown</Text>
+          </View>
+
+          <View style={styles.multiDrawerCols}>
+            {/* Drawer 1: USD */}
+            <Pressable
+              onPress={() => setActiveCurrency('USD')}
+              style={[
+                styles.drawerItem,
+                activeCurrency === 'USD' && styles.drawerItemActive,
+              ]}
+            >
+              <Text style={styles.drawerCurCode}>USD Cashbox</Text>
+              <Text style={[styles.drawerBalance, { color: EmeraldTokens.deepPine }]}>
+                {displayMoney(multiDrawer.USD.netCashFlow, 'USD')}
+              </Text>
+              <Text style={styles.drawerCount}>{multiDrawer.USD.count} records</Text>
+            </Pressable>
+
+            {/* Drawer 2: ZiG */}
+            <Pressable
+              onPress={() => setActiveCurrency('ZWG')}
+              style={[
+                styles.drawerItem,
+                activeCurrency === 'ZWG' && styles.drawerItemActive,
+              ]}
+            >
+              <Text style={styles.drawerCurCode}>EcoCash ZiG</Text>
+              <Text style={[styles.drawerBalance, { color: EmeraldTokens.pastelMintText }]}>
+                {displayMoney(multiDrawer.ZWG.netCashFlow, 'ZWG')}
+              </Text>
+              <Text style={styles.drawerCount}>{multiDrawer.ZWG.count} records</Text>
+            </Pressable>
+
+            {/* Drawer 3: ZAR */}
+            <Pressable
+              onPress={() => setActiveCurrency('ZAR')}
+              style={[
+                styles.drawerItem,
+                activeCurrency === 'ZAR' && styles.drawerItemActive,
+              ]}
+            >
+              <Text style={styles.drawerCurCode}>ZAR Rand</Text>
+              <Text style={[styles.drawerBalance, { color: EmeraldTokens.pastelAmberText }]}>
+                {displayMoney(multiDrawer.ZAR.netCashFlow, 'ZAR')}
+              </Text>
+              <Text style={styles.drawerCount}>{multiDrawer.ZAR.count} records</Text>
+            </Pressable>
+          </View>
+        </View>
+
         {/* Period Selector Tabs */}
         <View style={styles.periodRow}>
           {[
@@ -238,7 +463,7 @@ export default function OverviewScreen() {
             </View>
             <Text style={styles.actionTitle}>Record Sale</Text>
             <Text style={styles.actionSubtitle}>
-              {formatMoney(summary.recordedInflows, currency)} in
+              {displayMoney(summary.recordedInflows, currency)} in
             </Text>
           </Pressable>
 
@@ -255,11 +480,26 @@ export default function OverviewScreen() {
             </View>
             <Text style={styles.actionTitle}>Record Expense</Text>
             <Text style={styles.actionSubtitle}>
-              {formatMoney(summary.recordedOutflows, currency)} out
+              {displayMoney(summary.recordedOutflows, currency)} out
             </Text>
           </Pressable>
 
-          {/* Action 3: Debts & Credit */}
+          {/* Action 3: Instant SMS Quick-Paste Parser */}
+          <Pressable
+            onPress={() => setIsSmsModalOpen(true)}
+            style={({ pressed }) => [
+              styles.actionCard,
+              { transform: [{ scale: pressed ? 0.97 : 1 }] },
+            ]}
+          >
+            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
+              <Ionicons name="chatbox-ellipses-outline" size={20} color={EmeraldTokens.pastelRoseText} />
+            </View>
+            <Text style={styles.actionTitle}>Paste SMS</Text>
+            <Text style={styles.actionSubtitle}>EcoCash & InnBucks</Text>
+          </Pressable>
+
+          {/* Action 4: Customer Debts & Mukando */}
           <Pressable
             onPress={() => router.push('/(tabs)/debts')}
             style={({ pressed }) => [
@@ -271,22 +511,7 @@ export default function OverviewScreen() {
               <Ionicons name="people-outline" size={20} color={EmeraldTokens.pastelAmberText} />
             </View>
             <Text style={styles.actionTitle}>Customer Credit</Text>
-            <Text style={styles.actionSubtitle}>Track who owes you</Text>
-          </Pressable>
-
-          {/* Action 4: Profile & License */}
-          <Pressable
-            onPress={() => router.push('/modal')}
-            style={({ pressed }) => [
-              styles.actionCard,
-              { transform: [{ scale: pressed ? 0.97 : 1 }] },
-            ]}
-          >
-            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
-              <Ionicons name="shield-checkmark-outline" size={20} color={EmeraldTokens.pastelSkyText} />
-            </View>
-            <Text style={styles.actionTitle}>Trader Profile</Text>
-            <Text style={styles.actionSubtitle}>Active Pro license</Text>
+            <Text style={styles.actionSubtitle}>Who owes you</Text>
           </Pressable>
         </View>
 
@@ -306,7 +531,7 @@ export default function OverviewScreen() {
           </View>
           <View style={styles.profitRight}>
             <Text style={styles.profitAmount}>
-              {formatMoney(summary.estimatedOperatingProfit, currency)}
+              {displayMoney(summary.estimatedOperatingProfit, currency)}
             </Text>
             <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.textSubtle} />
           </View>
@@ -321,24 +546,24 @@ export default function OverviewScreen() {
           </View>
         )}
 
-        {/* 4. Recent Transactions Section (Directly from Screen 3) */}
+        {/* 4. Recent Transactions Section (Screen 3) */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <Text style={styles.sectionTitle}>Recent Transactions ({currency})</Text>
           <Pressable
             onPress={() => router.push('/(tabs)/transactions')}
             accessibilityRole="button"
             accessibilityLabel="View all transactions"
           >
-            <Text style={styles.seeAllText}>See all ({transactions.length})</Text>
+            <Text style={styles.seeAllText}>See all ({filteredTxs.length})</Text>
           </Pressable>
         </View>
 
         {recentTransactions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={40} color={EmeraldTokens.textSubtle} />
-            <Text style={styles.emptyTitle}>No transactions recorded</Text>
+            <Text style={styles.emptyTitle}>No {currency} records yet</Text>
             <Text style={styles.emptySub}>
-              Tap the button below or import a statement to populate your cash book.
+              Tap "Record Sale", "Record Expense" or "Paste SMS" to log transactions in {currency}.
             </Text>
           </View>
         ) : (
@@ -347,18 +572,16 @@ export default function OverviewScreen() {
             const catMeta = CATEGORIES[tx.category];
             return (
               <View key={tx.id} style={styles.transactionCard}>
-                {/* Top Row: Ref & Date + Amount Chip */}
                 <View style={styles.txTopRow}>
                   <View style={styles.txRefRow}>
                     <Text style={styles.txRefText}>
-                      REF: {tx.id.substring(0, 8).toUpperCase()}
+                      REF: {tx.originalReference || tx.id.substring(0, 8).toUpperCase()}
                     </Text>
                     <Text style={styles.txDateText}>
                       &bull; {tx.transactionDate}
                     </Text>
                   </View>
 
-                  {/* Amount Circle / Chip */}
                   <View
                     style={[
                       styles.amountBadge,
@@ -380,17 +603,15 @@ export default function OverviewScreen() {
                       ]}
                     >
                       {isInflow ? '+' : '-'}
-                      {formatMoney(tx.amount, tx.currency)}
+                      {displayMoney(tx.amount, tx.currency)}
                     </Text>
                   </View>
                 </View>
 
-                {/* Middle Row: Description */}
                 <Text style={styles.txDescription} numberOfLines={2}>
                   {tx.description}
                 </Text>
 
-                {/* Bottom Row: Category & Status */}
                 <View style={styles.txBottomRow}>
                   <View style={styles.txCategoryChip}>
                     <Ionicons
@@ -414,7 +635,7 @@ export default function OverviewScreen() {
           })
         )}
 
-        {/* 5. Bottom Mint CTA Button (Directly from Screen 1) */}
+        {/* 5. Bottom Mint CTA Button */}
         <View style={styles.bottomCtaContainer}>
           <M3Button
             label="CREATE TRANSACTION"
@@ -426,7 +647,121 @@ export default function OverviewScreen() {
         </View>
       </ScrollView>
 
-      {/* New Transaction Bottom Sheet / Modal */}
+      {/* Instant SMS Quick-Paste Modal */}
+      <Modal
+        visible={isSmsModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsSmsModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.smsHeaderLeft}>
+                <Ionicons name="chatbox-ellipses" size={20} color={EmeraldTokens.deepPine} />
+                <Text style={styles.modalTitle}>Paste Transaction SMS</Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  setIsSmsModalOpen(false);
+                  setRawSmsInput('');
+                  setParsedSms(null);
+                }}
+                hitSlop={10}
+                style={styles.closeBtn}
+              >
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.smsInstruction}>
+              Paste any EcoCash, InnBucks, or Bank SMS notification. Our regex engine will automatically extract the amount, sender, reference, and date.
+            </Text>
+
+            {/* Test Samples Carousel */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.smsChipRow}>
+              {SAMPLE_SMS_CHIPS.map((chip, i) => (
+                <Pressable
+                  key={i}
+                  onPress={() => handleApplySampleSms(chip.sms)}
+                  style={styles.smsChip}
+                >
+                  <Text style={styles.smsChipText}>{chip.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <View style={styles.smsInputWrapper}>
+              <TextInput
+                multiline
+                numberOfLines={3}
+                placeholder="Paste SMS here (e.g. Transfer Confirmation: USD 15.00 received from...)"
+                placeholderTextColor={EmeraldTokens.textSubtle}
+                value={rawSmsInput}
+                onChangeText={handleSmsChange}
+                style={styles.smsTextInput}
+              />
+            </View>
+
+            {/* Live Parsing Preview Card */}
+            {parsedSms && (
+              <View
+                style={[
+                  styles.parsedCard,
+                  {
+                    borderColor: parsedSms.isValid ? EmeraldTokens.mintCta : '#FB7185',
+                    backgroundColor: parsedSms.isValid ? '#F0FDF4' : '#FFF1F2',
+                  },
+                ]}
+              >
+                {parsedSms.isValid ? (
+                  <>
+                    <View style={styles.parsedTopRow}>
+                      <M3Badge
+                        label={parsedSms.provider.toUpperCase()}
+                        variant={parsedSms.direction === 'inflow' ? 'mint' : 'outflow'}
+                      />
+                      <Text
+                        style={[
+                          styles.parsedAmount,
+                          {
+                            color:
+                              parsedSms.direction === 'inflow'
+                                ? EmeraldTokens.pastelMintText
+                                : EmeraldTokens.pastelRoseText,
+                          },
+                        ]}
+                      >
+                        {parsedSms.direction === 'inflow' ? '+' : '-'}
+                        {formatMoney(parsedSms.amount, parsedSms.currency)}
+                      </Text>
+                    </View>
+                    <Text style={styles.parsedDesc}>
+                      Counterparty: <Text style={{ fontWeight: '700' }}>{parsedSms.counterparty}</Text>
+                    </Text>
+                    <Text style={styles.parsedSub}>
+                      Ref: {parsedSms.reference} &bull; Date: {parsedSms.date} &bull; Category: {CATEGORIES[parsedSms.suggestedCategory]?.label || parsedSms.suggestedCategory}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.parseErrorText}>{parsedSms.error}</Text>
+                )}
+              </View>
+            )}
+
+            <M3Button
+              label={parsedSms?.isValid ? 'CONFIRM & RECORD TO TILL' : 'PASTE A VALID SMS'}
+              variant="mint"
+              size="lg"
+              disabled={!parsedSms?.isValid}
+              onPress={handleSaveParsedSms}
+              style={{ marginTop: 14 }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Manual New Transaction Bottom Sheet / Modal */}
       <Modal
         visible={isModalOpen}
         animationType="slide"
@@ -437,7 +772,7 @@ export default function OverviewScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {direction === 'inflow' ? 'Record Cash In' : 'Record Cash Out'}
+                {direction === 'inflow' ? `Record Cash In (${currency})` : `Record Cash Out (${currency})`}
               </Text>
               <Pressable
                 onPress={() => setIsModalOpen(false)}
@@ -448,7 +783,6 @@ export default function OverviewScreen() {
               </Pressable>
             </View>
 
-            {/* Inflow / Outflow Direction Switcher */}
             <View style={styles.directionToggle}>
               <Pressable
                 onPress={() => {
@@ -517,6 +851,68 @@ export default function OverviewScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Till Master PIN Unlock Modal */}
+      <Modal
+        visible={isPinUnlockOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setIsPinUnlockOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxWidth: 360, alignSelf: 'center' }]}>
+            <View style={styles.modalHeader}>
+              <View style={styles.smsHeaderLeft}>
+                <Ionicons name="lock-closed" size={20} color={EmeraldTokens.deepPine} />
+                <Text style={styles.modalTitle}>Enter Master PIN</Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  setIsPinUnlockOpen(false);
+                  setPinAttempt('');
+                  setPinError(null);
+                }}
+                hitSlop={10}
+                style={styles.closeBtn}
+              >
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.smsInstruction}>
+              Enter your 4-digit till master PIN to disable the privacy shield and reveal financial totals.
+            </Text>
+
+            <M3Input
+              label="4-Digit PIN"
+              value={pinAttempt}
+              onChangeText={(t) => {
+                setPinAttempt(t);
+                if (pinError) setPinError(null);
+              }}
+              placeholder="••••"
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry
+              autoFocus
+            />
+
+            {pinError && (
+              <Text style={{ color: '#E11D48', fontSize: 12, marginTop: 4, fontWeight: '600' }}>
+                {pinError}
+              </Text>
+            )}
+
+            <M3Button
+              label="UNLOCK TILL COUNTER"
+              variant="mint"
+              size="lg"
+              onPress={handleVerifyPinAndUnmask}
+              style={{ marginTop: 14 }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -526,18 +922,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: EmeraldTokens.deepPine,
   },
-  // Top Emerald Hero Header
   emeraldHeader: {
     backgroundColor: EmeraldTokens.deepPine,
     paddingTop: Platform.OS === 'ios' ? 52 : 44,
     paddingHorizontal: 22,
-    paddingBottom: 24,
+    paddingBottom: 22,
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
+  },
+  topRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   greetingTitle: {
     fontSize: 22,
@@ -551,10 +951,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '500',
   },
-  bellButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -562,12 +962,37 @@ const styles = StyleSheet.create({
   },
   bellBadge: {
     position: 'absolute',
-    top: 9,
-    right: 10,
+    top: 8,
+    right: 9,
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: EmeraldTokens.mintCta,
+  },
+
+  // Currency Drawer Switcher Chips
+  currencyDrawerRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  currencyDrawerChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: DesignTokens.shapes.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  currencyDrawerChipActive: {
+    backgroundColor: EmeraldTokens.mintCta,
+  },
+  currencyDrawerChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  currencyDrawerChipTextActive: {
+    color: EmeraldTokens.mintDarkText,
+    fontWeight: '700',
   },
 
   // 3-Column Stat Bar (Directly from Screen 1)
@@ -585,7 +1010,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.2,
@@ -612,8 +1037,65 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 18,
     paddingBottom: 40,
+  },
+
+  // 3-Drawer Cashbox Card
+  multiDrawerCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.06)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  multiDrawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  multiDrawerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  multiDrawerCols: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  drawerItem: {
+    flex: 1,
+    backgroundColor: '#F8FAF9',
+    borderRadius: 14,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  drawerItemActive: {
+    borderColor: EmeraldTokens.mintCta,
+    backgroundColor: '#F0FDF4',
+  },
+  drawerCurCode: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: EmeraldTokens.textMuted,
+    textTransform: 'uppercase',
+  },
+  drawerBalance: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginVertical: 2,
+  },
+  drawerCount: {
+    fontSize: 10,
+    color: EmeraldTokens.textSubtle,
   },
 
   // Period Selector Chips
@@ -632,7 +1114,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // 2x2 Action Cards Grid (Directly from Screen 1)
+  // 2x2 Action Cards Grid
   actionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -755,7 +1237,7 @@ const styles = StyleSheet.create({
     color: EmeraldTokens.deepPine,
   },
 
-  // Transaction Cards (Inspired by Screen 3)
+  // Transaction Cards
   transactionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
@@ -865,7 +1347,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  smsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   modalTitle: {
     fontSize: 18,
@@ -892,5 +1379,72 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: EmeraldTokens.textMuted,
+  },
+
+  // SMS Modal specific styles
+  smsInstruction: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  smsChipRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  smsChip: {
+    backgroundColor: '#F1F5F3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: DesignTokens.shapes.pill,
+    marginRight: 8,
+  },
+  smsChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: EmeraldTokens.deepPine,
+  },
+  smsInputWrapper: {
+    backgroundColor: '#F8FAF9',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.1)',
+    padding: 12,
+    marginBottom: 14,
+  },
+  smsTextInput: {
+    fontSize: 13,
+    color: EmeraldTokens.textSlate,
+    textAlignVertical: 'top',
+    minHeight: 60,
+  },
+  parsedCard: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  parsedTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  parsedAmount: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  parsedDesc: {
+    fontSize: 13,
+    color: EmeraldTokens.textSlate,
+    marginBottom: 4,
+  },
+  parsedSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+  },
+  parseErrorText: {
+    fontSize: 12,
+    color: '#E11D48',
   },
 });

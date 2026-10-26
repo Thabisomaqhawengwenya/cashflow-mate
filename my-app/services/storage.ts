@@ -362,6 +362,42 @@ const INITIAL_TRANSACTIONS: MobileTransaction[] = [
     category: 'sales_goods',
     reviewStatus: 'confirmed',
   },
+  {
+    id: 'tx_18',
+    transactionDate: '2026-10-25',
+    description: 'EcoCash ZiG: 5x Sugar & Mealie Meal Customer Sale',
+    amount: 320.00,
+    currency: 'ZWG',
+    direction: 'inflow',
+    type: 'business_income',
+    category: 'sales_goods',
+    originalReference: 'EC-ZWG-9021',
+    reviewStatus: 'confirmed',
+  },
+  {
+    id: 'tx_19',
+    transactionDate: '2026-10-25',
+    description: 'Bakers Inn Bread ZiG Delivery Settlement',
+    amount: 140.00,
+    currency: 'ZWG',
+    direction: 'outflow',
+    type: 'business_expense',
+    category: 'stock_purchase',
+    originalReference: 'BP-ZWG-4412',
+    reviewStatus: 'confirmed',
+  },
+  {
+    id: 'tx_20',
+    transactionDate: '2026-10-26',
+    description: 'Kombi Cross-Border Haulage (Bulawayo-Beitbridge)',
+    amount: 150.00,
+    currency: 'ZAR',
+    direction: 'outflow',
+    type: 'business_expense',
+    category: 'transport_fuel',
+    originalReference: 'ZAR-KM-8821',
+    reviewStatus: 'confirmed',
+  },
 ];
 
 const INITIAL_DEBTS: MobileDebt[] = [
@@ -588,4 +624,46 @@ export class MobileStorageService {
       categoryBreakdown,
     };
   }
+
+  static calculateMultiCurrencyCashbox(transactions: MobileTransaction[]): MultiCurrencyCashbox {
+    const result: MultiCurrencyCashbox = {
+      USD: { currency: 'USD', label: 'USD Cash Drawer', inflows: 0, outflows: 0, netCashFlow: 0, count: 0 },
+      ZWG: { currency: 'ZWG', label: 'EcoCash ZiG Wallet', inflows: 0, outflows: 0, netCashFlow: 0, count: 0 },
+      ZAR: { currency: 'ZAR', label: 'Rand Float', inflows: 0, outflows: 0, netCashFlow: 0, count: 0 },
+    };
+
+    for (const t of transactions) {
+      const cur = (t.currency || 'USD') as CurrencyCode;
+      if (!result[cur]) continue;
+      const amt = roundMoney(t.amount);
+      result[cur].count++;
+      if (t.direction === 'inflow') {
+        result[cur].inflows = roundMoney(result[cur].inflows + amt);
+      } else if (t.direction === 'outflow') {
+        result[cur].outflows = roundMoney(result[cur].outflows + amt);
+      }
+    }
+
+    result.USD.netCashFlow = roundMoney(result.USD.inflows - result.USD.outflows);
+    result.ZWG.netCashFlow = roundMoney(result.ZWG.inflows - result.ZWG.outflows);
+    result.ZAR.netCashFlow = roundMoney(result.ZAR.inflows - result.ZAR.outflows);
+
+    return result;
+  }
 }
+
+export interface CurrencyTillSummary {
+  currency: CurrencyCode;
+  label: string;
+  inflows: number;
+  outflows: number;
+  netCashFlow: number;
+  count: number;
+}
+
+export interface MultiCurrencyCashbox {
+  USD: CurrencyTillSummary;
+  ZWG: CurrencyTillSummary;
+  ZAR: CurrencyTillSummary;
+}
+
