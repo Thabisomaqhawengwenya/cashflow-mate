@@ -1,107 +1,139 @@
 import React from 'react';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { DesktopSidebar } from '@/components/DesktopSidebar';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { width } = useWindowDimensions();
+
+  // Desktop view when width >= 768px (standard tablet / desktop boundary)
+  const isDesktop = width >= 768;
 
   const getColor = (c: any, focused: boolean) =>
     focused ? EmeraldTokens.deepPine : typeof c === 'string' ? c : '#94A3B8';
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: EmeraldTokens.deepPine,
-        tabBarInactiveTintColor: '#94A3B8',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: 'rgba(12, 62, 53, 0.08)',
-          borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 10,
-          paddingTop: 8,
-          shadowColor: '#0C3E35',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.04,
-          shadowRadius: 8,
-          elevation: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
-          letterSpacing: 0.2,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'grid' : 'grid-outline'}
-              size={22}
-              color={getColor(color, focused)}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="transactions"
-        options={{
-          title: 'Records',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'receipt' : 'receipt-outline'}
-              size={22}
-              color={getColor(color, focused)}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="import"
-        options={{
-          title: 'Import',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'cloud-upload' : 'cloud-upload-outline'}
-              size={22}
-              color={getColor(color, focused)}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="debts"
-        options={{
-          title: 'Debts',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'people' : 'people-outline'}
-              size={22}
-              color={getColor(color, focused)}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: 'Assistant',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'sparkles' : 'sparkles-outline'}
-              size={22}
-              color={getColor(color, focused)}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+    <View style={[styles.rootContainer, isDesktop && styles.rootContainerDesktop]}>
+      {/* 1. Left Sidebar only rendered on Desktop */}
+      {isDesktop && <DesktopSidebar />}
+
+      {/* 2. Main Content View holding the Tabs */}
+      <View style={styles.screenWrapper}>
+        <Tabs
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: EmeraldTokens.deepPine,
+            tabBarInactiveTintColor: '#94A3B8',
+            // Completely hide the bottom tab bar on desktop; preserve in mobile
+            tabBarStyle: isDesktop
+              ? { display: 'none' }
+              : {
+                  backgroundColor: '#FFFFFF',
+                  borderTopColor: 'rgba(12, 62, 53, 0.08)',
+                  borderTopWidth: 1,
+                  height: 64,
+                  paddingBottom: 10,
+                  paddingTop: 8,
+                  shadowColor: '#0C3E35',
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.04,
+                  shadowRadius: 8,
+                  elevation: 4,
+                },
+            tabBarLabelStyle: {
+              fontSize: 11,
+              fontWeight: '700',
+              letterSpacing: 0.2,
+            },
+          }}
+        >
+          <Tabs.Screen
+            name="index"
+            options={{
+              title: 'Home',
+              tabBarIcon: ({ color, focused }) => (
+                <Ionicons
+                  name={focused ? 'grid' : 'grid-outline'}
+                  size={22}
+                  color={getColor(color, focused)}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="transactions"
+            options={{
+              title: 'Records',
+              tabBarIcon: ({ color, focused }) => (
+                <Ionicons
+                  name={focused ? 'receipt' : 'receipt-outline'}
+                  size={22}
+                  color={getColor(color, focused)}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="import"
+            options={{
+              title: 'Import',
+              tabBarIcon: ({ color, focused }) => (
+                <Ionicons
+                  name={focused ? 'cloud-upload' : 'cloud-upload-outline'}
+                  size={22}
+                  color={getColor(color, focused)}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="debts"
+            options={{
+              title: 'Debts',
+              tabBarIcon: ({ color, focused }) => (
+                <Ionicons
+                  name={focused ? 'people' : 'people-outline'}
+                  size={22}
+                  color={getColor(color, focused)}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="insights"
+            options={{
+              title: 'Assistant',
+              tabBarIcon: ({ color, focused }) => (
+                <Ionicons
+                  name={focused ? 'sparkles' : 'sparkles-outline'}
+                  size={22}
+                  color={getColor(color, focused)}
+                />
+              ),
+            }}
+          />
+        </Tabs>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    backgroundColor: EmeraldTokens.deepPine,
+  },
+  rootContainerDesktop: {
+    flexDirection: 'row',
+  },
+  screenWrapper: {
+    flex: 1,
+    height: '100%',
+  },
+});
