@@ -1,8 +1,8 @@
 {
-  "establishedAt": "2026-10-26T14:06:50.895Z",
+  "establishedAt": "2026-10-27T07:41:07.695Z",
   "supremeCommander": "Mr Q",
   "executive2iC": "Antigravity",
-  "totalMembers": 12,
+  "totalMembers": 18,
   "members": [
     {
       "id": "deepseek",
@@ -63,6 +63,36 @@
       "id": "subagent-zim",
       "name": "Zim Market Analyst",
       "role": "EcoCash, Mukando & Trader Empathy Lead"
+    },
+    {
+      "id": "ecc-architect",
+      "name": "ECC Architect",
+      "role": "System Architecture & Technical Strategy"
+    },
+    {
+      "id": "ecc-code-reviewer",
+      "name": "ECC Code Reviewer",
+      "role": "Code Quality Gate & TypeScript Standards"
+    },
+    {
+      "id": "ecc-performance-optimizer",
+      "name": "ECC Performance Optimizer",
+      "role": "Speed, Rendering & 60fps Mobile Performance"
+    },
+    {
+      "id": "ecc-refactor-cleaner",
+      "name": "ECC Refactor Cleaner",
+      "role": "Code Health & Complexity Reduction"
+    },
+    {
+      "id": "ecc-e2e-runner",
+      "name": "ECC E2E Runner",
+      "role": "End-to-End Verification & Test Automation"
+    },
+    {
+      "id": "ecc-build-resolver",
+      "name": "ECC Build Resolver",
+      "role": "Compiler Diagnostics & Bundler Integrity"
     }
   ],
   "tandems": [
@@ -110,6 +140,34 @@
       "partner": "Codebuff",
       "objective": "Provide parallel peripheral code generation, micro-tool scaffolding, and utility automation.",
       "handshake": "OpenCode and Codebuff synchronize desktop runtimes to absorb burst workloads."
+    },
+    {
+      "name": "Systems Architecture & Modularity Wing",
+      "lead": "ECC Architect",
+      "partner": "Claude Code",
+      "objective": "Enforce high-cohesion, low-coupling system boundaries across the monorepo and evaluate long-term scalability trade-offs.",
+      "handshake": "ECC Architect aligns monorepo interface contracts with Claude Code’s architectural review gates."
+    },
+    {
+      "name": "Code Health & Cleanliness Legion",
+      "lead": "ECC Code Reviewer",
+      "partner": "ECC Refactor Cleaner",
+      "objective": "Enforce zero dead code, verify strict TypeScript safety, eliminate duplicate helpers, and reduce cyclomatic complexity.",
+      "handshake": "ECC Code Reviewer flags unidiomatic patterns and directs ECC Refactor Cleaner to perform behavior-preserving simplifications."
+    },
+    {
+      "name": "Verification & Automated Gate Citadel",
+      "lead": "ECC E2E Runner",
+      "partner": "Security Sentinel",
+      "objective": "Execute end-to-end user flows, automated Vitest test harnesses, and cryptographic license verification.",
+      "handshake": "ECC E2E Runner automates full transaction journeys while Security Sentinel verifies cryptographic hash invariants."
+    },
+    {
+      "name": "Mobile Speed & Compiler Integrity Squad",
+      "lead": "ECC Performance Optimizer",
+      "partner": "ECC Build Resolver",
+      "objective": "Guarantee 60 FPS on lower-end Android hardware, prevent re-render thrashing, and resolve compiler/bundler conflicts instantly.",
+      "handshake": "ECC Performance Optimizer audits React Native memoization while ECC Build Resolver keeps TypeScript and Metro builds instant."
     }
   ],
   "councilCodeOfHonor": [

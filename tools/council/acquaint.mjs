@@ -54,6 +54,34 @@ const TANDEMS = [
     partner: 'Codebuff',
     objective: 'Provide parallel peripheral code generation, micro-tool scaffolding, and utility automation.',
     handshake: 'OpenCode and Codebuff synchronize desktop runtimes to absorb burst workloads.'
+  },
+  {
+    name: 'Systems Architecture & Modularity Wing',
+    lead: 'ECC Architect',
+    partner: 'Claude Code',
+    objective: 'Enforce high-cohesion, low-coupling system boundaries across the monorepo and evaluate long-term scalability trade-offs.',
+    handshake: 'ECC Architect aligns monorepo interface contracts with Claude Code’s architectural review gates.'
+  },
+  {
+    name: 'Code Health & Cleanliness Legion',
+    lead: 'ECC Code Reviewer',
+    partner: 'ECC Refactor Cleaner',
+    objective: 'Enforce zero dead code, verify strict TypeScript safety, eliminate duplicate helpers, and reduce cyclomatic complexity.',
+    handshake: 'ECC Code Reviewer flags unidiomatic patterns and directs ECC Refactor Cleaner to perform behavior-preserving simplifications.'
+  },
+  {
+    name: 'Verification & Automated Gate Citadel',
+    lead: 'ECC E2E Runner',
+    partner: 'Security Sentinel',
+    objective: 'Execute end-to-end user flows, automated Vitest test harnesses, and cryptographic license verification.',
+    handshake: 'ECC E2E Runner automates full transaction journeys while Security Sentinel verifies cryptographic hash invariants.'
+  },
+  {
+    name: 'Mobile Speed & Compiler Integrity Squad',
+    lead: 'ECC Performance Optimizer',
+    partner: 'ECC Build Resolver',
+    objective: 'Guarantee 60 FPS on lower-end Android hardware, prevent re-render thrashing, and resolve compiler/bundler conflicts instantly.',
+    handshake: 'ECC Performance Optimizer audits React Native memoization while ECC Build Resolver keeps TypeScript and Metro builds instant.'
   }
 ];
 

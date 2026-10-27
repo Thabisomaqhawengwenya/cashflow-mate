@@ -1,34 +1,23 @@
 /**
  * CashFlow Mate - Council of AI Agents Dispatcher
- * Allows Mr Q and Antigravity (2iC) to dispatch tasks across Council members:
- * - DeepSeek (Strategic Thinker & Edge Case Auditor)
- * - Aesthetic Craftsman (UI/UX & Design Specialist)
- * - Core Systems Engineer (Deterministic Math & Storage)
- * - Security Sentinel (HMAC-SHA256 & QA Harness)
- * - Zimbabwe Market Analyst (EcoCash, Mukando & Trader Empathy)
+ * Allows Mr Q and Antigravity (2iC) to dispatch tasks across Council members
  */
 
 import { execSync } from 'child_process';
 import path from 'path';
-
-const COUNCIL_MEMBERS = [
-  { id: 'deepseek', name: 'DeepSeek', role: 'Strategic Thinker & Critical Auditor', status: 'Connected via Bridge' },
-  { id: 'aesthetic', name: 'Aesthetic Craftsman', role: 'UI/UX & Material 3 Expressive Lead', status: 'Active Subagent' },
-  { id: 'core', name: 'Core Systems Engineer', role: 'Deterministic Math & Storage Engine', status: 'Active Subagent' },
-  { id: 'sentinel', name: 'Security Sentinel', role: 'HMAC-SHA256 & QA Test Automation', status: 'Active Subagent' },
-  { id: 'zim-analyst', name: 'Zim Market Analyst', role: 'EcoCash, Mukando & Trader Empathy', status: 'Active Subagent' },
-];
+import { COUNCIL_REGISTRY } from './hub.mjs';
 
 function printCouncilRoster() {
-  console.log('\n======================================================');
-  console.log('   THE COUNCIL OF AI AGENTS — CASHFLOW MATE');
-  console.log('   Supreme Commander : Mr Q');
-  console.log('   Second in Command : Antigravity');
-  console.log('======================================================\n');
-  COUNCIL_MEMBERS.forEach((m, idx) => {
-    console.log(` [${idx + 1}] ${m.name.padEnd(22)} | ${m.role.padEnd(38)} | ${m.status}`);
+  console.log('\n========================================================================================');
+  console.log('                 THE HIGH COUNCIL OF AI AGENTS — CASHFLOW MATE');
+  console.log('                 Supreme Commander : Mr Q (Maqhawe T Ngwenya)');
+  console.log('                 Executive 2iC     : Antigravity');
+  console.log('========================================================================================\n');
+  COUNCIL_REGISTRY.forEach((m, idx) => {
+    console.log(` [${String(idx + 1).padStart(2, ' ')}] ${m.name.padEnd(26)} | ${m.role.padEnd(46)} | ${m.tier}`);
   });
-  console.log('\nReady to receive executive commands from Mr Q.\n');
+  console.log(`\nTotal Active Council Strength: ${COUNCIL_REGISTRY.length} Specialized AI Engines.`);
+  console.log('Ready to receive executive commands from Mr Q.\n');
 }
 
 const args = process.argv.slice(2);
@@ -39,12 +28,21 @@ if (args.includes('--roster') || args.length === 0) {
   const task = args[taskIndex] || 'General System Review';
   console.log(`[Council 2iC] Antigravity dispatching task to Council: "${task}"`);
   
-  // Notify DeepSeek Bridge
+  // 1. Notify DeepSeek Bridge
   try {
     execSync(`node tools/deepseek-bridge/notify.mjs --event council.task.dispatched --summary "${task.replace(/"/g, '\\"')}"`, {
       stdio: 'inherit',
     });
   } catch (e) {
     console.error('Bridge notification error:', e.message);
+  }
+
+  // 2. Notify Codex IPC Socket Bridge
+  try {
+    execSync(`node tools/codex-bridge/notify.mjs "${task.replace(/"/g, '\\"')}"`, {
+      stdio: 'inherit',
+    });
+  } catch (e) {
+    console.error('Codex Bridge notification error:', e.message);
   }
 }
