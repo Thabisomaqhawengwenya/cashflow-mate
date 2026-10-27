@@ -170,10 +170,10 @@ export const DesktopSidebar: React.FC = () => {
       <View style={styles.currencyBox}>
         <View style={styles.currencyBoxHeader}>
           <Ionicons name="cash-outline" size={14} color="#6EE7B7" />
-          <Text style={styles.currencyBoxTitle}>3-Drawer Segregation</Text>
+          <Text style={styles.currencyBoxTitle}>3-Drawer Till Float</Text>
         </View>
         <Text style={styles.currencyBoxDesc}>
-          USD • ZiG • ZAR cash floats operate in strict isolation with zero float rounding.
+          USD • ZiG • ZAR cash floats segregated with automated End-of-Day Z-Report reconciliation.
         </Text>
       </View>
 

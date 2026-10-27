@@ -10,6 +10,7 @@ export default defineConfig({
     environment: 'node',
     alias: {
       '@': path.resolve(__dirname, './'),
+      'react-native': 'react-native-web',
     },
   },
 });

@@ -22,7 +22,9 @@ import {
   formatMoney,
   sortTransactionsByDateDesc,
   CATEGORIES,
+  BusinessProfile,
 } from '@/services/storage';
+import { MobileReceiptService } from '@/services/receipt';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
@@ -39,10 +41,15 @@ export default function TransactionsScreen() {
   const [selectedTx, setSelectedTx] = useState<MobileTransaction | null>(null);
   const [editCategory, setEditCategory] = useState('sales_goods');
   const [editNotes, setEditNotes] = useState('');
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
   const loadTransactions = useCallback(async () => {
-    const all = await MobileStorageService.getTransactions();
+    const [all, biz] = await Promise.all([
+      MobileStorageService.getTransactions(),
+      MobileStorageService.getBusiness(),
+    ]);
     setTransactions(all);
+    setBusiness(biz);
   }, []);
 
   useFocusEffect(
@@ -380,6 +387,16 @@ export default function TransactionsScreen() {
                 />
 
                 <Pressable
+                  onPress={() => selectedTx && MobileReceiptService.shareReceipt(selectedTx, business)}
+                  style={styles.shareReceiptBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share digital receipt on WhatsApp"
+                >
+                  <Ionicons name="share-social-outline" size={17} color={EmeraldTokens.mintDarkText} />
+                  <Text style={styles.shareReceiptBtnText}>Share Digital Receipt (WhatsApp)</Text>
+                </Pressable>
+
+                <Pressable
                   onPress={() => selectedTx && handleDelete(selectedTx.id)}
                   style={styles.deleteRow}
                 >
@@ -649,6 +666,23 @@ const styles = StyleSheet.create({
   catChoiceText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  shareReceiptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: EmeraldTokens.mintSoft,
+    paddingVertical: 12,
+    borderRadius: DesignTokens.shapes.pill,
+    marginTop: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: EmeraldTokens.mintBorder,
+  },
+  shareReceiptBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.mintDarkText,
   },
   deleteRow: {
     flexDirection: 'row',

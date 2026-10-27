@@ -60,4 +60,19 @@ describe('Mobile Security & PIN Protection Service', () => {
     expect(await MobileSecurityService.togglePrivacyMask()).toBe(false);
     expect(MobileSecurityService.formatMasked('$1,240.00', false)).toBe('$1,240.00');
   });
+
+  it('triggers lockout after 5 consecutive failed attempts', async () => {
+    await MobileSecurityService.setPin('1234');
+
+    // 4 failed attempts
+    for (let i = 0; i < 4; i++) {
+      expect(await MobileSecurityService.verifyPin('0000')).toBe(false);
+    }
+
+    // 5th failed attempt should trigger lockout error
+    await expect(MobileSecurityService.verifyPin('0000')).rejects.toThrow('30 seconds');
+
+    // Subsequent calls while locked out should be blocked
+    await expect(MobileSecurityService.verifyPin('1234')).rejects.toThrow('locked');
+  });
 });

@@ -124,6 +124,14 @@ function stringToBytes(str: string): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
+export function sha256(message: string): string {
+  const bytes = stringToBytes(message);
+  const hashBytes = sha256Bytes(bytes);
+  return Array.from(hashBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export function hmacSha256(key: string, message: string): string {
   const blockSize = 64;
   let keyBytes = stringToBytes(key);

@@ -29,6 +29,8 @@ import {
 } from '@/services/storage';
 import { parseZimbabweSms, ParsedSmsResult } from '@/services/smsParser';
 import { MobileSecurityService } from '@/services/security';
+import { MobileExchangeService, PortfolioValuation } from '@/services/exchangeRates';
+import { MobileReconciliationService, ZReport } from '@/services/reconciliation';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
@@ -82,6 +84,18 @@ export default function OverviewScreen() {
   const [rawSmsInput, setRawSmsInput] = useState('');
   const [parsedSms, setParsedSms] = useState<ParsedSmsResult | null>(null);
 
+  // Unified Portfolio & Exchange Rates State
+  const [portfolioValuation, setPortfolioValuation] = useState<PortfolioValuation | null>(null);
+  const [showPortfolioTotal, setShowPortfolioTotal] = useState(false);
+
+  // Day-End Shift Balancing (Z-Report) State
+  const [isZReportModalOpen, setIsZReportModalOpen] = useState(false);
+  const [physicalUsd, setPhysicalUsd] = useState('');
+  const [physicalZwg, setPhysicalZwg] = useState('');
+  const [physicalZar, setPhysicalZar] = useState('');
+  const [zReportNotes, setZReportNotes] = useState('');
+  const [isSavingZReport, setIsSavingZReport] = useState(false);
+
   const loadData = useCallback(async () => {
     const biz = await MobileStorageService.getBusiness();
     const txs = await MobileStorageService.getTransactions();
@@ -93,6 +107,14 @@ export default function OverviewScreen() {
     if (biz?.currency) {
       setActiveCurrency(biz.currency);
     }
+
+    // Compute unified portfolio valuation
+    try {
+      const cashbox = MobileStorageService.calculateMultiCurrencyCashbox(txs);
+      const rates = await MobileExchangeService.getRates();
+      const val = MobileExchangeService.calculatePortfolioValuation(cashbox, rates);
+      setPortfolioValuation(val);
+    } catch {}
   }, []);
 
   useFocusEffect(
@@ -105,6 +127,41 @@ export default function OverviewScreen() {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
+  };
+
+  const handleOpenZReport = async () => {
+    const expected = await MobileReconciliationService.getExpectedBalances();
+    setPhysicalUsd(String(expected.USD));
+    setPhysicalZwg(String(expected.ZWG));
+    setPhysicalZar(String(expected.ZAR));
+    setZReportNotes('');
+    setIsZReportModalOpen(true);
+  };
+
+  const handleSaveZReport = async () => {
+    setIsSavingZReport(true);
+    try {
+      const report = await MobileReconciliationService.closeShiftAndGenerateZReport(
+        {
+          USD: parseFloat(physicalUsd) || 0,
+          ZWG: parseFloat(physicalZwg) || 0,
+          ZAR: parseFloat(physicalZar) || 0,
+        },
+        business?.name || 'Master Cashier',
+        zReportNotes
+      );
+      setIsSavingZReport(false);
+      setIsZReportModalOpen(false);
+      Alert.alert(
+        report.status === 'balanced' ? 'Shift Balanced! ✅' : 'Z-Report Recorded ⚠️',
+        report.status === 'balanced'
+          ? 'Physical cash in all 3 drawers matches expected till float perfectly.'
+          : `Shift closed with variance. USD Variance: ${report.variances.USD >= 0 ? '+' : ''}$${report.variances.USD}. Record saved.`
+      );
+    } catch (e: any) {
+      setIsSavingZReport(false);
+      Alert.alert('Error', e.message || 'Could not save Z-Report.');
+    }
   };
 
   const handleToggleMask = async () => {
@@ -344,6 +401,23 @@ export default function OverviewScreen() {
             <Text style={styles.statLabel}>Net Till Balance</Text>
           </View>
         </View>
+
+        {/* Unified Multi-Currency Portfolio Valuation Pill */}
+        <Pressable
+          onPress={() => setShowPortfolioTotal(!showPortfolioTotal)}
+          style={styles.portfolioValuationPill}
+          accessibilityRole="button"
+          accessibilityLabel="Toggle unified portfolio valuation"
+        >
+          <Ionicons name="sparkles" size={13} color={EmeraldTokens.mintCta} />
+          <Text style={styles.portfolioValuationText}>
+            Unified Worth:{' '}
+            <Text style={styles.portfolioValuationAmount}>
+              {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} USD eq.`}
+            </Text>
+          </Text>
+          <Ionicons name="swap-horizontal" size={13} color="#A7F3D0" />
+        </Pressable>
       </View>
 
       {/* 2. White Curved Body Sheet */}
@@ -545,6 +619,28 @@ export default function OverviewScreen() {
             </Text>
           </View>
         )}
+
+        {/* Day-End Shift Balancing & Z-Report Banner */}
+        <Pressable
+          onPress={handleOpenZReport}
+          style={styles.zReportCard}
+          accessibilityRole="button"
+          accessibilityLabel="Open Day-End Shift Balancing Z-Report"
+        >
+          <View style={styles.zReportLeft}>
+            <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
+              <Ionicons name="clipboard-outline" size={16} color={EmeraldTokens.pastelIndigoText} />
+            </View>
+            <View>
+              <Text style={styles.zReportCardTitle}>Day-End Shift Balancing (Z-Report)</Text>
+              <Text style={styles.zReportCardSub}>Count cash, verify variance & close day</Text>
+            </View>
+          </View>
+          <View style={styles.zReportRight}>
+            <Text style={styles.zReportActionText}>Count Float</Text>
+            <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.deepPine} />
+          </View>
+        </Pressable>
 
         {/* 4. Recent Transactions Section (Screen 3) */}
         <View style={styles.sectionHeader}>
@@ -913,6 +1009,80 @@ export default function OverviewScreen() {
           </View>
         </View>
       </Modal>
+      {/* Day-End Shift Balancing (Z-Report) Modal */}
+      <Modal
+        visible={isZReportModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsZReportModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.smsHeaderLeft}>
+                <Ionicons name="clipboard" size={20} color={EmeraldTokens.deepPine} />
+                <Text style={styles.modalTitle}>Day-End Shift Balancing</Text>
+              </View>
+              <Pressable
+                onPress={() => setIsZReportModalOpen(false)}
+                hitSlop={10}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close modal"
+              >
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.zReportInstruction}>
+                Physically count cash notes and check your EcoCash & InnBucks balances. Enter them below to verify till reconciliation.
+              </Text>
+
+              <M3Input
+                label="Physical USD Cash Count ($)"
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                value={physicalUsd}
+                onChangeText={setPhysicalUsd}
+              />
+
+              <M3Input
+                label="EcoCash / ZiG Balance (ZiG)"
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                value={physicalZwg}
+                onChangeText={setPhysicalZwg}
+              />
+
+              <M3Input
+                label="Physical ZAR Rand Count (R)"
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                value={physicalZar}
+                onChangeText={setPhysicalZar}
+              />
+
+              <M3Input
+                label="Shift Notes (Optional)"
+                placeholder="e.g. End of Tuesday market shift, notes verified"
+                value={zReportNotes}
+                onChangeText={setZReportNotes}
+              />
+
+              <View style={{ marginTop: 18, marginBottom: 12 }}>
+                <M3Button
+                  label={isSavingZReport ? "CLOSING SHIFT..." : "VERIFY & CLOSE Z-REPORT"}
+                  variant="mint"
+                  size="lg"
+                  isLoading={isSavingZReport}
+                  onPress={handleSaveZReport}
+                />
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1026,6 +1196,79 @@ const styles = StyleSheet.create({
     width: 1,
     height: 32,
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
+  },
+
+  portfolioValuationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: DesignTokens.shapes.pill,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.25)',
+  },
+  portfolioValuationText: {
+    fontSize: 11,
+    color: '#A7F3D0',
+    fontWeight: '600',
+  },
+  portfolioValuationAmount: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+
+  // Z-Report Card Styles
+  zReportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    borderRadius: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.08)',
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  zReportLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  zReportRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  zReportCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  zReportCardSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+    marginTop: 2,
+  },
+  zReportActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: EmeraldTokens.deepPine,
+  },
+  zReportInstruction: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: EmeraldTokens.textMuted,
+    marginBottom: 14,
   },
 
   // Curved Sheet Container

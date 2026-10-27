@@ -24,6 +24,9 @@ import {
   SecuritySettings,
 } from '@/services/security';
 import { MobileAuthService, UserSession } from '@/services/auth';
+import { MobileBackupService } from '@/services/backup';
+import { MobileExchangeService, ExchangeRateConfig } from '@/services/exchangeRates';
+import { MobileSyncService, SyncStatus } from '@/services/sync';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
@@ -42,6 +45,19 @@ export default function ModalScreen() {
   const [showPinSection, setShowPinSection] = useState(false);
   const [language, setLanguage] = useState<'EN' | 'SN'>('EN');
 
+  // Rates State
+  const [rates, setRates] = useState<ExchangeRateConfig | null>(null);
+  const [editZwgRate, setEditZwgRate] = useState('28.0');
+  const [editZarRate, setEditZarRate] = useState('18.0');
+  const [showRatesSection, setShowRatesSection] = useState(false);
+
+  // Backup & Sync State
+  const [showBackupSection, setShowBackupSection] = useState(false);
+  const [backupJson, setBackupJson] = useState('');
+  const [restoreInput, setRestoreInput] = useState('');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
   // PIN Form State
   const [newPin, setNewPin] = useState('');
   const [currentPin, setCurrentPin] = useState('');
@@ -54,6 +70,12 @@ export default function ModalScreen() {
     });
     MobileSecurityService.getSecuritySettings().then(setSecurity);
     MobileAuthService.getSession().then(setSession);
+    MobileExchangeService.getRates().then((r) => {
+      setRates(r);
+      setEditZwgRate(String(r.usdToZwg));
+      setEditZarRate(String(r.usdToZar));
+    });
+    MobileSyncService.getSyncStatus().then(setSyncStatus);
   }, []);
 
   const handleActivate = async (keyToUse?: string) => {
@@ -132,6 +154,58 @@ export default function ModalScreen() {
         },
       },
     ]);
+  };
+
+  const handleSaveRates = async () => {
+    const zwg = parseFloat(editZwgRate);
+    const zar = parseFloat(editZarRate);
+    if (!zwg || zwg <= 0 || !zar || zar <= 0) {
+      Alert.alert('Invalid Rates', 'Exchange rates must be positive numbers.');
+      return;
+    }
+    const updated = await MobileExchangeService.updateRates({ usdToZwg: zwg, usdToZar: zar });
+    setRates(updated);
+    setShowRatesSection(false);
+    Alert.alert('Rates Saved ✅', `Active market rates updated: 1 USD = ${updated.usdToZwg} ZiG | 1 USD = ${updated.usdToZar} ZAR.`);
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      const json = await MobileBackupService.createBackup();
+      setBackupJson(json);
+      Alert.alert('Backup Created! 📦', `Full till database exported (${json.length} bytes). Validated with SHA-256 integrity checksum.`);
+    } catch (e: any) {
+      Alert.alert('Backup Error', e.message || 'Could not export backup.');
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    if (!restoreInput.trim()) {
+      Alert.alert('Empty Input', 'Please paste a valid CashFlow Mate backup JSON string.');
+      return;
+    }
+    try {
+      const res = await MobileBackupService.restoreBackup(restoreInput);
+      setRestoreInput('');
+      setShowBackupSection(false);
+      Alert.alert(
+        'Database Restored! 🎉',
+        `Successfully restored ${res.transactionsCount} transactions and ${res.debtsCount} customer debts for ${res.businessName}.`
+      );
+    } catch (e: any) {
+      Alert.alert('Restore Failed ⚠️', e.message || 'Corrupted or incompatible backup format.');
+    }
+  };
+
+  const handleSyncCloud = async () => {
+    setIsSyncing(true);
+    const status = await MobileSyncService.syncWithCloud();
+    setSyncStatus(status);
+    setIsSyncing(false);
+    Alert.alert(
+      status.status === 'synced' ? 'Cloud Synced! ☁️' : 'Offline Notice 📱',
+      status.message
+    );
   };
 
   return (
@@ -256,7 +330,7 @@ export default function ModalScreen() {
               <View>
                 <Text style={styles.settingLabel}>Market Till Master PIN</Text>
                 <Text style={styles.settingSub}>
-                  {security?.isPinSet ? '4-Digit PIN Lock Engaged' : 'Not protected &bull; Tap to lock'}
+                  {security?.isPinSet ? '4-Digit PIN Lock Engaged' : 'Not protected • Tap to lock'}
                 </Text>
               </View>
             </View>
@@ -397,6 +471,143 @@ export default function ModalScreen() {
               </View>
             </View>
           )}
+
+          {/* Item 4b: Market Exchange Rates Setup */}
+          <Pressable
+            onPress={() => setShowRatesSection(!showRatesSection)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Configure Market Exchange Rates"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+                <Ionicons name="swap-horizontal" size={18} color={EmeraldTokens.pastelAmberText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Market Exchange Rates</Text>
+                <Text style={styles.settingSub}>
+                  1 USD = {rates?.usdToZwg || 28} ZiG &bull; 1 USD = {rates?.usdToZar || 18} ZAR
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showRatesSection ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
+          </Pressable>
+
+          {showRatesSection && (
+            <View style={styles.expandedSectionBox}>
+              <Text style={styles.pinExplanation}>
+                Customize street / interbank exchange rates to calculate your unified USD portfolio net worth.
+              </Text>
+              <M3Input
+                label="ZiG per 1 USD (EcoCash Rate)"
+                value={editZwgRate}
+                onChangeText={setEditZwgRate}
+                keyboardType="decimal-pad"
+              />
+              <M3Input
+                label="ZAR Rand per 1 USD"
+                value={editZarRate}
+                onChangeText={setEditZarRate}
+                keyboardType="decimal-pad"
+              />
+              <M3Button
+                label="SAVE EXCHANGE RATES"
+                variant="mint"
+                size="md"
+                onPress={handleSaveRates}
+                style={{ marginTop: 8 }}
+              />
+            </View>
+          )}
+
+          {/* Item 4c: Encrypted Backup & Restore */}
+          <Pressable
+            onPress={() => setShowBackupSection(!showBackupSection)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Backup and Restore Database"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
+                <Ionicons name="cloud-download-outline" size={18} color={EmeraldTokens.pastelMintText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Backup & Restore Ledger</Text>
+                <Text style={styles.settingSub}>Export/import portable JSON archive</Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showBackupSection ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
+          </Pressable>
+
+          {showBackupSection && (
+            <View style={styles.expandedSectionBox}>
+              <Text style={styles.pinExplanation}>
+                Create an encrypted, tamper-evident JSON backup of all transactions, debts, and settings.
+              </Text>
+              <M3Button
+                label="EXPORT FULL JSON BACKUP"
+                variant="mint"
+                size="md"
+                onPress={handleExportBackup}
+                style={{ marginBottom: 12 }}
+              />
+
+              {backupJson ? (
+                <View style={styles.backupOutputBox}>
+                  <Text style={styles.backupOutputTitle}>Backup Payload Ready ({backupJson.length} bytes):</Text>
+                  <Text style={styles.backupOutputText} numberOfLines={4}>
+                    {backupJson}
+                  </Text>
+                </View>
+              ) : null}
+
+              <Text style={[styles.inputHeading, { marginTop: 12 }]}>Restore from JSON Backup</Text>
+              <M3Input
+                label="Paste Backup JSON Content"
+                placeholder='Paste {"version": 1, ...}'
+                value={restoreInput}
+                onChangeText={setRestoreInput}
+                multiline
+                numberOfLines={3}
+              />
+              <M3Button
+                label="VERIFY & RESTORE DATABASE"
+                variant="tonal"
+                size="md"
+                onPress={handleRestoreBackup}
+                style={{ marginTop: 8 }}
+              />
+            </View>
+          )}
+
+          {/* Item 4d: Cloud Sync Bridge */}
+          <Pressable
+            onPress={handleSyncCloud}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Sync with cloud server"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
+                <Ionicons name="sync-outline" size={18} color={EmeraldTokens.pastelSkyText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Cloud Ledger Synchronization</Text>
+                <Text style={styles.settingSub}>
+                  {isSyncing ? 'Syncing...' : syncStatus?.message || 'Tap to sync records'}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="cloud-upload-outline" size={18} color={EmeraldTokens.deepPine} />
+          </Pressable>
 
           {/* Item 5: Multi-Currency Till Drawers */}
           <View style={styles.settingItem}>
@@ -701,6 +912,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: EmeraldTokens.deepPine,
     fontWeight: '600',
+  },
+
+  backupOutputBox: {
+    backgroundColor: '#F8FAF9',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 62, 53, 0.08)',
+  },
+  backupOutputTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.deepPine,
+    marginBottom: 4,
+  },
+  backupOutputText: {
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: EmeraldTokens.textMuted,
   },
 
   bottomCtaContainer: {
