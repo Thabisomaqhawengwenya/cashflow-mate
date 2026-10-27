@@ -23,6 +23,7 @@ import {
   MobileSecurityService,
   SecuritySettings,
 } from '@/services/security';
+import { MobileAuthService, UserSession } from '@/services/auth';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
@@ -34,6 +35,7 @@ export default function ModalScreen() {
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [license, setLicense] = useState<LicenseInfo | null>(null);
   const [security, setSecurity] = useState<SecuritySettings | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
   const [keyInput, setKeyInput] = useState('');
   const [isActivating, setIsActivating] = useState(false);
   const [showLicenseInput, setShowLicenseInput] = useState(false);
@@ -51,6 +53,7 @@ export default function ModalScreen() {
       setKeyInput(lic.key);
     });
     MobileSecurityService.getSecuritySettings().then(setSecurity);
+    MobileAuthService.getSession().then(setSession);
   }, []);
 
   const handleActivate = async (keyToUse?: string) => {
@@ -188,6 +191,27 @@ export default function ModalScreen() {
         <Text style={styles.sectionHeading}>General & Security</Text>
 
         <View style={styles.settingsGroup}>
+          {/* Item 0: Trader Account & Sign In */}
+          <Pressable
+            onPress={() => router.push('/login')}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Manage Trader Account"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
+                <Ionicons name="person-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Trader Account</Text>
+                <Text style={styles.settingSub}>
+                  {session ? `${session.name} • ${session.isDemo ? 'Demo Mode' : session.email}` : 'Tap to sign in or switch account'}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+
           {/* Item 1: Language Setup */}
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
