@@ -11,8 +11,9 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.maqhawe.cashflowmate",
       "adaptiveIcon": {
-        "backgroundColor": "#F9F9FC",
+        "backgroundColor": "#0C3E35",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -37,6 +38,17 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "maqhawengwenya",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "d9c881ab-b0cc-4feb-8e23-80ff09f38805"
+      }
     }
   }
 }
