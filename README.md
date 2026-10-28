@@ -6,6 +6,22 @@
 
 ---
 
+## 📲 Download & Install Android APK (v1.0.0 Standalone)
+
+| Platform | Download Link | Build Type | Status |
+| :--- | :--- | :--- | :--- |
+| **Android (APK v1.0.0)** | [⬇️ **Download CashFlow Mate v1.0.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | ✅ Live Release |
+| **GitHub Release v1.0.0** | [📦 **GitHub Release v1.0.0**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.0.0) | Official Release Asset (`95.2 MB`) | ✅ Published |
+| **Expo EAS Cloud** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/e4dab19a-9265-4829-b033-b084928bbca0) | EAS Cloud Artifact (`e4dab19a`) | ✅ Verified |
+
+### 🚀 Android Quick Install
+1. **Download**: Tap the [Download APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) link directly from your Android phone browser.
+2. **Open**: Tap the downloaded file in your notification bar or *Downloads* folder.
+3. **Allow Installation**: If prompted, enable *"Install unknown apps"* for your browser or file manager.
+4. **Launch**: Open **CashFlow Mate** from your home screen. No Expo Go or internet connection required for day-to-day till operations.
+
+---
+
 ## 1. Problem Statement & Mission
 
 Small informal traders in Zimbabwe frequently manage cash in hand, EcoCash, InnBucks, and occasional bank transfers. Their financial records are scattered across SMS notifications, paper notes, receipt books, and memory. Because of this, answering essential questions is difficult:
