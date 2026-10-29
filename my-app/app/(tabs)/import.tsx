@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useFocusEffect, router } from 'expo-router';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
+import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.06)',
+    borderColor: BlueTokens.borders,
   },
   gateLeft: {
     flexDirection: 'row',
@@ -511,8 +511,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    borderColor: BlueTokens.borders,
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.04,
     shadowRadius: 10,
@@ -556,8 +556,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    borderColor: BlueTokens.borders,
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 6,
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.05)',
+    borderColor: BlueTokens.borders,
   },
   previewTop: {
     flexDirection: 'row',

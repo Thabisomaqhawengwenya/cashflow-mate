@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { EmeraldTokens } from '@/constants/Colors';
+import { BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 
 interface NavItem {
@@ -89,7 +89,7 @@ export const DesktopSidebar: React.FC = () => {
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <View style={styles.logoBadge}>
-            <Ionicons name="wallet" size={20} color={EmeraldTokens.mintDarkText} />
+            <Ionicons name="wallet" size={20} color="#FFFFFF" />
           </View>
           <View style={styles.logoTextWrapper}>
             <Text style={styles.brandTitle}>CashFlow Mate</Text>
@@ -130,7 +130,7 @@ export const DesktopSidebar: React.FC = () => {
                 <Ionicons
                   name={active ? item.iconActive : item.iconInactive}
                   size={19}
-                  color={active ? EmeraldTokens.mintCta : '#94A3B8'}
+                  color={active ? BlueTokens.accent : '#94A3B8'}
                 />
               </View>
 
@@ -157,7 +157,7 @@ export const DesktopSidebar: React.FC = () => {
                 <Ionicons
                   name="chevron-forward"
                   size={16}
-                  color={EmeraldTokens.mintCta}
+                  color={BlueTokens.accent}
                   style={styles.activeChevron}
                 />
               )}
@@ -169,7 +169,7 @@ export const DesktopSidebar: React.FC = () => {
       {/* 3. Multi-Currency Quick Indicator Box */}
       <View style={styles.currencyBox}>
         <View style={styles.currencyBoxHeader}>
-          <Ionicons name="cash-outline" size={14} color="#6EE7B7" />
+          <Ionicons name="cash-outline" size={14} color={BlueTokens.accent} />
           <Text style={styles.currencyBoxTitle}>3-Drawer Till Float</Text>
         </View>
         <Text style={styles.currencyBoxDesc}>
@@ -189,7 +189,7 @@ export const DesktopSidebar: React.FC = () => {
           ]}
         >
           <View style={styles.profileAvatar}>
-            <Ionicons name="lock-closed" size={17} color={EmeraldTokens.mintCta} />
+            <Ionicons name="lock-closed" size={17} color={BlueTokens.accent} />
           </View>
           <View style={styles.profileTextWrapper}>
             <Text style={styles.profileTitle} numberOfLines={1}>
@@ -213,7 +213,7 @@ export const DesktopSidebar: React.FC = () => {
 const styles = StyleSheet.create({
   sidebar: {
     width: 270,
-    backgroundColor: '#072822', // Deep Obsidian Pine luxury canvas
+    backgroundColor: BlueTokens.darkNavy, // #06152E Deep Navy luxury canvas
     borderRightWidth: 1,
     borderRightColor: 'rgba(255, 255, 255, 0.08)',
     paddingVertical: 24,
@@ -240,13 +240,13 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: EmeraldTokens.mintCta,
+    backgroundColor: BlueTokens.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    shadowColor: EmeraldTokens.mintCta,
+    shadowColor: BlueTokens.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 6,
   },
   logoTextWrapper: {
@@ -261,32 +261,32 @@ const styles = StyleSheet.create({
   brandSubtitle: {
     fontSize: 9,
     fontWeight: '700',
-    color: EmeraldTokens.mintCta,
+    color: BlueTokens.accent,
     letterSpacing: 1.1,
     marginTop: 2,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    backgroundColor: 'rgba(21, 101, 216, 0.18)',
     borderRadius: DesignTokens.shapes.pill,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.22)',
+    borderColor: 'rgba(85, 215, 255, 0.28)',
     alignSelf: 'flex-start',
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: EmeraldTokens.mintCta,
+    backgroundColor: BlueTokens.success, // Semantic Green for system active/healthy
     marginRight: 7,
   },
   statusPillText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#6EE7B7',
+    color: BlueTokens.accent,
     letterSpacing: 0.6,
   },
   navSection: {
@@ -311,9 +311,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   navItemActive: {
-    backgroundColor: 'rgba(12, 62, 53, 0.85)',
+    backgroundColor: 'rgba(21, 101, 216, 0.22)',
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.25)',
+    borderColor: 'rgba(85, 215, 255, 0.32)',
   },
   activeBar: {
     position: 'absolute',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     bottom: 8,
     width: 3.5,
     borderRadius: 2,
-    backgroundColor: EmeraldTokens.mintCta,
+    backgroundColor: BlueTokens.accent,
   },
   iconSquircle: {
     width: 36,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   iconSquircleActive: {
-    backgroundColor: 'rgba(52, 211, 153, 0.16)',
+    backgroundColor: 'rgba(21, 101, 216, 0.35)',
   },
   iconSquircleInactive: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -357,17 +357,17 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   navSublabelActive: {
-    color: '#A7F3D0',
+    color: BlueTokens.accent,
   },
   activeChevron: {
     marginLeft: 6,
   },
   currencyBox: {
-    backgroundColor: 'rgba(12, 62, 53, 0.55)',
+    backgroundColor: 'rgba(21, 101, 216, 0.16)',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: 'rgba(85, 215, 255, 0.15)',
     marginBottom: 16,
   },
   currencyBoxHeader: {
@@ -378,13 +378,13 @@ const styles = StyleSheet.create({
   currencyBoxTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#A7F3D0',
+    color: BlueTokens.accent,
     marginLeft: 6,
   },
   currencyBoxDesc: {
     fontSize: 10,
     lineHeight: 14,
-    color: 'rgba(255, 255, 255, 0.55)',
+    color: 'rgba(255, 255, 255, 0.65)',
   },
   footer: {
     paddingTop: 14,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    backgroundColor: 'rgba(21, 101, 216, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,

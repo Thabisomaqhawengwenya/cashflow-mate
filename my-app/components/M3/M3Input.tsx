@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
+import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -21,8 +21,8 @@ export const M3Input: React.FC<M3InputProps> = ({ label, error, prefix, style, .
         style={[
           styles.inputWrapper,
           {
-            backgroundColor: '#F8FAF9',
-            borderColor: error ? theme.outflow : 'rgba(12, 62, 53, 0.12)',
+            backgroundColor: '#F7F9FC',
+            borderColor: error ? theme.outflow : BlueTokens.borders,
           },
         ]}
       >

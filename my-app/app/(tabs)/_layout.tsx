@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
+import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { DesktopSidebar } from '@/components/DesktopSidebar';
 
@@ -15,7 +15,7 @@ export default function TabLayout() {
   const isDesktop = width >= 768;
 
   const getColor = (c: any, focused: boolean) =>
-    focused ? EmeraldTokens.deepPine : typeof c === 'string' ? c : '#94A3B8';
+    focused ? BlueTokens.primary : typeof c === 'string' ? c : '#94A3B8';
 
   return (
     <View style={[styles.rootContainer, isDesktop && styles.rootContainerDesktop]}>
@@ -27,19 +27,19 @@ export default function TabLayout() {
         <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarActiveTintColor: EmeraldTokens.deepPine,
+            tabBarActiveTintColor: BlueTokens.primary,
             tabBarInactiveTintColor: '#94A3B8',
             // Completely hide the bottom tab bar on desktop; preserve in mobile
             tabBarStyle: isDesktop
               ? { display: 'none' }
               : {
                   backgroundColor: '#FFFFFF',
-                  borderTopColor: 'rgba(12, 62, 53, 0.08)',
+                  borderTopColor: BlueTokens.borders,
                   borderTopWidth: 1,
                   height: 64,
                   paddingBottom: 10,
                   paddingTop: 8,
-                  shadowColor: '#0C3E35',
+                  shadowColor: BlueTokens.darkNavy,
                   shadowOffset: { width: 0, height: -2 },
                   shadowOpacity: 0.04,
                   shadowRadius: 8,

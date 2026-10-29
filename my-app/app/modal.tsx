@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
+import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { MobileStorageService, BusinessProfile } from '@/services/storage';
@@ -267,7 +267,7 @@ export default function ModalScreen() {
         <View style={styles.settingsGroup}>
           {/* Item 0: Trader Account & Sign In */}
           <Pressable
-            onPress={() => router.push('/login')}
+            onPress={() => router.push('/login' as any)}
             style={styles.settingItem}
             accessibilityRole="button"
             accessibilityLabel="Manage Trader Account"
@@ -569,7 +569,7 @@ export default function ModalScreen() {
                 </View>
               ) : null}
 
-              <Text style={[styles.inputHeading, { marginTop: 12 }]}>Restore from JSON Backup</Text>
+              <Text style={[styles.settingLabel, { marginTop: 12, marginBottom: 8 }]}>Restore from JSON Backup</Text>
               <M3Input
                 label="Paste Backup JSON Content"
                 placeholder='Paste {"version": 1, ...}'
@@ -717,8 +717,8 @@ const styles = StyleSheet.create({
     marginTop: -32,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    borderColor: BlueTokens.borders,
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -783,8 +783,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    borderColor: BlueTokens.borders,
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
@@ -915,11 +915,11 @@ const styles = StyleSheet.create({
   },
 
   backupOutputBox: {
-    backgroundColor: '#F8FAF9',
+    backgroundColor: '#F7F9FC',
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(12, 62, 53, 0.08)',
+    borderColor: BlueTokens.borders,
   },
   backupOutputTitle: {
     fontSize: 11,

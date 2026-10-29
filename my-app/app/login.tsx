@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { EmeraldTokens } from '@/constants/Colors';
+import { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { MobileAuthService } from '@/services/auth';
 import { M3Input } from '@/components/M3/M3Input';
@@ -76,7 +76,7 @@ export default function LoginScreen() {
               accessibilityLabel="Skip to Till Dashboard"
             >
               <Text style={styles.skipText}>Skip to Till</Text>
-              <Ionicons name="arrow-forward" size={15} color="#A7F3D0" />
+              <Ionicons name="arrow-forward" size={15} color={BlueTokens.accent} />
             </Pressable>
           </View>
 
@@ -180,7 +180,7 @@ export default function LoginScreen() {
           <View style={styles.footerRow}>
             <Text style={styles.footerPrompt}>New to CashFlow Mate?</Text>
             <Pressable
-              onPress={() => router.push('/signup')}
+              onPress={() => router.push('/signup' as any)}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
               <Text style={styles.signUpLink}>Create Account</Text>
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#A7F3D0',
+    color: BlueTokens.accent,
   },
   brandRow: {
     flexDirection: 'row',
@@ -277,25 +277,25 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: 'rgba(21, 101, 216, 0.22)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: DesignTokens.shapes.pill,
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.25)',
+    borderColor: 'rgba(85, 215, 255, 0.35)',
   },
   pulseDot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: EmeraldTokens.mintCta,
+    backgroundColor: BlueTokens.success,
     marginRight: 8,
   },
   statusPillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#6EE7B7',
+    color: BlueTokens.accent,
     letterSpacing: 0.6,
   },
   sheetCard: {
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 28,
     paddingBottom: 40,
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(12, 62, 53, 0.08)',
+    backgroundColor: BlueTokens.borders,
   },
   dividerText: {
     fontSize: 10,

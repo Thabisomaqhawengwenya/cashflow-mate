@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
+import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import {
@@ -319,13 +319,13 @@ export default function OverviewScreen() {
               accessibilityLabel="Toggle privacy mask for sensitive numbers"
               style={[
                 styles.iconButton,
-                isMasked && { backgroundColor: 'rgba(52, 211, 153, 0.25)' },
+                isMasked && { backgroundColor: 'rgba(21, 101, 216, 0.35)' },
               ]}
             >
               <Ionicons
                 name={isMasked ? 'eye-off-outline' : 'eye-outline'}
                 size={19}
-                color={isMasked ? EmeraldTokens.mintCta : '#FFFFFF'}
+                color={isMasked ? BlueTokens.accent : '#FFFFFF'}
               />
             </Pressable>
 
@@ -393,7 +393,7 @@ export default function OverviewScreen() {
           <View style={styles.statDivider} />
 
           <View style={styles.statCol}>
-            <Text style={[styles.statNumber, { color: EmeraldTokens.mintCta }]}>
+            <Text style={[styles.statNumber, { color: BlueTokens.accent }]}>
               {isMasked
                 ? '••••'
                 : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
@@ -416,7 +416,7 @@ export default function OverviewScreen() {
               {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} USD eq.`}
             </Text>
           </Text>
-          <Ionicons name="swap-horizontal" size={13} color="#A7F3D0" />
+          <Ionicons name="swap-horizontal" size={13} color={BlueTokens.accent} />
         </Pressable>
       </View>
 
@@ -1202,17 +1202,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: 'rgba(21, 101, 216, 0.22)',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: DesignTokens.shapes.pill,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.25)',
+    borderColor: 'rgba(85, 215, 255, 0.35)',
   },
   portfolioValuationText: {
     fontSize: 11,
-    color: '#A7F3D0',
+    color: BlueTokens.accent,
     fontWeight: '600',
   },
   portfolioValuationAmount: {
@@ -1232,7 +1232,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(12, 62, 53, 0.08)',
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -1292,7 +1292,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -1322,8 +1322,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   drawerItemActive: {
-    borderColor: EmeraldTokens.mintCta,
-    backgroundColor: '#F0FDF4',
+    borderColor: BlueTokens.primary,
+    backgroundColor: '#EBF3FF',
   },
   drawerCurCode: {
     fontSize: 10,
@@ -1371,7 +1371,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -1408,7 +1408,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 6,
@@ -1488,7 +1488,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: 'rgba(12, 62, 53, 0.06)',
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 6,

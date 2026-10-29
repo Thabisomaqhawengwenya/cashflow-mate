@@ -25,9 +25,9 @@ describe('MobileExchangeService', () => {
   });
 
   const mockCashbox: MultiCurrencyCashbox = {
-    USD: { currency: 'USD', recordedInflows: 500, recordedOutflows: 100, netCashFlow: 400, count: 5 },
-    ZWG: { currency: 'ZWG', recordedInflows: 560, recordedOutflows: 0, netCashFlow: 560, count: 2 }, // 560 / 28 = $20 USD
-    ZAR: { currency: 'ZAR', recordedInflows: 360, recordedOutflows: 0, netCashFlow: 360, count: 2 }, // 360 / 18 = $20 USD
+    USD: { currency: 'USD', label: 'USD Drawer', inflows: 500, outflows: 100, netCashFlow: 400, count: 5 },
+    ZWG: { currency: 'ZWG', label: 'ZiG Drawer', inflows: 560, outflows: 0, netCashFlow: 560, count: 2 }, // 560 / 28 = $20 USD
+    ZAR: { currency: 'ZAR', label: 'ZAR Drawer', inflows: 360, outflows: 0, netCashFlow: 360, count: 2 }, // 360 / 18 = $20 USD
   };
 
   it('calculates portfolio net worth in USD equivalent accurately', () => {

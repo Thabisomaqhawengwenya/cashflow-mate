@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { EmeraldTokens } from '@/constants/Colors';
+import { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { CurrencyCode } from '@/services/storage';
 import { MobileAuthService } from '@/services/auth';
@@ -221,7 +221,7 @@ export default function SignupScreen() {
           <View style={styles.footerRow}>
             <Text style={styles.footerPrompt}>Already have an account?</Text>
             <Pressable
-              onPress={() => router.push('/login')}
+              onPress={() => router.push('/login' as any)}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
               <Text style={styles.loginLink}>Sign In</Text>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#A7F3D0',
+    color: BlueTokens.accent,
   },
   heroGreeting: {
     fontSize: 24,
@@ -295,18 +295,18 @@ const styles = StyleSheet.create({
   featurePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: 'rgba(21, 101, 216, 0.22)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: DesignTokens.shapes.pill,
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.22)',
+    borderColor: 'rgba(85, 215, 255, 0.35)',
     gap: 6,
   },
   featurePillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#6EE7B7',
+    color: BlueTokens.accent,
   },
   sheetCard: {
     flex: 1,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 26,
     paddingBottom: 40,
-    shadowColor: '#0C3E35',
+    shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   currencyChipSelected: {
-    backgroundColor: 'rgba(12, 62, 53, 0.08)',
-    borderColor: EmeraldTokens.deepPine,
+    backgroundColor: 'rgba(21, 101, 216, 0.12)',
+    borderColor: BlueTokens.primary,
   },
   currencyChipText: {
     fontSize: 11,

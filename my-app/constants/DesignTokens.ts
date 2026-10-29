@@ -31,14 +31,14 @@ export const DesignTokens = {
   // Soft Depth Shadows
   shadows: {
     softCard: {
-      shadowColor: '#0C3E35',
+      shadowColor: '#06152E',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.05,
       shadowRadius: 12,
       elevation: 2,
     },
     floatingCta: {
-      shadowColor: '#059669',
+      shadowColor: '#1565D8',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.25,
       shadowRadius: 14,
