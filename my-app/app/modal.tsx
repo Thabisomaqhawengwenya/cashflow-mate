@@ -93,7 +93,7 @@ export default function ModalScreen() {
       setLicense(result);
       setKeyInput(result.key);
       Alert.alert(
-        'License Activated! 🎉',
+        'License Activated',
         `${result.tier.toUpperCase()} tier unlocked for ${result.traderName} until ${result.expiresAt}.`
       );
     } else {
@@ -118,7 +118,7 @@ export default function ModalScreen() {
       setSecurity(updated);
       setNewPin('');
       setShowPinSection(false);
-      Alert.alert('PIN Locked! 🔒', 'Your market till is now secured with a 4-digit master PIN.');
+      Alert.alert('PIN Locked', 'Your market till is now secured with a 4-digit master PIN.');
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Could not set PIN.');
     }
@@ -166,14 +166,14 @@ export default function ModalScreen() {
     const updated = await MobileExchangeService.updateRates({ usdToZwg: zwg, usdToZar: zar });
     setRates(updated);
     setShowRatesSection(false);
-    Alert.alert('Rates Saved ✅', `Active market rates updated: 1 USD = ${updated.usdToZwg} ZiG | 1 USD = ${updated.usdToZar} ZAR.`);
+    Alert.alert('Rates Saved', `Active market rates updated: 1 USD = ${updated.usdToZwg} ZiG | 1 USD = ${updated.usdToZar} ZAR.`);
   };
 
   const handleExportBackup = async () => {
     try {
       const json = await MobileBackupService.createBackup();
       setBackupJson(json);
-      Alert.alert('Backup Created! 📦', `Full till database exported (${json.length} bytes). Validated with SHA-256 integrity checksum.`);
+      Alert.alert('Backup Created', `Full till database exported (${json.length} bytes). Validated with SHA-256 integrity checksum.`);
     } catch (e: any) {
       Alert.alert('Backup Error', e.message || 'Could not export backup.');
     }
@@ -189,11 +189,11 @@ export default function ModalScreen() {
       setRestoreInput('');
       setShowBackupSection(false);
       Alert.alert(
-        'Database Restored! 🎉',
+        'Database Restored',
         `Successfully restored ${res.transactionsCount} transactions and ${res.debtsCount} customer debts for ${res.businessName}.`
       );
     } catch (e: any) {
-      Alert.alert('Restore Failed ⚠️', e.message || 'Corrupted or incompatible backup format.');
+      Alert.alert('Restore Failed', e.message || 'Corrupted or incompatible backup format.');
     }
   };
 
@@ -203,7 +203,7 @@ export default function ModalScreen() {
     setSyncStatus(status);
     setIsSyncing(false);
     Alert.alert(
-      status.status === 'synced' ? 'Cloud Synced! ☁️' : 'Offline Notice 📱',
+      status.status === 'synced' ? 'Cloud Synced' : 'Offline Notice',
       status.message
     );
   };

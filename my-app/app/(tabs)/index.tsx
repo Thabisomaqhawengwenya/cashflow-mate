@@ -34,21 +34,31 @@ import { MobileReconciliationService, ZReport } from '@/services/reconciliation'
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
+import {
+  EcoCashLogo,
+  InnBucksLogo,
+  BakersInnLogo,
+  CompanyBrandLogo,
+} from '@/components/BrandLogos';
 
 const SAMPLE_SMS_CHIPS = [
   {
+    type: 'ecocash',
     label: 'EcoCash $15 In',
     sms: 'Transfer Confirmation: USD 15.00 received from TAFADZWA CHIDZERO (0772123456) on 26/10/2026 at 14:22:10. TxId: MP261026.002. New balance: USD 84.50',
   },
   {
+    type: 'bakers_inn',
     label: 'Bakers Inn $35 Out',
     sms: 'Transfer Confirmation: USD 35.00 paid to BAKERS INN (Merchant Code: 19821) on 26/10/2026. TxId: MP261026.044. Fee: USD 0.70',
   },
   {
+    type: 'ecocash',
     label: 'EcoCash ZiG 250 In',
     sms: 'Transfer Confirmation: ZiG 250.00 received from MAI RUVIMBO (0781234567) on 26/10/2026. TxId: MP261026.115',
   },
   {
+    type: 'innbucks',
     label: 'InnBucks $25 In',
     sms: 'InnBucks: You have received US$25.00 from Simba Moyo (0712345678). Ref: IB-883921 on 26-10-2026. Dial *569# to view balance.',
   },
@@ -153,7 +163,7 @@ export default function OverviewScreen() {
       setIsSavingZReport(false);
       setIsZReportModalOpen(false);
       Alert.alert(
-        report.status === 'balanced' ? 'Shift Balanced! ✅' : 'Z-Report Recorded ⚠️',
+        report.status === 'balanced' ? 'Shift Balanced' : 'Z-Report Recorded',
         report.status === 'balanced'
           ? 'Physical cash in all 3 drawers matches expected till float perfectly.'
           : `Shift closed with variance. USD Variance: ${report.variances.USD >= 0 ? '+' : ''}$${report.variances.USD}. Record saved.`
@@ -277,7 +287,7 @@ export default function OverviewScreen() {
     setRawSmsInput('');
     setParsedSms(null);
     await loadData();
-    Alert.alert('Transaction Recorded! 🎉', `${parsedSms.direction === 'inflow' ? 'Sale' : 'Payment'} saved to till.`);
+    Alert.alert('Transaction Recorded', `${parsedSms.direction === 'inflow' ? 'Sale' : 'Payment'} saved to till.`);
   };
 
   const todayFormatted = new Intl.DateTimeFormat('en-US', {
@@ -464,8 +474,11 @@ export default function OverviewScreen() {
                 activeCurrency === 'ZWG' && styles.drawerItemActive,
               ]}
             >
-              <Text style={styles.drawerCurCode}>EcoCash ZiG</Text>
-              <Text style={[styles.drawerBalance, { color: EmeraldTokens.pastelMintText }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <EcoCashLogo size={15} />
+                <Text style={styles.drawerCurCode}>EcoCash ZiG</Text>
+              </View>
+              <Text style={[styles.drawerBalance, { color: BlueTokens.success }]}>
                 {displayMoney(multiDrawer.ZWG.netCashFlow, 'ZWG')}
               </Text>
               <Text style={styles.drawerCount}>{multiDrawer.ZWG.count} records</Text>
@@ -668,63 +681,68 @@ export default function OverviewScreen() {
             const catMeta = CATEGORIES[tx.category];
             return (
               <View key={tx.id} style={styles.transactionCard}>
-                <View style={styles.txTopRow}>
-                  <View style={styles.txRefRow}>
-                    <Text style={styles.txRefText}>
-                      REF: {tx.originalReference || tx.id.substring(0, 8).toUpperCase()}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <CompanyBrandLogo identifier={tx.description} size={36} style={{ marginRight: 12, marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.txTopRow}>
+                      <View style={styles.txRefRow}>
+                        <Text style={styles.txRefText}>
+                          REF: {tx.originalReference || tx.id.substring(0, 8).toUpperCase()}
+                        </Text>
+                        <Text style={styles.txDateText}>
+                          &bull; {tx.transactionDate}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.amountBadge,
+                          {
+                            backgroundColor: isInflow
+                              ? BlueTokens.pastelMint
+                              : BlueTokens.pastelRose,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.amountBadgeText,
+                            {
+                              color: isInflow
+                                ? BlueTokens.success
+                                : BlueTokens.error,
+                            },
+                          ]}
+                        >
+                          {isInflow ? '+' : '-'}
+                          {displayMoney(tx.amount, tx.currency)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.txDescription} numberOfLines={2}>
+                      {tx.description}
                     </Text>
-                    <Text style={styles.txDateText}>
-                      &bull; {tx.transactionDate}
-                    </Text>
+
+                    <View style={styles.txBottomRow}>
+                      <View style={styles.txCategoryChip}>
+                        <Ionicons
+                          name={isInflow ? 'arrow-down-circle' : 'arrow-up-circle'}
+                          size={13}
+                          color={isInflow ? BlueTokens.success : BlueTokens.error}
+                          style={{ marginRight: 4 }}
+                        />
+                        <Text style={styles.txCategoryText}>
+                          {catMeta ? catMeta.label : tx.category}
+                        </Text>
+                      </View>
+
+                      <M3Badge
+                        label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'PENDING'}
+                        variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
+                      />
+                    </View>
                   </View>
-
-                  <View
-                    style={[
-                      styles.amountBadge,
-                      {
-                        backgroundColor: isInflow
-                          ? EmeraldTokens.pastelMint
-                          : EmeraldTokens.pastelRose,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.amountBadgeText,
-                        {
-                          color: isInflow
-                            ? EmeraldTokens.pastelMintText
-                            : EmeraldTokens.pastelRoseText,
-                        },
-                      ]}
-                    >
-                      {isInflow ? '+' : '-'}
-                      {displayMoney(tx.amount, tx.currency)}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.txDescription} numberOfLines={2}>
-                  {tx.description}
-                </Text>
-
-                <View style={styles.txBottomRow}>
-                  <View style={styles.txCategoryChip}>
-                    <Ionicons
-                      name={isInflow ? 'arrow-down-circle' : 'arrow-up-circle'}
-                      size={13}
-                      color={isInflow ? EmeraldTokens.pastelMintText : EmeraldTokens.pastelRoseText}
-                      style={{ marginRight: 4 }}
-                    />
-                    <Text style={styles.txCategoryText}>
-                      {catMeta ? catMeta.label : tx.category}
-                    </Text>
-                  </View>
-
-                  <M3Badge
-                    label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'PENDING'}
-                    variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
-                  />
                 </View>
               </View>
             );
@@ -776,15 +794,23 @@ export default function OverviewScreen() {
 
             {/* Test Samples Carousel */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.smsChipRow}>
-              {SAMPLE_SMS_CHIPS.map((chip, i) => (
-                <Pressable
-                  key={i}
-                  onPress={() => handleApplySampleSms(chip.sms)}
-                  style={styles.smsChip}
-                >
-                  <Text style={styles.smsChipText}>{chip.label}</Text>
-                </Pressable>
-              ))}
+              {SAMPLE_SMS_CHIPS.map((chip, i) => {
+                const renderChipLogo = () => {
+                  if (chip.type === 'ecocash') return <EcoCashLogo size={15} style={{ marginRight: 6 }} />;
+                  if (chip.type === 'bakers_inn') return <BakersInnLogo size={15} style={{ marginRight: 6 }} />;
+                  return <InnBucksLogo size={15} style={{ marginRight: 6 }} />;
+                };
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={() => handleApplySampleSms(chip.sms)}
+                    style={[styles.smsChip, { flexDirection: 'row', alignItems: 'center' }]}
+                  >
+                    {renderChipLogo()}
+                    <Text style={styles.smsChipText}>{chip.label}</Text>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
 
             <View style={styles.smsInputWrapper}>
@@ -805,7 +831,7 @@ export default function OverviewScreen() {
                 style={[
                   styles.parsedCard,
                   {
-                    borderColor: parsedSms.isValid ? EmeraldTokens.mintCta : '#FB7185',
+                    borderColor: parsedSms.isValid ? BlueTokens.primary : '#FB7185',
                     backgroundColor: parsedSms.isValid ? '#F0FDF4' : '#FFF1F2',
                   },
                 ]}
@@ -813,10 +839,17 @@ export default function OverviewScreen() {
                 {parsedSms.isValid ? (
                   <>
                     <View style={styles.parsedTopRow}>
-                      <M3Badge
-                        label={parsedSms.provider.toUpperCase()}
-                        variant={parsedSms.direction === 'inflow' ? 'mint' : 'outflow'}
-                      />
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <CompanyBrandLogo
+                          identifier={parsedSms.provider + ' ' + (parsedSms.counterparty || '')}
+                          size={28}
+                          style={{ marginRight: 8 }}
+                        />
+                        <M3Badge
+                          label={parsedSms.provider.toUpperCase()}
+                          variant={parsedSms.direction === 'inflow' ? 'mint' : 'outflow'}
+                        />
+                      </View>
                       <Text
                         style={[
                           styles.parsedAmount,

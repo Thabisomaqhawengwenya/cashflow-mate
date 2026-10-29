@@ -24,6 +24,7 @@ import {
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
+import { CompanyBrandLogo } from '@/components/BrandLogos';
 
 export default function DebtsScreen() {
   const colorScheme = useColorScheme();
@@ -231,26 +232,33 @@ export default function DebtsScreen() {
                   {/* Top Row: Person Name + Remaining Badge */}
                   <View style={styles.cardTopRow}>
                     <View style={styles.personGroup}>
-                      <View
-                        style={[
-                          styles.miniAvatar,
-                          {
-                            backgroundColor: isOwedToMe
-                              ? EmeraldTokens.pastelMint
-                              : EmeraldTokens.pastelRose,
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={isOwedToMe ? 'arrow-down' : 'arrow-up'}
-                          size={13}
-                          color={
-                            isOwedToMe
-                              ? EmeraldTokens.pastelMintText
-                              : EmeraldTokens.pastelRoseText
-                          }
-                        />
-                      </View>
+                      <CompanyBrandLogo
+                        identifier={debt.personName + ' ' + (debt.notes || '')}
+                        size={38}
+                        fallbackIcon={
+                          <View
+                            style={[
+                              styles.miniAvatar,
+                              {
+                                backgroundColor: isOwedToMe
+                                  ? BlueTokens.pastelMint
+                                  : BlueTokens.pastelRose,
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name={isOwedToMe ? 'arrow-down' : 'arrow-up'}
+                              size={13}
+                              color={
+                                isOwedToMe
+                                  ? BlueTokens.success
+                                  : BlueTokens.error
+                              }
+                            />
+                          </View>
+                        }
+                        style={{ marginRight: 10 }}
+                      />
                       <View>
                         <Text style={styles.personName}>{debt.personName}</Text>
                         <Text style={styles.recordedDate}>

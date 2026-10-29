@@ -241,7 +241,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm text-md-on-surface">CashFlow Mate</span>
-            <span>&copy; {new Date().getFullYear()} — Built for Zimbabwean Traders</span>
+            <span>&copy; {new Date().getFullYear()} : Built for Zimbabwean Traders</span>
           </div>
           <div className="flex items-center gap-4">
             <a href="#privacy" onClick={(e) => { e.preventDefault(); alert("CashFlow Mate Privacy: Your transaction records are stored locally or in your encrypted private database. AI analysis only transmits sanitized descriptions."); }} className="hover:underline">

@@ -167,7 +167,7 @@ export const ImportPage: React.FC = () => {
             </h3>
             <p className="text-xs text-md-on-surface-variant max-w-sm">
               {selectedFile
-                ? `${(selectedFile.size / 1024).toFixed(1)} KB — Ready to parse`
+                ? `${(selectedFile.size / 1024).toFixed(1)} KB - Ready to parse`
                 : 'Drag and drop your statement file here, or click to browse (up to 5MB)'}
             </p>
           </div>
@@ -275,7 +275,7 @@ export const ImportPage: React.FC = () => {
                       }
                     >
                       <td className="py-2.5 px-3 text-md-on-surface-variant">{row.rowNumber}</td>
-                      <td className="py-2.5 px-3 font-mono">{row.parsedDate || '—'}</td>
+                      <td className="py-2.5 px-3 font-mono">{row.parsedDate || '-'}</td>
                       <td className="py-2.5 px-3 font-medium max-w-xs truncate">
                         {row.parsedDescription}
                         {row.duplicateReason && (
@@ -290,7 +290,7 @@ export const ImportPage: React.FC = () => {
                         )}
                       </td>
                       <td className="py-2.5 px-3 text-right font-bold tabular-nums">
-                        {row.parsedAmount !== null ? formatMoney(row.parsedAmount, row.currency) : '—'}
+                        {row.parsedAmount !== null ? formatMoney(row.parsedAmount, row.currency) : '-'}
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="px-2 py-0.5 rounded-full bg-md-surface-container-high text-[11px]">

@@ -13,18 +13,19 @@ export class MobileReceiptService {
     const typeLabel = tx.direction === 'inflow' ? 'PAYMENT RECEIVED' : 'OFFICIAL DISBURSEMENT';
 
     return [
-      `🧾 *OFFICIAL TILL RECEIPT*`,
-      `🏪 *${bizName}*`,
-      `📅 Date: ${dateStr}`,
-      `🔖 Reference: ${ref}`,
-      `---------------------------------`,
-      `📝 *Details:* ${tx.description}`,
-      `💵 *Amount:* ${amountStr}`,
-      `📌 *Type:* ${typeLabel}`,
-      `✅ *Status:* VERIFIED & RECORDED`,
-      `---------------------------------`,
-      `_Thank you for your custom!_`,
-      `_Issued via CashFlow Mate Till OS_`,
+      `=================================`,
+      `*OFFICIAL TILL RECEIPT*`,
+      `*${bizName}*`,
+      `=================================`,
+      `Date      : ${dateStr}`,
+      `Reference : ${ref}`,
+      `Details   : ${tx.description}`,
+      `Amount    : ${amountStr}`,
+      `Type      : ${typeLabel}`,
+      `Status    : VERIFIED & RECORDED`,
+      `=================================`,
+      `Thank you for your custom.`,
+      `Issued via CashFlow Mate Till OS`,
     ].join('\n');
   }
 

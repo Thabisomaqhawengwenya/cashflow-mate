@@ -28,6 +28,7 @@ import { MobileReceiptService } from '@/services/receipt';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
+import { CompanyBrandLogo } from '@/components/BrandLogos';
 
 export default function TransactionsScreen() {
   const colorScheme = useColorScheme();
@@ -223,69 +224,74 @@ export default function TransactionsScreen() {
                     { transform: [{ scale: pressed ? 0.98 : 1 }] },
                   ]}
                 >
-                  {/* Top Row: Ref & Timestamp + Amount Badge */}
-                  <View style={styles.cardTopRow}>
-                    <View style={styles.cardRefGroup}>
-                      <Text style={styles.cardRefCode}>
-                        % {tx.originalReference || tx.id.slice(0, 8).toUpperCase()}
-                      </Text>
-                      <View style={styles.timeGroup}>
-                        <Ionicons name="time-outline" size={12} color={EmeraldTokens.textSubtle} />
-                        <Text style={styles.cardTimeText}>{tx.transactionDate}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <CompanyBrandLogo identifier={tx.description} size={38} style={{ marginRight: 12, marginTop: 2 }} />
+                    <View style={{ flex: 1 }}>
+                      {/* Top Row: Ref & Timestamp + Amount Badge */}
+                      <View style={styles.cardTopRow}>
+                        <View style={styles.cardRefGroup}>
+                          <Text style={styles.cardRefCode}>
+                            % {tx.originalReference || tx.id.slice(0, 8).toUpperCase()}
+                          </Text>
+                          <View style={styles.timeGroup}>
+                            <Ionicons name="time-outline" size={12} color={BlueTokens.textSubtle} />
+                            <Text style={styles.cardTimeText}>{tx.transactionDate}</Text>
+                          </View>
+                        </View>
+
+                        {/* Amount Chip */}
+                        <View
+                          style={[
+                            styles.cardAmountBadge,
+                            {
+                              backgroundColor: isInflow
+                                ? BlueTokens.pastelMint
+                                : BlueTokens.pastelRose,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.cardAmountText,
+                              {
+                                color: isInflow
+                                  ? BlueTokens.success
+                                  : BlueTokens.error,
+                              },
+                            ]}
+                          >
+                            {isInflow ? '+' : '-'}
+                            {formatMoney(tx.amount, tx.currency)}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
 
-                    {/* Amount Chip */}
-                    <View
-                      style={[
-                        styles.cardAmountBadge,
-                        {
-                          backgroundColor: isInflow
-                            ? EmeraldTokens.pastelMint
-                            : EmeraldTokens.pastelRose,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.cardAmountText,
-                          {
-                            color: isInflow
-                              ? EmeraldTokens.pastelMintText
-                              : EmeraldTokens.pastelRoseText,
-                          },
-                        ]}
-                      >
-                        {isInflow ? '+' : '-'}
-                        {formatMoney(tx.amount, tx.currency)}
+                      {/* Middle Row: Description */}
+                      <Text style={styles.cardDescription} numberOfLines={2}>
+                        {tx.description}
                       </Text>
-                    </View>
-                  </View>
 
-                  {/* Middle Row: Description */}
-                  <Text style={styles.cardDescription} numberOfLines={2}>
-                    {tx.description}
-                  </Text>
+                      {/* Bottom Row: Counterparty/Category + Review Status */}
+                      <View style={styles.cardBottomRow}>
+                        <View style={styles.avatarGroup}>
+                          <View style={styles.miniAvatar}>
+                            <Ionicons
+                              name={isInflow ? 'arrow-down' : 'arrow-up'}
+                              size={12}
+                              color={BlueTokens.primary}
+                            />
+                          </View>
+                          <Text style={styles.categoryName} numberOfLines={1}>
+                            {catMeta ? catMeta.label : tx.category}
+                          </Text>
+                        </View>
 
-                  {/* Bottom Row: Counterparty/Category + Review Status */}
-                  <View style={styles.cardBottomRow}>
-                    <View style={styles.avatarGroup}>
-                      <View style={styles.miniAvatar}>
-                        <Ionicons
-                          name={isInflow ? 'arrow-down' : 'arrow-up'}
-                          size={12}
-                          color={EmeraldTokens.deepPine}
+                        <M3Badge
+                          label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'REVIEW'}
+                          variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
                         />
                       </View>
-                      <Text style={styles.categoryName} numberOfLines={1}>
-                        {catMeta ? catMeta.label : tx.category}
-                      </Text>
                     </View>
-
-                    <M3Badge
-                      label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'REVIEW'}
-                      variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
-                    />
                   </View>
                 </Pressable>
               );

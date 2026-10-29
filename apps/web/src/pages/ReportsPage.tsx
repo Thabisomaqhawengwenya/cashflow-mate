@@ -195,7 +195,7 @@ export const ReportsPage: React.FC = () => {
                         {formatMoney(c.amount, business?.currency)}
                       </td>
                       <td className="py-2.5 px-3 text-right tabular-nums">
-                        {c.direction === 'outflow' ? `${c.percentageOfTotal}%` : '—'}
+                        {c.direction === 'outflow' ? `${c.percentageOfTotal}%` : '-'}
                       </td>
                     </tr>
                   ))

@@ -30,6 +30,12 @@ import {
 import { MobileLicenseService, LicenseInfo } from '@/services/licensing';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
+import {
+  EcoCashLogo,
+  InnBucksLogo,
+  CabsLogo,
+  CompanyBrandLogo,
+} from '@/components/BrandLogos';
 
 const SAMPLE_CSV_PRESETS = [
   {
@@ -308,6 +314,12 @@ export default function ImportScreen() {
         <View style={styles.presetGrid}>
           {SAMPLE_CSV_PRESETS.map((p) => {
             const isSelected = activePresetId === p.id;
+            const renderLogo = () => {
+              if (p.id === 'ecocash') return <EcoCashLogo size={36} />;
+              if (p.id === 'innbucks') return <InnBucksLogo size={36} />;
+              return <CabsLogo size={36} />;
+            };
+
             return (
               <Pressable
                 key={p.id}
@@ -315,20 +327,25 @@ export default function ImportScreen() {
                 style={[
                   styles.presetCard,
                   isSelected && {
-                    borderColor: EmeraldTokens.mintCta,
-                    backgroundColor: '#F0FDF4',
+                    borderColor: BlueTokens.primary,
+                    backgroundColor: '#EBF3FF',
                   },
                 ]}
               >
-                <View style={styles.presetTop}>
-                  <Text style={styles.presetName}>{p.name}</Text>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={16} color={EmeraldTokens.mintDarkText} />
-                  )}
+                <View style={styles.presetRow}>
+                  {renderLogo()}
+                  <View style={styles.presetContent}>
+                    <View style={styles.presetTop}>
+                      <Text style={styles.presetName}>{p.name}</Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={18} color={BlueTokens.primary} />
+                      )}
+                    </View>
+                    <Text style={styles.presetSub} numberOfLines={2}>
+                      {p.description}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={styles.presetSub} numberOfLines={2}>
-                  {p.description}
-                </Text>
               </Pressable>
             );
           })}
@@ -344,10 +361,10 @@ export default function ImportScreen() {
                 Total Rows: <Text style={{ fontWeight: '700' }}>{importResult.totalRows}</Text>
               </Text>
               <Text style={styles.summaryText}>
-                Duplicates: <Text style={{ fontWeight: '700', color: EmeraldTokens.pastelRoseText }}>{importResult.duplicateCount}</Text>
+                Duplicates: <Text style={{ fontWeight: '700', color: BlueTokens.error }}>{importResult.duplicateCount}</Text>
               </Text>
               <Text style={styles.summaryText}>
-                Valid Rows: <Text style={{ fontWeight: '700', color: EmeraldTokens.pastelMintText }}>{importResult.validRows}</Text>
+                Valid Rows: <Text style={{ fontWeight: '700', color: BlueTokens.success }}>{importResult.validRows}</Text>
               </Text>
             </View>
 
@@ -356,32 +373,37 @@ export default function ImportScreen() {
               const catMeta = CATEGORIES[row.category];
               return (
                 <View key={idx} style={styles.previewRowCard}>
-                  <View style={styles.previewTop}>
-                    <Text style={styles.previewDate}>{row.date}</Text>
-                    <Text
-                      style={[
-                        styles.previewAmount,
-                        {
-                          color:
-                            row.direction === 'inflow'
-                              ? EmeraldTokens.pastelMintText
-                              : EmeraldTokens.pastelRoseText,
-                        },
-                      ]}
-                    >
-                      {row.direction === 'inflow' ? '+' : '-'}
-                      {formatMoney(row.amount, currency)}
-                    </Text>
-                  </View>
-                  <Text style={styles.previewDesc}>{row.description}</Text>
-                  <View style={styles.previewBottom}>
-                    <M3Badge
-                      label={catMeta ? catMeta.label : row.category}
-                      variant="purple"
-                    />
-                    {row.isDuplicate && (
-                      <M3Badge label="DUPLICATE (SKIP)" variant="amber" />
-                    )}
+                  <View style={styles.previewRowLayout}>
+                    <CompanyBrandLogo identifier={row.description} size={34} style={{ marginRight: 12 }} />
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.previewTop}>
+                        <Text style={styles.previewDate}>{row.date}</Text>
+                        <Text
+                          style={[
+                            styles.previewAmount,
+                            {
+                              color:
+                                row.direction === 'inflow'
+                                  ? BlueTokens.success
+                                  : BlueTokens.error,
+                            },
+                          ]}
+                        >
+                          {row.direction === 'inflow' ? '+' : '-'}
+                          {formatMoney(row.amount, currency)}
+                        </Text>
+                      </View>
+                      <Text style={styles.previewDesc}>{row.description}</Text>
+                      <View style={styles.previewBottom}>
+                        <M3Badge
+                          label={catMeta ? catMeta.label : row.category}
+                          variant="purple"
+                        />
+                        {row.isDuplicate && (
+                          <M3Badge label="DUPLICATE (SKIP)" variant="amber" />
+                        )}
+                      </View>
+                    </View>
                   </View>
                 </View>
               );
@@ -554,7 +576,7 @@ const styles = StyleSheet.create({
   presetCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: BlueTokens.borders,
     shadowColor: BlueTokens.darkNavy,
@@ -562,6 +584,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 6,
     elevation: 1,
+  },
+  presetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  presetContent: {
+    flex: 1,
   },
   presetTop: {
     flexDirection: 'row',
@@ -601,6 +631,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: BlueTokens.borders,
+  },
+  previewRowLayout: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   previewTop: {
     flexDirection: 'row',
