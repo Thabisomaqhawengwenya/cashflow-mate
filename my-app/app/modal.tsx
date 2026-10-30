@@ -300,7 +300,7 @@ export default function ModalScreen() {
             <View style={styles.mintChip}>
               <Text style={styles.mintChipText}>
                 {license?.isValid
-                  ? `${license.tier.toUpperCase()} TIER &bull; HARARE`
+                  ? `${license.tier.toUpperCase()} TIER \u2022 HARARE`
                   : 'STARTER TIER'}
               </Text>
             </View>
@@ -322,9 +322,9 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
                 <Ionicons name="person-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Trader Profile & Username</Text>
-                <Text style={styles.settingSub}>
+                <Text style={styles.settingSub} numberOfLines={1}>
                   {userDisplayName} • {business?.name || 'Mbare Fresh Produce & Tuckshop'}
                 </Text>
               </View>
@@ -386,7 +386,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
                 <Ionicons name="language-outline" size={18} color={EmeraldTokens.pastelMintText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>{t('language_setup')}</Text>
                 <Text style={styles.settingSub}>
                   {t('language_active')} {activeLanguageInfo.nativeName}
@@ -426,7 +426,7 @@ export default function ModalScreen() {
                   color={security?.isPinSet ? EmeraldTokens.pastelMintText : EmeraldTokens.pastelRoseText}
                 />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Market Till Master PIN</Text>
                 <Text style={styles.settingSub}>
                   {security?.isPinSet ? '4-Digit PIN Lock Engaged' : 'Not protected • Tap to lock'}
@@ -499,7 +499,7 @@ export default function ModalScreen() {
                   color={EmeraldTokens.pastelAmberText}
                 />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Counter Privacy Shield</Text>
                 <Text style={styles.settingSub}>
                   {security?.isPrivacyMaskActive ? 'Hiding figures (••••)' : 'Displaying real amounts'}
@@ -522,7 +522,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
                 <Ionicons name="key-outline" size={18} color={EmeraldTokens.pastelRoseText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>License & Activation</Text>
                 <Text style={styles.settingSub}>
                   {license?.isValid ? `${license.tier.toUpperCase()} Valid` : 'Starter'}
@@ -582,7 +582,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
                 <Ionicons name="swap-horizontal" size={18} color={EmeraldTokens.pastelAmberText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Market Exchange Rates</Text>
                 <Text style={styles.settingSub}>
                   1 USD = {rates?.usdToZwg || 28} ZiG &bull; 1 USD = {rates?.usdToZar || 18} ZAR
@@ -634,7 +634,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
                 <Ionicons name="cloud-download-outline" size={18} color={EmeraldTokens.pastelMintText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Backup & Restore Ledger</Text>
                 <Text style={styles.settingSub}>Export/import portable JSON archive</Text>
               </View>
@@ -698,9 +698,9 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
                 <Ionicons name="sync-outline" size={18} color={EmeraldTokens.pastelSkyText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Cloud Ledger Synchronization</Text>
-                <Text style={styles.settingSub}>
+                <Text style={styles.settingSub} numberOfLines={2}>
                   {isSyncing ? 'Syncing...' : syncStatus?.message || 'Tap to sync records'}
                 </Text>
               </View>
@@ -714,7 +714,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
                 <Ionicons name="wallet-outline" size={18} color={EmeraldTokens.pastelSkyText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Active Till Drawers</Text>
                 <Text style={styles.settingSub}>USD Cash &bull; EcoCash ZiG &bull; ZAR Rand</Text>
               </View>
@@ -728,7 +728,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
                 <Ionicons name="shield-checkmark-outline" size={18} color={EmeraldTokens.pastelMintText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Privacy & Copyright</Text>
                 <Text style={styles.settingSub}>MIT License &bull; Mr Q</Text>
               </View>
@@ -742,7 +742,7 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
                 <Ionicons name="refresh-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
               </View>
-              <View>
+              <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Reset Harare Demo Data</Text>
                 <Text style={styles.settingSub}>Restore synthetic sample records</Text>
               </View>
@@ -772,9 +772,9 @@ const styles = StyleSheet.create({
   },
   emeraldHeader: {
     backgroundColor: EmeraldTokens.deepPine,
-    paddingTop: Platform.OS === 'ios' ? 52 : 44,
+    paddingTop: Platform.OS === 'ios' ? 52 : 36,
     paddingHorizontal: 20,
-    paddingBottom: 48, // generous space for overlapping card
+    paddingBottom: 24,
   },
   topNavRow: {
     flexDirection: 'row',
@@ -803,17 +803,19 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
   },
   sheetContent: {
+    paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
 
-  // Overlapping Hero Profile Card (Screen 2)
+  // Hero Profile Card (Screen 2)
   heroProfileCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginTop: -32,
+    marginTop: 0,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: BlueTokens.borders,
@@ -822,12 +824,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 3,
-    alignSelf: 'stretch',
+    width: '100%',
     maxWidth: 960,
+    alignSelf: 'center',
   },
   avatarWrapper: {
-    marginTop: -38,
-    marginBottom: 12,
+    marginTop: 0,
+    marginBottom: 14,
   },
   avatarCircle: {
     width: 68,
@@ -855,6 +858,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: EmeraldTokens.textMuted,
     marginBottom: 12,
+    textAlign: 'center',
   },
   badgeRow: {
     flexDirection: 'row',
@@ -878,7 +882,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: EmeraldTokens.textSlate,
     marginBottom: 12,
-    marginLeft: 4,
+    paddingLeft: 4,
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
   },
   settingsGroup: {
     backgroundColor: '#FFFFFF',
@@ -891,8 +898,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 1,
-    alignSelf: 'stretch',
+    width: '100%',
     maxWidth: 960,
+    alignSelf: 'center',
   },
   settingItem: {
     flexDirection: 'row',
@@ -908,6 +916,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginRight: 8,
+    minWidth: 0,
+  },
+  settingTextCol: {
+    flex: 1,
+    minWidth: 0,
   },
   iconSquircle: {
     width: 38,
@@ -1043,5 +1056,8 @@ const styles = StyleSheet.create({
 
   bottomCtaContainer: {
     marginTop: 24,
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
   },
 });
