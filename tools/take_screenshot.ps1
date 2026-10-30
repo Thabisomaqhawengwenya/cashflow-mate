@@ -19,6 +19,7 @@ $argList = @(
     "--no-default-browser-check",
     "--disable-background-networking",
     "--disable-sync",
+    "--hide-scrollbars",
     "--virtual-time-budget=5000",
     "--user-data-dir=$tempProfile",
     "--window-size=$Width,$Height",

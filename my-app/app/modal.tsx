@@ -30,10 +30,12 @@ import { MobileSyncService, SyncStatus } from '@/services/sync';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { language, setLanguage, t, supportedLanguages, activeLanguageInfo } = useLanguage();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [license, setLicense] = useState<LicenseInfo | null>(null);
@@ -43,7 +45,6 @@ export default function ModalScreen() {
   const [isActivating, setIsActivating] = useState(false);
   const [showLicenseInput, setShowLicenseInput] = useState(false);
   const [showPinSection, setShowPinSection] = useState(false);
-  const [language, setLanguage] = useState<'EN' | 'SN'>('EN');
 
   // Rates State
   const [rates, setRates] = useState<ExchangeRateConfig | null>(null);
@@ -243,8 +244,8 @@ export default function ModalScreen() {
             </View>
           </View>
 
-          <Text style={styles.profileName}>
-            Hello, {business?.name || 'Mr Q'}
+          <Text style={styles.profileName} numberOfLines={2}>
+            {t('greeting_prefix')}, {business?.name || 'Mr Q'}
           </Text>
           <Text style={styles.profileContact}>
             +263 77 123 4567 &bull; Harare, Zimbabwe
@@ -292,25 +293,30 @@ export default function ModalScreen() {
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
                 <Ionicons name="language-outline" size={18} color={EmeraldTokens.pastelMintText} />
               </View>
-              <Text style={styles.settingLabel}>Language Setup</Text>
+              <View>
+                <Text style={styles.settingLabel}>{t('language_setup')}</Text>
+                <Text style={styles.settingSub}>
+                  {t('language_active')} {activeLanguageInfo.nativeName}
+                </Text>
+              </View>
             </View>
             <View style={styles.langToggle}>
-              <Pressable
-                onPress={() => setLanguage('SN')}
-                style={[styles.langChip, language === 'SN' && styles.langChipActive]}
-              >
-                <Text style={[styles.langText, language === 'SN' && styles.langTextActive]}>
-                  SN
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setLanguage('EN')}
-                style={[styles.langChip, language === 'EN' && styles.langChipActive]}
-              >
-                <Text style={[styles.langText, language === 'EN' && styles.langTextActive]}>
-                  EN
-                </Text>
-              </Pressable>
+              {supportedLanguages.map((item) => {
+                const isActive = language === item.id;
+                return (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => setLanguage(item.id)}
+                    style={[styles.langChip, isActive && styles.langChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Switch language to ${item.name}`}
+                  >
+                    <Text style={[styles.langText, isActive && styles.langTextActive]}>
+                      {item.code}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -723,6 +729,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 3,
+    alignSelf: 'stretch',
+    maxWidth: 960,
   },
   avatarWrapper: {
     marginTop: -38,
@@ -748,6 +756,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: EmeraldTokens.textSlate,
     marginBottom: 3,
+    textAlign: 'center',
   },
   profileContact: {
     fontSize: 13,
@@ -789,6 +798,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 1,
+    alignSelf: 'stretch',
+    maxWidth: 960,
   },
   settingItem: {
     flexDirection: 'row',
@@ -799,9 +810,11 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(15, 23, 42, 0.05)',
   },
   settingLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginRight: 8,
   },
   iconSquircle: {
     width: 38,
@@ -824,13 +837,15 @@ const styles = StyleSheet.create({
   // Language Toggle
   langToggle: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F1F5F3',
     borderRadius: DesignTokens.shapes.pill,
-    padding: 3,
+    padding: 2,
+    gap: 2,
   },
   langChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: DesignTokens.shapes.pill,
   },
   langChipActive: {

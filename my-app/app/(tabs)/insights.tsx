@@ -23,19 +23,35 @@ import {
 } from '@/services/storage';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
+import { useLanguage } from '@/context/LanguageContext';
+import { SupportedLanguage } from '@/services/i18n';
 
-const QUICK_QUESTIONS = [
-  'What did I spend the most money on this month?',
-  'Why is cash flow different from my profit?',
-  'How much did I spend on stock and inventory?',
-  'What transactions still need my review?',
-];
+const QUICK_QUESTIONS_MAP: Record<SupportedLanguage, string[]> = {
+  en: [
+    'What did I spend the most money on this month?',
+    'Why is cash flow different from my profit?',
+    'How much did I spend on stock and inventory?',
+    'What transactions still need my review?',
+  ],
+  sn: [
+    'Ndechipi chanyanya kudya mari mwedzi uno?',
+    'Nei mari yasara yakasiyana nepurofiti?',
+    'Imarii yandakashandisa kutenga zvitoro?',
+    'Ndezvipi zvinyorwa zvinoda kuongororwa?',
+  ],
+  nd: [
+    'Yiziphi izindleko ezinkulu kule inyanga?',
+    'Kungani imali eseleyo yehlukene lenzuzo?',
+    'Yimalini engiyisebenzise empahleni yesitolo?',
+    'Yimaphi amarekhodi adinga ukuhlolwa?',
+  ],
+};
 
 export default function InsightsScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { language, setLanguage, t, supportedLanguages } = useLanguage();
 
-  const [language, setLanguage] = useState<'en' | 'sn' | 'nd'>('en');
   const [question, setQuestion] = useState('');
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
@@ -160,14 +176,14 @@ export default function InsightsScreen() {
           <Pressable onPress={() => router.push('/(tabs)')} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>Financial Assistant</Text>
+          <Text style={styles.headerTitle}>{t('assistant_title')}</Text>
           <Pressable onPress={() => router.push('/modal')} style={styles.backButton}>
             <Ionicons name="sparkles-outline" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
 
         <Text style={styles.headerSubtitle}>
-          Ask plain-language questions about your business cash flow, stock, and profit.
+          {t('assistant_subtitle')}
         </Text>
 
         {/* Language Selection Pills in Header */}
@@ -221,14 +237,14 @@ export default function InsightsScreen() {
             <TextInput
               value={question}
               onChangeText={setQuestion}
-              placeholder="Ask about your sales, bread expenses, rent..."
+              placeholder={t('ask_placeholder')}
               placeholderTextColor={EmeraldTokens.textSubtle}
               style={styles.textInput}
               onSubmitEditing={() => handleAsk()}
             />
           </View>
           <M3Button
-            label={isThinking ? 'ANALYZING...' : 'ASK ASSISTANT'}
+            label={isThinking ? t('analyzing_button') : t('ask_button')}
             variant="mint"
             size="md"
             disabled={isThinking || !question.trim()}
@@ -238,9 +254,9 @@ export default function InsightsScreen() {
         </View>
 
         {/* Common Quick Questions */}
-        <Text style={styles.sectionHeading}>Quick Questions</Text>
+        <Text style={styles.sectionHeading}>{t('quick_questions_title')}</Text>
         <View style={styles.quickGrid}>
-          {QUICK_QUESTIONS.map((q, idx) => (
+          {(QUICK_QUESTIONS_MAP[language] || QUICK_QUESTIONS_MAP.en).map((q, idx) => (
             <Pressable
               key={idx}
               onPress={() => {
@@ -262,7 +278,7 @@ export default function InsightsScreen() {
         {isThinking && (
           <View style={styles.thinkingBox}>
             <ActivityIndicator size="small" color={EmeraldTokens.deepPine} />
-            <Text style={styles.thinkingText}>Calculating deterministic financial response...</Text>
+            <Text style={styles.thinkingText}>{t('thinking_text')}</Text>
           </View>
         )}
 
@@ -272,14 +288,14 @@ export default function InsightsScreen() {
               <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelMint }]}>
                 <Ionicons name="sparkles" size={16} color={EmeraldTokens.pastelMintText} />
               </View>
-              <Text style={styles.answerTitle}>Financial Explanation</Text>
+              <Text style={styles.answerTitle}>{t('explanation_title')}</Text>
             </View>
 
             <Text style={styles.answerBody}>{answer}</Text>
 
             {observations.length > 0 && (
               <View style={styles.obsList}>
-                <Text style={styles.obsHeading}>Verified Accounting Observations:</Text>
+                <Text style={styles.obsHeading}>{t('verified_facts')}:</Text>
                 {observations.map((obs, i) => (
                   <View key={i} style={styles.obsItem}>
                     <Ionicons name="checkmark-circle" size={14} color={EmeraldTokens.pastelMintText} />

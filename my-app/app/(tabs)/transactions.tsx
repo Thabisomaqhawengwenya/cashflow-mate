@@ -29,10 +29,12 @@ import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { CompanyBrandLogo } from '@/components/BrandLogos';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function TransactionsScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { t, getCategoryLabel } = useLanguage();
 
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
   const [search, setSearch] = useState('');
@@ -126,7 +128,7 @@ export default function TransactionsScreen() {
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>My Transactions</Text>
+          <Text style={styles.headerTitle}>{t('my_transactions')}</Text>
           <Pressable
             onPress={() => router.push('/modal')}
             hitSlop={10}
@@ -142,7 +144,7 @@ export default function TransactionsScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search by vendor, bread, customer name..."
+            placeholder={t('search_placeholder')}
             placeholderTextColor="rgba(255, 255, 255, 0.6)"
             style={styles.searchInput}
           />
@@ -160,10 +162,10 @@ export default function TransactionsScreen() {
           contentContainerStyle={styles.filterPillRow}
         >
           {[
-            { id: 'all', label: 'All' },
-            { id: 'inflow', label: 'Inflows' },
-            { id: 'outflow', label: 'Outflows' },
-            { id: 'review', label: 'Needs Review' },
+            { id: 'all', label: t('filter_all') },
+            { id: 'inflow', label: t('filter_inflows') },
+            { id: 'outflow', label: t('filter_outflows') },
+            { id: 'review', label: t('filter_review') },
           ].map((item) => {
             const isActive = selectedFilter === item.id;
             return (
@@ -282,12 +284,12 @@ export default function TransactionsScreen() {
                             />
                           </View>
                           <Text style={styles.categoryName} numberOfLines={1}>
-                            {catMeta ? catMeta.label : tx.category}
+                            {getCategoryLabel(tx.category)}
                           </Text>
                         </View>
 
                         <M3Badge
-                          label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'REVIEW'}
+                          label={tx.reviewStatus === 'confirmed' ? t('status_completed') : t('status_review')}
                           variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
                         />
                       </View>
@@ -299,10 +301,8 @@ export default function TransactionsScreen() {
           ) : (
             <View style={styles.emptyContainer}>
               <Ionicons name="file-tray-outline" size={44} color={EmeraldTokens.textSubtle} />
-              <Text style={styles.emptyTitle}>No matching transactions</Text>
-              <Text style={styles.emptySub}>
-                Try adjusting your search terms or filter selection.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('empty_records_title')}</Text>
+              <Text style={styles.emptySub}>{t('empty_records_sub')}</Text>
             </View>
           )}
         </ScrollView>

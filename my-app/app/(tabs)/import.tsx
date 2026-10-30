@@ -36,6 +36,7 @@ import {
   CabsLogo,
   CompanyBrandLogo,
 } from '@/components/BrandLogos';
+import { useLanguage } from '@/context/LanguageContext';
 
 const SAMPLE_CSV_PRESETS = [
   {
@@ -74,6 +75,7 @@ const SAMPLE_CSV_PRESETS = [
 export default function ImportScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { t, getCategoryLabel } = useLanguage();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [existingTransactions, setExistingTransactions] = useState<MobileTransaction[]>([]);
@@ -216,14 +218,14 @@ export default function ImportScreen() {
           <Pressable onPress={() => router.push('/(tabs)')} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>Import Statements</Text>
+          <Text style={styles.headerTitle}>{t('import_title')}</Text>
           <Pressable onPress={() => router.push('/modal')} style={styles.backButton}>
             <Ionicons name="key-outline" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
 
         <Text style={styles.headerSubtitle}>
-          Import EcoCash, InnBucks, and bank CSV records directly into your till.
+          {t('import_subtitle')}
         </Text>
       </View>
 
@@ -241,14 +243,14 @@ export default function ImportScreen() {
                 <Ionicons name="lock-closed" size={16} color={EmeraldTokens.pastelAmberText} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.gateTitle}>Pro Feature</Text>
+                <Text style={styles.gateTitle}>{t('pro_feature')}</Text>
                 <Text style={styles.gateSub}>
-                  CSV import requires a Pro or Enterprise license key.
+                  {t('pro_feature_sub')}
                 </Text>
               </View>
             </View>
             <M3Button
-              label="ACTIVATE"
+              label={t('activate_button')}
               size="sm"
               variant="mint"
               onPress={() => router.push('/modal')}
@@ -285,18 +287,18 @@ export default function ImportScreen() {
           <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
             <Ionicons name="cloud-upload-outline" size={26} color={EmeraldTokens.pastelSkyText} />
           </View>
-          <Text style={styles.uploadTitle}>Upload CSV Statement</Text>
+          <Text style={styles.uploadTitle}>{t('upload_csv_title')}</Text>
           <Text style={styles.uploadSub}>
-            Select a .csv or .txt statement from your phone or device storage.
+            {t('upload_csv_sub')}
           </Text>
 
           <M3Button
             label={
               !isProUnlocked
-                ? 'PRO LICENSE REQUIRED'
+                ? t('pro_license_required')
                 : isReadingFile
                 ? 'READING FILE...'
-                : 'CHOOSE CSV FILE'
+                : t('select_csv_file')
             }
             variant="mint"
             size="lg"
@@ -310,7 +312,7 @@ export default function ImportScreen() {
         </View>
 
         {/* Presets Row */}
-        <Text style={styles.sectionHeading}>Or Test with a Preset Statement</Text>
+        <Text style={styles.sectionHeading}>{t('preset_title')}</Text>
         <View style={styles.presetGrid}>
           {SAMPLE_CSV_PRESETS.map((p) => {
             const isSelected = activePresetId === p.id;

@@ -25,10 +25,12 @@ import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { CompanyBrandLogo } from '@/components/BrandLogos';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function DebtsScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { t } = useLanguage();
 
   const [debts, setDebts] = useState<MobileDebt[]>([]);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
@@ -144,7 +146,7 @@ export default function DebtsScreen() {
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>Customer & Supplier Credit</Text>
+          <Text style={styles.headerTitle}>{t('debts_title')}</Text>
           <Pressable
             onPress={() => setIsAddOpen(true)}
             hitSlop={10}
@@ -160,23 +162,23 @@ export default function DebtsScreen() {
             <Text style={styles.statHeroAmount}>
               {formatMoney(totalOwedToBusiness, currency)}
             </Text>
-            <Text style={styles.statHeroLabel}>Customers Owe You</Text>
+            <Text style={styles.statHeroLabel}>{t('tab_owed_to_me')}</Text>
           </View>
           <View style={styles.statHeroDivider} />
           <View style={styles.statHeroCol}>
             <Text style={[styles.statHeroAmount, { color: EmeraldTokens.pastelRose }]}>
               {formatMoney(totalOwedByBusiness, currency)}
             </Text>
-            <Text style={styles.statHeroLabel}>You Owe Suppliers</Text>
+            <Text style={styles.statHeroLabel}>{t('tab_i_owe')}</Text>
           </View>
         </View>
 
         {/* Filter Capsules */}
         <View style={styles.filterPillsRow}>
           {[
-            { id: 'all', label: 'All Records' },
-            { id: 'owed_to_business', label: 'Owed to Me' },
-            { id: 'owed_by_business', label: 'I Owe Others' },
+            { id: 'all', label: t('filter_all_records') },
+            { id: 'owed_to_business', label: t('tab_owed_to_me') },
+            { id: 'owed_by_business', label: t('tab_i_owe') },
           ].map((item) => {
             const isActive = filter === item.id;
             return (

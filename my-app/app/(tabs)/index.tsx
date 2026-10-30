@@ -34,6 +34,7 @@ import { MobileReconciliationService, ZReport } from '@/services/reconciliation'
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   EcoCashLogo,
   InnBucksLogo,
@@ -67,6 +68,7 @@ const SAMPLE_SMS_CHIPS = [
 export default function OverviewScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { t, getCategoryLabel } = useLanguage();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
@@ -315,10 +317,10 @@ export default function OverviewScreen() {
         <View style={styles.topBar}>
           <View>
             <Text style={styles.greetingTitle}>
-              Hello, {business?.name ? business.name.split(' ')[0] : 'Mr Q'}
+              {t('greeting_prefix')}, {business?.name ? business.name.split(' ')[0] : 'Mr Q'}
             </Text>
             <Text style={styles.headerSubtitle}>
-              {todayFormatted} &bull; Harare, Zimbabwe
+              {todayFormatted} &bull; {t('city_country')}
             </Text>
           </View>
           <View style={styles.topRightActions}>
@@ -355,9 +357,9 @@ export default function OverviewScreen() {
         {/* Multi-Currency Cashbox Drawer Switcher Chips */}
         <View style={styles.currencyDrawerRow}>
           {[
-            { id: 'USD', label: 'USD Cash' },
-            { id: 'ZWG', label: 'ZiG / EcoCash' },
-            { id: 'ZAR', label: 'ZAR Rand' },
+            { id: 'USD', label: t('usd_cash') },
+            { id: 'ZWG', label: t('zig_ecocash') },
+            { id: 'ZAR', label: t('zar_rand') },
           ].map((item) => {
             const isCurActive = activeCurrency === item.id;
             return (
@@ -388,7 +390,7 @@ export default function OverviewScreen() {
             <Text style={styles.statNumber}>
               {String(inflowCount).padStart(2, '0')}
             </Text>
-            <Text style={styles.statLabel}>{currency} Inflows</Text>
+            <Text style={styles.statLabel}>{currency} {t('filter_inflows')}</Text>
           </View>
 
           <View style={styles.statDivider} />
@@ -397,7 +399,7 @@ export default function OverviewScreen() {
             <Text style={styles.statNumber}>
               {String(outflowCount).padStart(2, '0')}
             </Text>
-            <Text style={styles.statLabel}>{currency} Outflows</Text>
+            <Text style={styles.statLabel}>{currency} {t('filter_outflows')}</Text>
           </View>
 
           <View style={styles.statDivider} />
@@ -408,7 +410,7 @@ export default function OverviewScreen() {
                 ? '••••'
                 : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
             </Text>
-            <Text style={styles.statLabel}>Net Till Balance</Text>
+            <Text style={styles.statLabel}>{t('net_till_flow')}</Text>
           </View>
         </View>
 
@@ -421,9 +423,9 @@ export default function OverviewScreen() {
         >
           <Ionicons name="sparkles" size={13} color={EmeraldTokens.mintCta} />
           <Text style={styles.portfolioValuationText}>
-            Unified Worth:{' '}
+            {t('unified_worth')}:{' '}
             <Text style={styles.portfolioValuationAmount}>
-              {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} USD eq.`}
+              {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} ${t('usd_eq')}`}
             </Text>
           </Text>
           <Ionicons name="swap-horizontal" size={13} color={BlueTokens.accent} />
@@ -447,7 +449,7 @@ export default function OverviewScreen() {
         <View style={styles.multiDrawerCard}>
           <View style={styles.multiDrawerHeader}>
             <Ionicons name="wallet-outline" size={17} color={EmeraldTokens.deepPine} />
-            <Text style={styles.multiDrawerTitle}>3-Drawer Till Float Breakdown</Text>
+            <Text style={styles.multiDrawerTitle}>{t('drawer_breakdown')}</Text>
           </View>
 
           <View style={styles.multiDrawerCols}>
@@ -459,11 +461,11 @@ export default function OverviewScreen() {
                 activeCurrency === 'USD' && styles.drawerItemActive,
               ]}
             >
-              <Text style={styles.drawerCurCode}>USD Cashbox</Text>
+              <Text style={styles.drawerCurCode}>{t('drawer_usd')}</Text>
               <Text style={[styles.drawerBalance, { color: EmeraldTokens.deepPine }]}>
                 {displayMoney(multiDrawer.USD.netCashFlow, 'USD')}
               </Text>
-              <Text style={styles.drawerCount}>{multiDrawer.USD.count} records</Text>
+              <Text style={styles.drawerCount}>{t('records_count', { count: multiDrawer.USD.count })}</Text>
             </Pressable>
 
             {/* Drawer 2: ZiG */}
@@ -476,12 +478,12 @@ export default function OverviewScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                 <EcoCashLogo size={15} />
-                <Text style={styles.drawerCurCode}>EcoCash ZiG</Text>
+                <Text style={styles.drawerCurCode}>{t('drawer_zig')}</Text>
               </View>
               <Text style={[styles.drawerBalance, { color: BlueTokens.success }]}>
                 {displayMoney(multiDrawer.ZWG.netCashFlow, 'ZWG')}
               </Text>
-              <Text style={styles.drawerCount}>{multiDrawer.ZWG.count} records</Text>
+              <Text style={styles.drawerCount}>{t('records_count', { count: multiDrawer.ZWG.count })}</Text>
             </Pressable>
 
             {/* Drawer 3: ZAR */}
@@ -492,11 +494,11 @@ export default function OverviewScreen() {
                 activeCurrency === 'ZAR' && styles.drawerItemActive,
               ]}
             >
-              <Text style={styles.drawerCurCode}>ZAR Rand</Text>
+              <Text style={styles.drawerCurCode}>{t('drawer_zar')}</Text>
               <Text style={[styles.drawerBalance, { color: EmeraldTokens.pastelAmberText }]}>
                 {displayMoney(multiDrawer.ZAR.netCashFlow, 'ZAR')}
               </Text>
-              <Text style={styles.drawerCount}>{multiDrawer.ZAR.count} records</Text>
+              <Text style={styles.drawerCount}>{t('records_count', { count: multiDrawer.ZAR.count })}</Text>
             </Pressable>
           </View>
         </View>
@@ -504,9 +506,9 @@ export default function OverviewScreen() {
         {/* Period Selector Tabs */}
         <View style={styles.periodRow}>
           {[
-            { id: 'this_month', label: 'This Month' },
-            { id: 'last_month', label: 'Last Month' },
-            { id: 'all', label: 'All Records' },
+            { id: 'this_month', label: t('filter_this_month') },
+            { id: 'last_month', label: t('filter_last_month') },
+            { id: 'all', label: t('filter_all_records') },
           ].map((item) => {
             const isActive = period === item.id;
             return (
@@ -548,9 +550,9 @@ export default function OverviewScreen() {
             <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
               <Ionicons name="arrow-down" size={20} color={EmeraldTokens.pastelIndigoText} />
             </View>
-            <Text style={styles.actionTitle}>Record Sale</Text>
+            <Text style={styles.actionTitle}>{t('action_record_sale')}</Text>
             <Text style={styles.actionSubtitle}>
-              {displayMoney(summary.recordedInflows, currency)} in
+              {t('action_sale_sub', { amount: displayMoney(summary.recordedInflows, currency) })}
             </Text>
           </Pressable>
 
@@ -565,9 +567,9 @@ export default function OverviewScreen() {
             <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
               <Ionicons name="cart-outline" size={20} color={EmeraldTokens.pastelMintText} />
             </View>
-            <Text style={styles.actionTitle}>Record Expense</Text>
+            <Text style={styles.actionTitle}>{t('action_record_expense')}</Text>
             <Text style={styles.actionSubtitle}>
-              {displayMoney(summary.recordedOutflows, currency)} out
+              {t('action_expense_sub', { amount: displayMoney(summary.recordedOutflows, currency) })}
             </Text>
           </Pressable>
 
@@ -582,8 +584,8 @@ export default function OverviewScreen() {
             <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
               <Ionicons name="chatbox-ellipses-outline" size={20} color={EmeraldTokens.pastelRoseText} />
             </View>
-            <Text style={styles.actionTitle}>Paste SMS</Text>
-            <Text style={styles.actionSubtitle}>EcoCash & InnBucks</Text>
+            <Text style={styles.actionTitle}>{t('action_paste_sms')}</Text>
+            <Text style={styles.actionSubtitle}>{t('action_sms_sub')}</Text>
           </Pressable>
 
           {/* Action 4: Customer Debts & Mukando */}
@@ -597,8 +599,8 @@ export default function OverviewScreen() {
             <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
               <Ionicons name="people-outline" size={20} color={EmeraldTokens.pastelAmberText} />
             </View>
-            <Text style={styles.actionTitle}>Customer Credit</Text>
-            <Text style={styles.actionSubtitle}>Who owes you</Text>
+            <Text style={styles.actionTitle}>{t('action_customer_credit')}</Text>
+            <Text style={styles.actionSubtitle}>{t('action_credit_sub')}</Text>
           </Pressable>
         </View>
 
@@ -657,22 +659,22 @@ export default function OverviewScreen() {
 
         {/* 4. Recent Transactions Section (Screen 3) */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions ({currency})</Text>
+          <Text style={styles.sectionTitle}>{t('recent_transactions')} ({currency})</Text>
           <Pressable
             onPress={() => router.push('/(tabs)/transactions')}
             accessibilityRole="button"
             accessibilityLabel="View all transactions"
           >
-            <Text style={styles.seeAllText}>See all ({filteredTxs.length})</Text>
+            <Text style={styles.seeAllText}>{t('view_all')} ({filteredTxs.length})</Text>
           </Pressable>
         </View>
 
         {recentTransactions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={40} color={EmeraldTokens.textSubtle} />
-            <Text style={styles.emptyTitle}>No {currency} records yet</Text>
+            <Text style={styles.emptyTitle}>{t('no_recent_transactions')}</Text>
             <Text style={styles.emptySub}>
-              Tap "Record Sale", "Record Expense" or "Paste SMS" to log transactions in {currency}.
+              {t('no_transactions_recorded')}
             </Text>
           </View>
         ) : (
@@ -733,12 +735,12 @@ export default function OverviewScreen() {
                           style={{ marginRight: 4 }}
                         />
                         <Text style={styles.txCategoryText}>
-                          {catMeta ? catMeta.label : tx.category}
+                          {getCategoryLabel(tx.category)}
                         </Text>
                       </View>
 
                       <M3Badge
-                        label={tx.reviewStatus === 'confirmed' ? 'COMPLETED' : 'PENDING'}
+                        label={tx.reviewStatus === 'confirmed' ? t('status_completed') : t('status_review')}
                         variant={tx.reviewStatus === 'confirmed' ? 'mint' : 'amber'}
                       />
                     </View>

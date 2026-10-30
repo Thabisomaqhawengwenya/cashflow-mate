@@ -4,12 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface NavItem {
   id: string;
-  name: string;
-  label: string;
-  sublabel: string;
+  labelKey: string;
+  sublabelKey: string;
   iconActive: keyof typeof Ionicons.glyphMap;
   iconInactive: keyof typeof Ionicons.glyphMap;
   route: string;
@@ -18,45 +18,40 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     id: 'index',
-    name: 'Home',
-    label: 'Home Dashboard',
-    sublabel: 'Till & Cashbox Float',
+    labelKey: 'nav_home_label',
+    sublabelKey: 'nav_home_sub',
     iconActive: 'grid',
     iconInactive: 'grid-outline',
     route: '/(tabs)',
   },
   {
     id: 'transactions',
-    name: 'Records',
-    label: 'Ledger Records',
-    sublabel: 'Cash Inflows & Outflows',
+    labelKey: 'nav_records_label',
+    sublabelKey: 'nav_records_sub',
     iconActive: 'receipt',
     iconInactive: 'receipt-outline',
     route: '/(tabs)/transactions',
   },
   {
     id: 'import',
-    name: 'Import',
-    label: 'CSV Data Ingest',
-    sublabel: 'Bank & Mobile CSVs',
+    labelKey: 'nav_import_label',
+    sublabelKey: 'nav_import_sub',
     iconActive: 'cloud-upload',
     iconInactive: 'cloud-upload-outline',
     route: '/(tabs)/import',
   },
   {
     id: 'debts',
-    name: 'Debts',
-    label: 'Debts & Credit',
-    sublabel: 'Customer & Supplier Book',
+    labelKey: 'nav_debts_label',
+    sublabelKey: 'nav_debts_sub',
     iconActive: 'people',
     iconInactive: 'people-outline',
     route: '/(tabs)/debts',
   },
   {
     id: 'insights',
-    name: 'Assistant',
-    label: 'Financial Assistant',
-    sublabel: 'Grounded Gemini AI',
+    labelKey: 'nav_assistant_label',
+    sublabelKey: 'nav_assistant_sub',
     iconActive: 'sparkles',
     iconInactive: 'sparkles-outline',
     route: '/(tabs)/insights',
@@ -65,6 +60,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export const DesktopSidebar: React.FC = () => {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const isItemActive = (item: NavItem) => {
     if (item.id === 'index') {
@@ -99,7 +95,7 @@ export const DesktopSidebar: React.FC = () => {
 
         <View style={styles.statusPill}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusPillText}>OFFLINE ENGINE READY</Text>
+          <Text style={styles.statusPillText}>{t('offline_engine_ready')}</Text>
         </View>
       </View>
 
@@ -113,7 +109,7 @@ export const DesktopSidebar: React.FC = () => {
               key={item.id}
               onPress={() => handleNav(item)}
               accessibilityRole="button"
-              accessibilityLabel={item.label}
+              accessibilityLabel={t(item.labelKey)}
               style={({ pressed }) => [
                 styles.navItem,
                 active && styles.navItemActive,
@@ -141,7 +137,7 @@ export const DesktopSidebar: React.FC = () => {
                     active && styles.navLabelActive,
                   ]}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Text>
                 <Text
                   style={[
@@ -149,7 +145,7 @@ export const DesktopSidebar: React.FC = () => {
                     active && styles.navSublabelActive,
                   ]}
                 >
-                  {item.sublabel}
+                  {t(item.sublabelKey)}
                 </Text>
               </View>
 
@@ -170,10 +166,10 @@ export const DesktopSidebar: React.FC = () => {
       <View style={styles.currencyBox}>
         <View style={styles.currencyBoxHeader}>
           <Ionicons name="cash-outline" size={14} color={BlueTokens.accent} />
-          <Text style={styles.currencyBoxTitle}>3-Drawer Till Float</Text>
+          <Text style={styles.currencyBoxTitle}>{t('till_float_summary')}</Text>
         </View>
         <Text style={styles.currencyBoxDesc}>
-          USD • ZiG • ZAR cash floats segregated with automated End-of-Day Z-Report reconciliation.
+          {t('till_float_summary_sub')}
         </Text>
       </View>
 
@@ -193,10 +189,10 @@ export const DesktopSidebar: React.FC = () => {
           </View>
           <View style={styles.profileTextWrapper}>
             <Text style={styles.profileTitle} numberOfLines={1}>
-              Till Security & PIN
+              {t('till_security_pin')}
             </Text>
             <Text style={styles.profileSubtitle} numberOfLines={1}>
-              Privacy Shield & License
+              {t('privacy_shield_license')}
             </Text>
           </View>
           <Ionicons name="settings-outline" size={16} color="rgba(255, 255, 255, 0.45)" />

@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { DesktopSidebar } from '@/components/DesktopSidebar';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { width } = useWindowDimensions();
+  const { t } = useLanguage();
 
   // Desktop view when width >= 768px (standard tablet / desktop boundary)
   const isDesktop = width >= 768;
@@ -55,7 +57,7 @@ export default function TabLayout() {
           <Tabs.Screen
             name="index"
             options={{
-              title: 'Home',
+              title: t('tab_home'),
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons
                   name={focused ? 'grid' : 'grid-outline'}
@@ -68,7 +70,7 @@ export default function TabLayout() {
           <Tabs.Screen
             name="transactions"
             options={{
-              title: 'Records',
+              title: t('tab_records'),
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons
                   name={focused ? 'receipt' : 'receipt-outline'}
@@ -81,7 +83,7 @@ export default function TabLayout() {
           <Tabs.Screen
             name="import"
             options={{
-              title: 'Import',
+              title: t('tab_import'),
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons
                   name={focused ? 'cloud-upload' : 'cloud-upload-outline'}
@@ -94,7 +96,7 @@ export default function TabLayout() {
           <Tabs.Screen
             name="debts"
             options={{
-              title: 'Debts',
+              title: t('tab_debts'),
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons
                   name={focused ? 'people' : 'people-outline'}
@@ -107,7 +109,7 @@ export default function TabLayout() {
           <Tabs.Screen
             name="insights"
             options={{
-              title: 'Assistant',
+              title: t('tab_assistant'),
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons
                   name={focused ? 'sparkles' : 'sparkles-outline'}
