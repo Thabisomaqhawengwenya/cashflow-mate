@@ -317,8 +317,8 @@ export default function OverviewScreen() {
 
   return (
     <View style={styles.screenWrapper}>
-      {/* 1. Top Emerald Hero Header */}
-      <View style={styles.emeraldHeader}>
+      {/* 1. Sticky Top App Bar */}
+      <View style={styles.stickyTopBar}>
         {/* Top App Bar Row */}
         <View style={styles.topBar}>
           <View>
@@ -359,89 +359,12 @@ export default function OverviewScreen() {
             </Pressable>
           </View>
         </View>
-
-        {/* Multi-Currency Cashbox Drawer Switcher Chips */}
-        <View style={styles.currencyDrawerRow}>
-          {[
-            { id: 'USD', label: t('usd_cash') },
-            { id: 'ZWG', label: t('zig_ecocash') },
-            { id: 'ZAR', label: t('zar_rand') },
-          ].map((item) => {
-            const isCurActive = activeCurrency === item.id;
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => setActiveCurrency(item.id as CurrencyCode)}
-                style={[
-                  styles.currencyDrawerChip,
-                  isCurActive && styles.currencyDrawerChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.currencyDrawerChipText,
-                    isCurActive && styles.currencyDrawerChipTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* 3-Column Stat Bar (Directly from Reference Screen 1) */}
-        <View style={styles.statBar}>
-          <View style={styles.statCol}>
-            <Text style={styles.statNumber}>
-              {String(inflowCount).padStart(2, '0')}
-            </Text>
-            <Text style={styles.statLabel}>{currency} {t('filter_inflows')}</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statCol}>
-            <Text style={styles.statNumber}>
-              {String(outflowCount).padStart(2, '0')}
-            </Text>
-            <Text style={styles.statLabel}>{currency} {t('filter_outflows')}</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statCol}>
-            <Text style={[styles.statNumber, { color: BlueTokens.accent }]}>
-              {isMasked
-                ? '••••'
-                : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
-            </Text>
-            <Text style={styles.statLabel}>{t('net_till_flow')}</Text>
-          </View>
-        </View>
-
-        {/* Unified Multi-Currency Portfolio Valuation Pill */}
-        <Pressable
-          onPress={() => setShowPortfolioTotal(!showPortfolioTotal)}
-          style={styles.portfolioValuationPill}
-          accessibilityRole="button"
-          accessibilityLabel="Toggle unified portfolio valuation"
-        >
-          <Ionicons name="sparkles" size={13} color={EmeraldTokens.mintCta} />
-          <Text style={styles.portfolioValuationText}>
-            {t('unified_worth')}:{' '}
-            <Text style={styles.portfolioValuationAmount}>
-              {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} ${t('usd_eq')}`}
-            </Text>
-          </Text>
-          <Ionicons name="swap-horizontal" size={13} color={BlueTokens.accent} />
-        </Pressable>
       </View>
 
-      {/* 2. White Curved Body Sheet */}
+      {/* 2. Main Scrollable Container */}
       <ScrollView
-        style={styles.sheetContainer}
-        contentContainerStyle={styles.sheetContent}
+        style={styles.mainScrollView}
+        contentContainerStyle={styles.mainScrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -451,8 +374,90 @@ export default function OverviewScreen() {
           />
         }
       >
-        {/* 3-Drawer Cashbox Breakdown Card */}
-        <View style={styles.multiDrawerCard}>
+        {/* Collapsible Hero Stat Block (Hides as user scrolls) */}
+        <View style={styles.collapsibleHeroBlock}>
+          {/* Multi-Currency Cashbox Drawer Switcher Chips */}
+          <View style={styles.currencyDrawerRow}>
+            {[
+              { id: 'USD', label: t('usd_cash') },
+              { id: 'ZWG', label: t('zig_ecocash') },
+              { id: 'ZAR', label: t('zar_rand') },
+            ].map((item) => {
+              const isCurActive = activeCurrency === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => setActiveCurrency(item.id as CurrencyCode)}
+                  style={[
+                    styles.currencyDrawerChip,
+                    isCurActive && styles.currencyDrawerChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.currencyDrawerChipText,
+                      isCurActive && styles.currencyDrawerChipTextActive,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* 3-Column Stat Bar (Directly from Reference Screen 1) */}
+          <View style={styles.statBar}>
+            <View style={styles.statCol}>
+              <Text style={styles.statNumber}>
+                {String(inflowCount).padStart(2, '0')}
+              </Text>
+              <Text style={styles.statLabel}>{currency} {t('filter_inflows')}</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statCol}>
+              <Text style={styles.statNumber}>
+                {String(outflowCount).padStart(2, '0')}
+              </Text>
+              <Text style={styles.statLabel}>{currency} {t('filter_outflows')}</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statCol}>
+              <Text style={[styles.statNumber, { color: BlueTokens.accent }]}>
+                {isMasked
+                  ? '••••'
+                  : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
+              </Text>
+              <Text style={styles.statLabel}>{t('net_till_flow')}</Text>
+            </View>
+          </View>
+
+          {/* Unified Multi-Currency Portfolio Valuation Pill */}
+          <Pressable
+            onPress={() => setShowPortfolioTotal(!showPortfolioTotal)}
+            style={styles.portfolioValuationPill}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle unified portfolio valuation"
+          >
+            <Ionicons name="sparkles" size={13} color={EmeraldTokens.mintCta} />
+            <Text style={styles.portfolioValuationText}>
+              {t('unified_worth')}:{' '}
+              <Text style={styles.portfolioValuationAmount}>
+                {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} ${t('usd_eq')}`}
+              </Text>
+            </Text>
+            <Ionicons name="swap-horizontal" size={13} color={BlueTokens.accent} />
+          </Pressable>
+        </View>
+
+        {/* 3. White Curved Body Sheet */}
+        <View style={styles.sheetContainer}>
+          {/* 3-Drawer Cashbox Breakdown Card */}
+          <View style={styles.multiDrawerCard}>
           <View style={styles.multiDrawerHeader}>
             <Ionicons name="wallet-outline" size={17} color={EmeraldTokens.deepPine} />
             <Text style={styles.multiDrawerTitle}>{t('drawer_breakdown')}</Text>
@@ -767,7 +772,8 @@ export default function OverviewScreen() {
             onPress={() => openNewTransaction('inflow')}
           />
         </View>
-      </ScrollView>
+      </View>
+    </ScrollView>
 
       {/* Instant SMS Quick-Paste Modal */}
       <Modal
@@ -1133,17 +1139,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: EmeraldTokens.deepPine,
   },
-  emeraldHeader: {
+  stickyTopBar: {
     backgroundColor: EmeraldTokens.deepPine,
     paddingTop: Platform.OS === 'ios' ? 52 : 44,
     paddingHorizontal: 22,
-    paddingBottom: 22,
+    paddingBottom: 10,
+    zIndex: 10,
+    elevation: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  collapsibleHeroBlock: {
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingHorizontal: 22,
+    paddingBottom: 16,
+    paddingTop: 4,
+  },
+  mainScrollView: {
+    flex: 1,
+    backgroundColor: EmeraldTokens.deepPine,
+  },
+  mainScrollContent: {
+    flexGrow: 1,
+    backgroundColor: EmeraldTokens.deepPine,
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 0,
   },
   topRightActions: {
     flexDirection: 'row',
@@ -1318,6 +1342,10 @@ const styles = StyleSheet.create({
     backgroundColor: EmeraldTokens.canvasLight,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 40,
+    minHeight: 600,
   },
   sheetContent: {
     paddingHorizontal: 20,
