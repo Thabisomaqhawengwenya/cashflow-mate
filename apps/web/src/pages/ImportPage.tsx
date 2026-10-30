@@ -159,8 +159,10 @@ export const ImportPage: React.FC = () => {
               onChange={handleFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
-            <div className="w-14 h-14 rounded-full bg-md-primary-container text-md-primary flex items-center justify-center mb-3">
-              <UploadCloud size={28} />
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <img src="/logos/ecocash-logo.png" alt="EcoCash" className="w-11 h-11 rounded-lg bg-white border border-slate-200 object-contain p-1" />
+              <img src="/logos/csv-logo.png" alt="CSV" className="w-14 h-14 object-contain" />
+              <img src="/logos/innbucks-logo.png" alt="InnBucks" className="w-11 h-11 rounded-lg bg-[#09223B] object-contain p-1" />
             </div>
             <h3 className="font-bold text-base text-md-on-surface mb-1">
               {selectedFile ? selectedFile.name : 'Upload your transaction CSV file'}

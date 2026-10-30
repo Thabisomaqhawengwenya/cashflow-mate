@@ -488,7 +488,7 @@ export default function OverviewScreen() {
               ]}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <EcoCashLogo size={15} />
+                <EcoCashLogo size={20} />
                 <Text style={styles.drawerCurCode}>{t('drawer_zig')}</Text>
               </View>
               <Text style={[styles.drawerBalance, { color: BlueTokens.success }]}>
@@ -592,8 +592,9 @@ export default function OverviewScreen() {
               { transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
-            <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
-              <Ionicons name="chatbox-ellipses-outline" size={20} color={EmeraldTokens.pastelRoseText} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <EcoCashLogo size={36} />
+              <InnBucksLogo size={36} />
             </View>
             <Text style={styles.actionTitle}>{t('action_paste_sms')}</Text>
             <Text style={styles.actionSubtitle}>{t('action_sms_sub')}</Text>
@@ -810,9 +811,9 @@ export default function OverviewScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.smsChipRow}>
               {SAMPLE_SMS_CHIPS.map((chip, i) => {
                 const renderChipLogo = () => {
-                  if (chip.type === 'ecocash') return <EcoCashLogo size={15} style={{ marginRight: 6 }} />;
-                  if (chip.type === 'bakers_inn') return <BakersInnLogo size={15} style={{ marginRight: 6 }} />;
-                  return <InnBucksLogo size={15} style={{ marginRight: 6 }} />;
+                  if (chip.type === 'ecocash') return <EcoCashLogo size={20} style={{ marginRight: 6 }} />;
+                  if (chip.type === 'bakers_inn') return <BakersInnLogo size={20} style={{ marginRight: 6 }} />;
+                  return <InnBucksLogo size={20} style={{ marginRight: 6 }} />;
                 };
                 return (
                   <Pressable

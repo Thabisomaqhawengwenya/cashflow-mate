@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import Svg, { Path, Rect, Circle, G, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { View, Image, StyleSheet, ViewStyle } from 'react-native';
+import Svg, { Path, Rect, Circle, Text as SvgText } from 'react-native-svg';
 
 interface LogoProps {
   size?: number;
@@ -8,56 +8,89 @@ interface LogoProps {
 }
 
 /**
- * Authentic EcoCash Brand Logo (Vector SVG)
- * Royal Blue & Cyan mobile money emblem
+ * Official EcoCash Brand Logo (Permanent Bundled Asset)
  */
 export const EcoCashLogo: React.FC<LogoProps> = ({ size = 32, style }) => {
+  const radius = Math.max(4, Math.round(size * 0.26));
   return (
-    <View style={[styles.container, { width: size, height: size }, style]}>
-      <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-        <Defs>
-          <LinearGradient id="ecoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#0B4DA2" />
-            <Stop offset="100%" stopColor="#0284C7" />
-          </LinearGradient>
-        </Defs>
-        {/* Squircle Badge */}
-        <Rect width="48" height="48" rx="14" fill="url(#ecoGrad)" />
-        {/* EcoCash Iconic Lowercase 'e' with Signal Waves */}
-        <Path
-          d="M24 12C17.37 12 12 17.37 12 24C12 30.63 17.37 36 24 36C28.5 36 32.4 33.5 34.4 29.8H29.5C28.2 31.4 26.2 32.4 24 32.4C19.7 32.4 16.2 29.2 15.8 25.1H35.8C35.9 24.4 36 23.7 36 23C36 16.9 30.6 12 24 12ZM16 21.8C16.8 17.9 20.1 15.2 24 15.2C27.9 15.2 31.2 17.9 32 21.8H16Z"
-          fill="#FFFFFF"
-        />
-        {/* Radiating Mobile Signal Dot */}
-        <Circle cx="35" cy="13" r="3.5" fill="#55D7FF" />
-      </Svg>
+    <View
+      style={[
+        styles.container,
+        {
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: '#FFFFFF',
+          borderWidth: 1,
+          borderColor: 'rgba(21, 101, 216, 0.16)',
+        },
+        style,
+      ]}
+    >
+      <Image
+        source={require('../assets/images/ecocash-logo.png')}
+        style={{ width: size * 0.94, height: size * 0.94 }}
+        resizeMode="contain"
+        accessibilityLabel="EcoCash Logo"
+      />
     </View>
   );
 };
 
 /**
- * Authentic InnBucks Brand Logo (Vector SVG)
- * Simbisa Brands InnBucks Gold & Dark Navy Coin Emblem
+ * Official InnBucks Brand Logo (Permanent Bundled Asset)
  */
 export const InnBucksLogo: React.FC<LogoProps> = ({ size = 32, style }) => {
+  const radius = Math.max(4, Math.round(size * 0.26));
   return (
-    <View style={[styles.container, { width: size, height: size }, style]}>
-      <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-        <Defs>
-          <LinearGradient id="innGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#F59E0B" />
-            <Stop offset="100%" stopColor="#D97706" />
-          </LinearGradient>
-        </Defs>
-        {/* Outer Round Coin */}
-        <Rect width="48" height="48" rx="14" fill="#06152E" />
-        <Circle cx="24" cy="24" r="18" fill="url(#innGrad)" />
-        {/* InnBucks Stylized "B" Chevron Cut */}
-        <Path
-          d="M18 14H27C29.76 14 32 16.24 32 19C32 20.8 31 22.37 29.5 23.18C31.5 24 33 25.8 33 28C33 30.76 30.76 33 28 33H18V14ZM22 21.5H26.5C27.88 21.5 29 20.38 29 19C29 17.62 27.88 16.5 26.5 16.5H22V21.5ZM22 30.5H27.5C28.88 30.5 30 29.38 30 28C30 26.62 28.88 25.5 27.5 25.5H22V30.5Z"
-          fill="#FFFFFF"
-        />
-      </Svg>
+    <View
+      style={[
+        styles.container,
+        {
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: '#09223B',
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.12)',
+        },
+        style,
+      ]}
+    >
+      <Image
+        source={require('../assets/images/innbucks-logo.png')}
+        style={{ width: size * 0.94, height: size * 0.94 }}
+        resizeMode="contain"
+        accessibilityLabel="InnBucks Logo"
+      />
+    </View>
+  );
+};
+
+/**
+ * Official CSV Statement Logo (Permanent Bundled Asset)
+ */
+export const CsvLogo: React.FC<LogoProps> = ({ size = 32, style }) => {
+  const radius = Math.max(4, Math.round(size * 0.24));
+  return (
+    <View
+      style={[
+        styles.container,
+        {
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: 'transparent',
+        },
+        style,
+      ]}
+    >
+      <Image
+        source={require('../assets/images/csv-logo.png')}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
+        accessibilityLabel="CSV Statement Logo"
+      />
     </View>
   );
 };
@@ -199,6 +232,9 @@ export const CompanyBrandLogo: React.FC<{
   }
   if (norm.includes('innbucks') || norm.includes('simbisa') || norm.includes('chicken inn') || norm.includes('pizza inn')) {
     return <InnBucksLogo size={size} style={style} />;
+  }
+  if (norm.includes('csv') || norm.includes('spreadsheet')) {
+    return <CsvLogo size={size} style={style} />;
   }
   if (norm.includes('cabs') || norm.includes('old mutual')) {
     return <CabsLogo size={size} style={style} />;

@@ -33,6 +33,7 @@ import { M3Button } from '@/components/M3/M3Button';
 import {
   EcoCashLogo,
   InnBucksLogo,
+  CsvLogo,
   CabsLogo,
   CompanyBrandLogo,
 } from '@/components/BrandLogos';
@@ -284,9 +285,7 @@ export default function ImportScreen() {
 
         {/* Main Upload Box */}
         <View style={styles.uploadCard}>
-          <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
-            <Ionicons name="cloud-upload-outline" size={26} color={EmeraldTokens.pastelSkyText} />
-          </View>
+          <CsvLogo size={54} style={{ marginBottom: 12 }} />
           <Text style={styles.uploadTitle}>{t('upload_csv_title')}</Text>
           <Text style={styles.uploadSub}>
             {t('upload_csv_sub')}
@@ -317,9 +316,9 @@ export default function ImportScreen() {
           {SAMPLE_CSV_PRESETS.map((p) => {
             const isSelected = activePresetId === p.id;
             const renderLogo = () => {
-              if (p.id === 'ecocash') return <EcoCashLogo size={36} />;
-              if (p.id === 'innbucks') return <InnBucksLogo size={36} />;
-              return <CabsLogo size={36} />;
+              if (p.id === 'ecocash') return <EcoCashLogo size={42} />;
+              if (p.id === 'innbucks') return <InnBucksLogo size={42} />;
+              return <CsvLogo size={42} />;
             };
 
             return (
