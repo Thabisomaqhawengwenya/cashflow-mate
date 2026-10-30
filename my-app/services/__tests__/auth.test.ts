@@ -27,10 +27,20 @@ describe('MobileAuthService', () => {
     const session = await MobileAuthService.demoLogin();
     expect(session.isLoggedIn).toBe(true);
     expect(session.isDemo).toBe(true);
-    expect(session.name).toBe('Tinashe Moyo');
+    expect(session.name).toBe('Mr Q');
+    expect(session.username).toBe('Mr Q');
 
     const stored = await MobileAuthService.getSession();
     expect(stored?.email).toBe('demo@cashflowmate.co.zw');
+    expect(stored?.username).toBe('Mr Q');
+  });
+
+  it('updates session username and details', async () => {
+    await MobileAuthService.demoLogin();
+    const updated = await MobileAuthService.updateSession({ username: 'Mai Simba' });
+    expect(updated?.username).toBe('Mai Simba');
+    const loaded = await MobileAuthService.getSession();
+    expect(loaded?.username).toBe('Mai Simba');
   });
 
   it('validates registration input requirements', async () => {

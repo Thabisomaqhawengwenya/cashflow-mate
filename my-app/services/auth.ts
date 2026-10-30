@@ -6,6 +6,7 @@ export const STORAGE_KEY_AUTH_SESSION = '@cashflow_user_session_v2';
 export interface UserSession {
   userId: string;
   name: string;
+  username?: string;
   email: string;
   businessName: string;
   currency: CurrencyCode;
@@ -17,7 +18,8 @@ export interface UserSession {
 
 const DEFAULT_DEMO_SESSION: UserSession = {
   userId: 'user_demo_001',
-  name: 'Tinashe Moyo',
+  name: 'Mr Q',
+  username: 'Mr Q',
   email: 'demo@cashflowmate.co.zw',
   businessName: 'Mbare Fresh Produce & Tuckshop',
   currency: 'USD',
@@ -35,7 +37,16 @@ export class MobileAuthService {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_AUTH_SESSION);
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as UserSession;
+      const parsed = JSON.parse(raw) as UserSession;
+      if (parsed.isDemo && (parsed.name === 'Tinashe Moyo' || !parsed.username)) {
+        parsed.name = 'Mr Q';
+        parsed.username = 'Mr Q';
+        await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(parsed));
+      }
+      if (!parsed.username && parsed.name) {
+        parsed.username = parsed.name;
+      }
+      return parsed;
     } catch {
       return null;
     }
@@ -64,6 +75,7 @@ export class MobileAuthService {
     const session: UserSession = {
       userId: `usr_${Date.now()}`,
       name: formattedName,
+      username: formattedName,
       email: cleanEmail,
       businessName: `${formattedName}'s Enterprise`,
       currency: 'USD',
@@ -109,6 +121,7 @@ export class MobileAuthService {
     const session: UserSession = {
       userId: `usr_${Date.now()}`,
       name: cleanName,
+      username: cleanName,
       email: cleanEmail,
       businessName: cleanBiz,
       currency: data.currency || 'USD',
@@ -142,6 +155,20 @@ export class MobileAuthService {
     };
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
     return session;
+  }
+
+  /**
+   * Update active user session details (e.g. username, name, businessName)
+   */
+  static async updateSession(partial: Partial<UserSession>): Promise<UserSession | null> {
+    const current = await this.getSession();
+    if (!current) return null;
+    const updated: UserSession = {
+      ...current,
+      ...partial,
+    };
+    await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(updated));
+    return updated;
   }
 
   /**

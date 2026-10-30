@@ -31,6 +31,7 @@ import { parseZimbabweSms, ParsedSmsResult } from '@/services/smsParser';
 import { MobileSecurityService } from '@/services/security';
 import { MobileExchangeService, PortfolioValuation } from '@/services/exchangeRates';
 import { MobileReconciliationService, ZReport } from '@/services/reconciliation';
+import { MobileAuthService, UserSession } from '@/services/auth';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
@@ -71,6 +72,7 @@ export default function OverviewScreen() {
   const { t, getCategoryLabel } = useLanguage();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
   const [activeCurrency, setActiveCurrency] = useState<CurrencyCode>('USD');
   const [period, setPeriod] = useState<'this_month' | 'last_month' | 'all'>('this_month');
@@ -112,10 +114,12 @@ export default function OverviewScreen() {
     const biz = await MobileStorageService.getBusiness();
     const txs = await MobileStorageService.getTransactions();
     const sec = await MobileSecurityService.getSecuritySettings();
+    const sess = await MobileAuthService.getSession();
     setBusiness(biz);
     setTransactions(txs);
     setIsMasked(sec.isPrivacyMaskActive);
     setIsPinSet(sec.isPinSet);
+    setSession(sess);
     if (biz?.currency) {
       setActiveCurrency(biz.currency);
     }
@@ -309,6 +313,8 @@ export default function OverviewScreen() {
     return formatMoney(val, cur);
   };
 
+  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
+
   return (
     <View style={styles.screenWrapper}>
       {/* 1. Top Emerald Hero Header */}
@@ -317,7 +323,7 @@ export default function OverviewScreen() {
         <View style={styles.topBar}>
           <View>
             <Text style={styles.greetingTitle}>
-              {t('greeting_prefix')}, {business?.name ? business.name.split(' ')[0] : 'Mr Q'}
+              {t('greeting_prefix')}, {userDisplayName}
             </Text>
             <Text style={styles.headerSubtitle}>
               {todayFormatted} &bull; {t('city_country')}

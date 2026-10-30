@@ -63,14 +63,28 @@ export default function ModalScreen() {
   const [newPin, setNewPin] = useState('');
   const [currentPin, setCurrentPin] = useState('');
 
+  // User Profile / Username State
+  const [showProfileSection, setShowProfileSection] = useState(false);
+  const [editUsername, setEditUsername] = useState('Mr Q');
+  const [editStallName, setEditStallName] = useState('Mbare Fresh Produce & Tuckshop');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   useEffect(() => {
-    MobileStorageService.getBusiness().then(setBusiness);
+    MobileStorageService.getBusiness().then((biz) => {
+      setBusiness(biz);
+      if (biz?.name) setEditStallName(biz.name);
+    });
     MobileLicenseService.getActiveLicense().then((lic) => {
       setLicense(lic);
       setKeyInput(lic.key);
     });
     MobileSecurityService.getSecuritySettings().then(setSecurity);
-    MobileAuthService.getSession().then(setSession);
+    MobileAuthService.getSession().then((sess) => {
+      setSession(sess);
+      if (sess?.username || sess?.name) {
+        setEditUsername(sess.username || sess.name);
+      }
+    });
     MobileExchangeService.getRates().then((r) => {
       setRates(r);
       setEditZwgRate(String(r.usdToZwg));
@@ -78,6 +92,35 @@ export default function ModalScreen() {
     });
     MobileSyncService.getSyncStatus().then(setSyncStatus);
   }, []);
+
+  const handleSaveProfile = async () => {
+    const cleanUser = editUsername.trim();
+    const cleanStall = editStallName.trim();
+    if (!cleanUser) {
+      Alert.alert('Empty Username', 'Please enter a valid username.');
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      const updatedSess = await MobileAuthService.updateSession({
+        username: cleanUser,
+        name: cleanUser,
+        ...(cleanStall ? { businessName: cleanStall } : {}),
+      });
+      const updatedBiz = await MobileStorageService.updateBusiness({
+        ownerName: cleanUser,
+        ...(cleanStall ? { name: cleanStall } : {}),
+      });
+      setSession(updatedSess);
+      setBusiness(updatedBiz);
+      Alert.alert('Profile Saved', `Username set to "${cleanUser}".`);
+      setShowProfileSection(false);
+    } catch {
+      Alert.alert('Error', 'Failed to save profile settings.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleActivate = async (keyToUse?: string) => {
     const targetKey = (keyToUse || keyInput).trim();
@@ -209,6 +252,8 @@ export default function ModalScreen() {
     );
   };
 
+  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
+
   return (
     <View style={styles.screenWrapper}>
       {/* 1. Top Emerald Header (Directly from Screen 2) */}
@@ -245,10 +290,10 @@ export default function ModalScreen() {
           </View>
 
           <Text style={styles.profileName} numberOfLines={2}>
-            {t('greeting_prefix')}, {business?.name || 'Mr Q'}
+            {userDisplayName}
           </Text>
           <Text style={styles.profileContact}>
-            +263 77 123 4567 &bull; Harare, Zimbabwe
+            {business?.name || 'Mbare Fresh Produce & Tuckshop'} &bull; Harare, Zimbabwe
           </Text>
 
           <View style={styles.badgeRow}>
@@ -266,26 +311,74 @@ export default function ModalScreen() {
         <Text style={styles.sectionHeading}>General & Security</Text>
 
         <View style={styles.settingsGroup}>
-          {/* Item 0: Trader Account & Sign In */}
+          {/* Item 0: Trader Profile & Username */}
           <Pressable
-            onPress={() => router.push('/login' as any)}
+            onPress={() => setShowProfileSection(!showProfileSection)}
             style={styles.settingItem}
             accessibilityRole="button"
-            accessibilityLabel="Manage Trader Account"
+            accessibilityLabel="Manage Trader Profile and Username"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
                 <Ionicons name="person-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
               </View>
               <View>
-                <Text style={styles.settingLabel}>Trader Account</Text>
+                <Text style={styles.settingLabel}>Trader Profile & Username</Text>
                 <Text style={styles.settingSub}>
-                  {session ? `${session.name} • ${session.isDemo ? 'Demo Mode' : session.email}` : 'Tap to sign in or switch account'}
+                  {userDisplayName} • {business?.name || 'Mbare Fresh Produce & Tuckshop'}
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+            <Ionicons
+              name={showProfileSection ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
           </Pressable>
+
+          {/* Expandable Trader Profile & Username Box */}
+          {showProfileSection && (
+            <View style={styles.expandedSectionBox}>
+              <Text style={styles.pinExplanation}>
+                Customize your display username. This appears on your Home dashboard greeting.
+              </Text>
+
+              <M3Input
+                label="Username / Trader Display Name"
+                value={editUsername}
+                onChangeText={setEditUsername}
+                placeholder="e.g. Mr Q"
+                autoCapitalize="words"
+              />
+
+              <M3Input
+                label="Stall / Business Name"
+                value={editStallName}
+                onChangeText={setEditStallName}
+                placeholder="e.g. Mbare Fresh Produce & Tuckshop"
+                autoCapitalize="words"
+              />
+
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <M3Button
+                    label={isSavingProfile ? 'SAVING...' : 'SAVE USERNAME'}
+                    variant="mint"
+                    size="md"
+                    onPress={handleSaveProfile}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <M3Button
+                    label="SWITCH ACCOUNT"
+                    variant="outlined"
+                    size="md"
+                    onPress={() => router.push('/login' as any)}
+                  />
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Item 1: Language Setup */}
           <View style={styles.settingItem}>

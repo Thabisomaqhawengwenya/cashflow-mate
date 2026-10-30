@@ -31,6 +31,7 @@ export interface MobileDebt {
 
 export interface BusinessProfile {
   name: string;
+  ownerName?: string;
   businessType: string;
   currency: CurrencyCode;
   country: string;
@@ -162,6 +163,7 @@ function cloneSeed<T>(value: T): T {
 
 const INITIAL_BUSINESS: BusinessProfile = {
   name: 'Mbare Fresh Produce & Tuckshop',
+  ownerName: 'Mr Q',
   businessType: 'Tuckshop & Market Stall',
   currency: 'USD',
   country: 'Zimbabwe',
@@ -445,7 +447,11 @@ export class MobileStorageService {
       await AsyncStorage.setItem(STORAGE_KEY_BIZ, JSON.stringify(INITIAL_BUSINESS));
       return cloneSeed(INITIAL_BUSINESS);
     }
-    return parseStored<BusinessProfile>(data, cloneSeed(INITIAL_BUSINESS));
+    const parsed = parseStored<BusinessProfile>(data, cloneSeed(INITIAL_BUSINESS));
+    if (!parsed.ownerName) {
+      parsed.ownerName = 'Mr Q';
+    }
+    return parsed;
   }
 
   static async updateBusiness(profile: Partial<BusinessProfile>): Promise<BusinessProfile> {
