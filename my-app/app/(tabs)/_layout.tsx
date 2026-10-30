@@ -38,19 +38,25 @@ export default function TabLayout() {
                   backgroundColor: '#FFFFFF',
                   borderTopColor: BlueTokens.borders,
                   borderTopWidth: 1,
-                  height: 64,
-                  paddingBottom: 10,
-                  paddingTop: 8,
+                  height: 68,
+                  paddingBottom: 6,
+                  paddingTop: 6,
                   shadowColor: BlueTokens.darkNavy,
                   shadowOffset: { width: 0, height: -2 },
                   shadowOpacity: 0.04,
                   shadowRadius: 8,
                   elevation: 4,
                 },
+            tabBarIconStyle: {
+              height: 24,
+            },
             tabBarLabelStyle: {
               fontSize: 11,
+              lineHeight: 15,
+              minHeight: 16,
               fontWeight: '700',
               letterSpacing: 0.2,
+              marginTop: 2,
             },
           }}
         >
