@@ -8,6 +8,33 @@ interface LogoProps {
 }
 
 /**
+ * Official CashFlow Mate App Logo (Permanent Bundled Asset)
+ * 3D Blue Squircle Wallet & Rising Chart Emblem
+ */
+export const AppLogo: React.FC<LogoProps> = ({ size = 36, style }) => {
+  return (
+    <View
+      style={[
+        styles.container,
+        {
+          width: size,
+          height: size,
+          backgroundColor: 'transparent',
+        },
+        style,
+      ]}
+    >
+      <Image
+        source={require('../assets/images/app-logo.png')}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
+        accessibilityLabel="CashFlow Mate Logo"
+      />
+    </View>
+  );
+};
+
+/**
  * Official EcoCash Brand Logo (Permanent Bundled Asset)
  */
 export const EcoCashLogo: React.FC<LogoProps> = ({ size = 32, style }) => {
@@ -227,6 +254,9 @@ export const CompanyBrandLogo: React.FC<{
 }> = ({ identifier, size = 32, fallbackIcon, style }) => {
   const norm = (identifier || '').toLowerCase();
 
+  if (norm.includes('cashflow') || norm.includes('till')) {
+    return <AppLogo size={size} style={style} />;
+  }
   if (norm.includes('ecocash') || norm.includes('econet')) {
     return <EcoCashLogo size={size} style={style} />;
   }

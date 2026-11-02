@@ -45,9 +45,11 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         {/* Brand Header */}
         <div className="h-16 px-6 flex items-center justify-between border-b border-md-outline-variant/30">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-md-primary flex items-center justify-center text-md-on-primary font-bold shadow-sm">
-              CM
-            </div>
+            <img
+              src="/logos/app-logo.png"
+              alt="CashFlow Mate Logo"
+              className="w-9 h-9 rounded-xl object-contain drop-shadow-sm"
+            />
             <div>
               <h1 className="font-bold text-base leading-tight tracking-tight text-md-on-surface">
                 CashFlow Mate
@@ -120,9 +122,11 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         {/* Mobile Header Bar */}
         <header className="md:hidden h-14 bg-md-surface-container-low px-4 flex items-center justify-between border-b border-md-outline-variant/30 sticky top-0 z-30">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-md-primary flex items-center justify-center text-md-on-primary font-bold text-xs">
-              CM
-            </div>
+            <img
+              src="/logos/app-logo.png"
+              alt="CashFlow Mate Logo"
+              className="w-7 h-7 rounded-lg object-contain"
+            />
             <div>
               <h2 className="font-bold text-sm text-md-on-surface leading-tight">CashFlow Mate</h2>
               <span className="text-[10px] text-md-on-surface-variant truncate block max-w-[150px]">

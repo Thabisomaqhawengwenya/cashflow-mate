@@ -16,6 +16,7 @@ import { MobileAuthService } from '@/services/auth';
 import { M3Input } from '@/components/M3/M3Input';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
+import { AppLogo } from '@/components/BrandLogos';
 import { useAppearance } from '@/context/AppearanceContext';
 
 export default function LoginScreen() {
@@ -152,13 +153,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.brandRow}>
-            <View style={[styles.logoBadge, { backgroundColor: palette.primary }]}>
-              <Ionicons
-                name={showAdminFields ? 'shield-half' : 'wallet'}
-                size={26}
-                color="#FFFFFF"
-              />
-            </View>
+            <AppLogo size={54} />
             <View>
               <Text style={styles.brandTitle}>CashFlow Mate</Text>
               <Text style={[styles.brandSubtitle, { color: palette.accent }]}>

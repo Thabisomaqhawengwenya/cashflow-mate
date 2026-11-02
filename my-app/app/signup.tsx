@@ -16,6 +16,7 @@ import { CurrencyCode } from '@/services/storage';
 import { MobileAuthService } from '@/services/auth';
 import { M3Input } from '@/components/M3/M3Input';
 import { M3Button } from '@/components/M3/M3Button';
+import { AppLogo } from '@/components/BrandLogos';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -109,6 +110,18 @@ export default function SignupScreen() {
             >
               <Text style={styles.skipText}>Use Demo Till</Text>
             </Pressable>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+            <AppLogo size={48} />
+            <View>
+              <Text style={{ fontSize: 19, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.3 }}>
+                CashFlow Mate
+              </Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: BlueTokens.accent, letterSpacing: 0.6 }}>
+                ZIM MARKET TILL OS
+              </Text>
+            </View>
           </View>
 
           <Text style={styles.heroGreeting}>Create Till Account</Text>

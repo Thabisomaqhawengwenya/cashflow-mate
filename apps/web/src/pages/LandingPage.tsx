@@ -50,9 +50,11 @@ export const LandingPage: React.FC = () => {
       {/* Top Header */}
       <header className="border-b border-md-outline-variant/30 sticky top-0 bg-md-surface/90 backdrop-blur-md z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-md-primary flex items-center justify-center text-md-on-primary font-bold shadow-xs">
-            CM
-          </div>
+          <img
+            src="/logos/app-logo.png"
+            alt="CashFlow Mate Logo"
+            className="w-9 h-9 rounded-xl object-contain drop-shadow-sm"
+          />
           <div>
             <span className="font-bold text-base tracking-tight text-md-on-surface">CashFlow Mate</span>
             <span className="text-[10px] block text-md-on-surface-variant font-medium">Zimbabwe</span>

@@ -38,6 +38,7 @@ import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
 import {
+  AppLogo,
   EcoCashLogo,
   InnBucksLogo,
   BakersInnLogo,
@@ -323,13 +324,16 @@ export default function OverviewScreen() {
       <View style={[styles.stickyTopBar, { backgroundColor: palette.headerBg }]}>
         {/* Top App Bar Row */}
         <View style={styles.topBar}>
-          <View>
-            <Text style={styles.greetingTitle}>
-              {t('greeting_prefix')}, {userDisplayName}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              {todayFormatted} &bull; {t('city_country')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <AppLogo size={36} />
+            <View>
+              <Text style={styles.greetingTitle}>
+                {t('greeting_prefix')}, {userDisplayName}
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                {todayFormatted} &bull; {t('city_country')}
+              </Text>
+            </View>
           </View>
           <View style={styles.topRightActions}>
             {/* Dark Mode / Light Mode Quick Toggle */}

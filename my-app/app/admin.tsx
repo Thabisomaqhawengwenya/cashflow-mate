@@ -35,6 +35,7 @@ import {
   TICKET_CATEGORY_LABELS,
 } from '@/services/admin';
 import { generateLicenseKey, LicenseTier } from '@/services/licensing';
+import { AppLogo } from '@/components/BrandLogos';
 
 type AdminSection =
   | 'overview'
@@ -412,9 +413,7 @@ export default function AdminBackOfficePortalScreen() {
         {/* Minimal Left Navigation Rail */}
         <View style={[styles.sidebar, !isDesktop && styles.sidebarMobile]}>
           <View style={styles.brandHeader}>
-            <View style={styles.brandMark}>
-              <Text style={styles.brandMarkText}>C</Text>
-            </View>
+            <AppLogo size={34} />
             <View>
               <Text style={styles.brandName}>CashFlow Mate</Text>
               <Text style={styles.brandMeta}>Admin</Text>

@@ -6,6 +6,7 @@ import { BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
+import { AppLogo } from '@/components/BrandLogos';
 
 interface NavItem {
   id: string;
@@ -86,9 +87,7 @@ export const DesktopSidebar: React.FC = () => {
       {/* 1. Brand Logo Header */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
-          <View style={[styles.logoBadge, { backgroundColor: palette.primary }]}>
-            <Ionicons name="wallet" size={20} color="#FFFFFF" />
-          </View>
+          <AppLogo size={42} />
           <View style={styles.logoTextWrapper}>
             <Text style={styles.brandTitle}>CashFlow Mate</Text>
             <Text style={[styles.brandSubtitle, { color: palette.accent }]}>

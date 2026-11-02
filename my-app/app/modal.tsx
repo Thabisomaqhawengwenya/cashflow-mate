@@ -33,6 +33,7 @@ import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
+import { AppLogo } from '@/components/BrandLogos';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
@@ -971,6 +972,17 @@ export default function ModalScreen() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
           </Pressable>
+        </View>
+
+        {/* App Branding & Version Card */}
+        <View style={{ alignItems: 'center', marginBottom: 20, marginTop: 8 }}>
+          <AppLogo size={48} />
+          <Text style={{ fontSize: 14, fontWeight: '800', color: EmeraldTokens.textMain, marginTop: 8 }}>
+            CashFlow Mate
+          </Text>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: EmeraldTokens.textSubtle, marginTop: 2 }}>
+            ZIM MARKET TILL OS • v1.2.0
+          </Text>
         </View>
 
         {/* 4. Bottom Full Pill Mint Action Button (Directly from Screen 2) */}
