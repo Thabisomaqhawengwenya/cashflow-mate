@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
+import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export interface M3InputProps extends TextInputProps {
   label: string;
@@ -13,31 +14,32 @@ export interface M3InputProps extends TextInputProps {
 export const M3Input: React.FC<M3InputProps> = ({ label, error, prefix, style, ...props }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { surfaces } = useAppearance();
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: EmeraldTokens.textSlate }]}>{label}</Text>
+      <Text style={[styles.label, { color: surfaces.textPrimary }]}>{label}</Text>
       <View
         style={[
           styles.inputWrapper,
           {
-            backgroundColor: '#F7F9FC',
-            borderColor: error ? theme.outflow : BlueTokens.borders,
+            backgroundColor: surfaces.inputBg,
+            borderColor: error ? theme.outflow : surfaces.border,
           },
         ]}
       >
         {prefix ? (
-          <Text style={styles.prefixText}>{prefix}</Text>
+          <Text style={[styles.prefixText, { color: surfaces.textMuted }]}>{prefix}</Text>
         ) : null}
         <TextInput
           style={[
             styles.input,
             {
-              color: EmeraldTokens.textSlate,
+              color: surfaces.textPrimary,
             },
             style,
           ]}
-          placeholderTextColor={EmeraldTokens.textSubtle}
+          placeholderTextColor={surfaces.textMuted || EmeraldTokens.textSubtle}
           {...props}
         />
       </View>
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
   prefixText: {
     fontSize: 14,
     fontWeight: '700',
-    color: EmeraldTokens.textMuted,
     marginRight: 6,
   },
   input: {

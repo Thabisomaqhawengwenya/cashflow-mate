@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
-import { useColorScheme } from '@/components/useColorScheme';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export interface M3CardProps {
   children: React.ReactNode;
@@ -11,18 +10,10 @@ export interface M3CardProps {
 }
 
 export const M3Card: React.FC<M3CardProps> = ({ children, variant = 'elevated', style }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme];
-
-  const borderRadius =
-    variant === 'kpi'
-      ? DesignTokens.shapes.kpiCard
-      : variant === 'action'
-      ? DesignTokens.shapes.card
-      : DesignTokens.shapes.card;
+  const { surfaces, cardRadius } = useAppearance();
 
   const backgroundColor =
-    variant === 'container' ? theme.surfaceContainer : theme.surface;
+    variant === 'container' ? surfaces.cardElevatedBg : surfaces.cardBg;
 
   return (
     <View
@@ -31,8 +22,8 @@ export const M3Card: React.FC<M3CardProps> = ({ children, variant = 'elevated', 
         DesignTokens.shadows.softCard,
         {
           backgroundColor,
-          borderRadius,
-          borderColor: theme.outlineVariant,
+          borderRadius: cardRadius,
+          borderColor: surfaces.border,
         },
         style,
       ]}

@@ -71,7 +71,7 @@ export default function OverviewScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { t, getCategoryLabel } = useLanguage();
-  const { palette, cardRadius, chipRadius } = useAppearance();
+  const { palette, surfaces, isDarkMode, toggleDarkMode, cardRadius, chipRadius } = useAppearance();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [session, setSession] = useState<UserSession | null>(null);
@@ -318,9 +318,9 @@ export default function OverviewScreen() {
   const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
 
   return (
-    <View style={styles.screenWrapper}>
+    <View style={[styles.screenWrapper, { backgroundColor: palette.headerBg }]}>
       {/* 1. Sticky Top App Bar */}
-      <View style={styles.stickyTopBar}>
+      <View style={[styles.stickyTopBar, { backgroundColor: palette.headerBg }]}>
         {/* Top App Bar Row */}
         <View style={styles.topBar}>
           <View>
@@ -332,6 +332,23 @@ export default function OverviewScreen() {
             </Text>
           </View>
           <View style={styles.topRightActions}>
+            {/* Dark Mode / Light Mode Quick Toggle */}
+            <Pressable
+              onPress={toggleDarkMode}
+              accessibilityRole="button"
+              accessibilityLabel={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Theme'}
+              style={[
+                styles.iconButton,
+                isDarkMode && { backgroundColor: 'rgba(255, 255, 255, 0.22)' },
+              ]}
+            >
+              <Ionicons
+                name={isDarkMode ? 'sunny' : 'moon-outline'}
+                size={18}
+                color={isDarkMode ? '#FBBF24' : '#FFFFFF'}
+              />
+            </Pressable>
+
             {/* Privacy Mask Toggle Button */}
             <Pressable
               onPress={handleToggleMask}

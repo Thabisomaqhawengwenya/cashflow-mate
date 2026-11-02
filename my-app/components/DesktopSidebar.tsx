@@ -62,7 +62,7 @@ const NAV_ITEMS: NavItem[] = [
 export const DesktopSidebar: React.FC = () => {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const { palette } = useAppearance();
+  const { palette, isDarkMode, toggleDarkMode } = useAppearance();
 
   const isItemActive = (item: NavItem) => {
     if (item.id === 'index') {
@@ -86,13 +86,34 @@ export const DesktopSidebar: React.FC = () => {
       {/* 1. Brand Logo Header */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
-          <View style={styles.logoBadge}>
+          <View style={[styles.logoBadge, { backgroundColor: palette.primary }]}>
             <Ionicons name="wallet" size={20} color="#FFFFFF" />
           </View>
           <View style={styles.logoTextWrapper}>
             <Text style={styles.brandTitle}>CashFlow Mate</Text>
-            <Text style={styles.brandSubtitle}>ZIM MARKET TILL OS</Text>
+            <Text style={[styles.brandSubtitle, { color: palette.accent }]}>ZIM MARKET TILL OS</Text>
           </View>
+          <Pressable
+            onPress={toggleDarkMode}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.14)',
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Theme'}
+          >
+            <Ionicons
+              name={isDarkMode ? 'sunny' : 'moon'}
+              size={16}
+              color={isDarkMode ? '#FBBF24' : palette.accent}
+            />
+          </Pressable>
         </View>
 
         <View style={styles.statusPill}>

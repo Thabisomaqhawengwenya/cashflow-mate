@@ -1,8 +1,9 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, ViewStyle, ActivityIndicator, TextStyle } from 'react-native';
-import Colors, { EmeraldTokens } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export interface M3ButtonProps {
   label: string;
@@ -33,32 +34,34 @@ export const M3Button: React.FC<M3ButtonProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const { palette, surfaces, buttonRadius } = useAppearance();
 
   const height = DesignTokens.buttonHeights[size];
 
   const getBackgroundColor = (pressed: boolean) => {
-    if (disabled) return theme.surfaceVariant;
-    if (variant === 'mint') return pressed ? EmeraldTokens.mintHover : EmeraldTokens.mintCta;
-    if (variant === 'filled') return pressed ? theme.primaryDark : theme.primary;
-    if (variant === 'tonal') return pressed ? theme.secondaryContainer : theme.secondaryContainer;
-    if (variant === 'outlined' || variant === 'text') return pressed ? theme.primaryContainer : 'transparent';
-    return EmeraldTokens.mintCta;
+    if (disabled) return surfaces.cardElevatedBg;
+    if (variant === 'mint' || variant === 'filled') {
+      return pressed ? palette.headerBg : palette.primary;
+    }
+    if (variant === 'tonal') return pressed ? palette.surfaceTint : surfaces.cardElevatedBg;
+    if (variant === 'outlined' || variant === 'text')
+      return pressed ? palette.surfaceTint : 'transparent';
+    return palette.primary;
   };
 
   const getTextColor = () => {
-    if (disabled) return theme.tabIconDefault;
-    if (variant === 'mint') return EmeraldTokens.mintDarkText;
-    if (variant === 'filled') return '#FFFFFF';
-    if (variant === 'tonal') return theme.text;
-    if (variant === 'outlined' || variant === 'text') return theme.primary;
-    return EmeraldTokens.mintDarkText;
+    if (disabled) return surfaces.textMuted;
+    if (variant === 'mint' || variant === 'filled') return '#FFFFFF';
+    if (variant === 'tonal') return surfaces.textPrimary;
+    if (variant === 'outlined' || variant === 'text') return palette.primary;
+    return '#FFFFFF';
   };
 
   const getBorderStyle = () => {
     if (variant === 'outlined') {
       return {
         borderWidth: 1,
-        borderColor: theme.outline,
+        borderColor: surfaces.border,
       };
     }
     return {};
@@ -76,7 +79,7 @@ export const M3Button: React.FC<M3ButtonProps> = ({
         {
           height,
           backgroundColor: getBackgroundColor(pressed),
-          borderRadius: DesignTokens.shapes.pill,
+          borderRadius: buttonRadius,
           transform: [{ scale: pressed ? 0.98 : 1.0 }],
         },
         getBorderStyle(),

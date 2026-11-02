@@ -13,11 +13,11 @@ export default function TabLayout() {
   const theme = Colors[colorScheme];
   const { width } = useWindowDimensions();
   const { t } = useLanguage();
-  const { navBarStyle, palette } = useAppearance();
+  const { navBarStyle, palette, surfaces, isDarkMode } = useAppearance();
 
   // Desktop view when width >= 768px (standard tablet / desktop boundary)
   const isDesktop = width >= 768;
-  const isDarkCapsule = navBarStyle === 'compact_pill';
+  const isDarkCapsule = navBarStyle === 'compact_pill' || isDarkMode;
   const activeTint = isDarkCapsule ? palette.accent : palette.primary;
   const inactiveTint = isDarkCapsule ? 'rgba(255, 255, 255, 0.58)' : '#94A3B8';
 
@@ -33,18 +33,18 @@ export default function TabLayout() {
         left: 14,
         right: 14,
         bottom: 14,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: surfaces.navBarBg,
         borderRadius: 9999,
         borderTopWidth: 0,
         borderWidth: 1,
-        borderColor: 'rgba(15, 23, 42, 0.08)',
+        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.14)' : 'rgba(15, 23, 42, 0.08)',
         height: 68,
         paddingBottom: 6,
         paddingTop: 6,
         paddingHorizontal: 8,
         shadowColor: '#06152E',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.14,
+        shadowOpacity: isDarkMode ? 0.35 : 0.14,
         shadowRadius: 18,
         elevation: 8,
       };
@@ -75,8 +75,8 @@ export default function TabLayout() {
 
     if (navBarStyle === 'curved_sheet') {
       return {
-        backgroundColor: '#FFFFFF',
-        borderTopColor: BlueTokens.borders,
+        backgroundColor: surfaces.navBarBg,
+        borderTopColor: surfaces.border,
         borderTopWidth: 1,
         borderTopLeftRadius: 26,
         borderTopRightRadius: 26,
@@ -93,8 +93,8 @@ export default function TabLayout() {
 
     // classic_dock
     return {
-      backgroundColor: '#FFFFFF',
-      borderTopColor: BlueTokens.borders,
+      backgroundColor: surfaces.navBarBg,
+      borderTopColor: surfaces.border,
       borderTopWidth: 1,
       height: 68,
       paddingBottom: 6,
