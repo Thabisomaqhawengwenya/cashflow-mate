@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { DesktopSidebar } from '@/components/DesktopSidebar';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
+import { MobileAuthService } from '@/services/auth';
+import AdminBackOfficePortalScreen from '../admin';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -14,6 +16,21 @@ export default function TabLayout() {
   const { width } = useWindowDimensions();
   const { t } = useLanguage();
   const { navBarStyle, palette, surfaces, isDarkMode } = useAppearance();
+  const [isAdminSession, setIsAdminSession] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      MobileAuthService.getSession().then((sess) => {
+        setIsAdminSession(sess?.role === 'admin');
+      });
+    }, [])
+  );
+
+  // If the current logged-in operator is an Admin, completely replace the regular User
+  // sidebar & cashbox tabs with the dedicated Admin Back-Office Portal.
+  if (isAdminSession) {
+    return <AdminBackOfficePortalScreen />;
+  }
 
   // Desktop view when width >= 768px (standard tablet / desktop boundary)
   const isDesktop = width >= 768;

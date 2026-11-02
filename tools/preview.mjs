@@ -44,7 +44,14 @@ const server = http.createServer((req, res) => {
     const dashIdx = base.lastIndexOf('-');
     if (dashIdx > 0 && base.endsWith('.js') && fs.existsSync(dir)) {
       const prefix = base.slice(0, dashIdx + 1);
-      const candidates = fs.readdirSync(dir).filter((f) => f.startsWith(prefix) && f.endsWith('.js'));
+      const candidates = fs
+        .readdirSync(dir)
+        .filter((f) => f.startsWith(prefix) && f.endsWith('.js'))
+        .sort(
+          (a, b) =>
+            fs.statSync(path.join(dir, b)).mtimeMs -
+            fs.statSync(path.join(dir, a)).mtimeMs
+        );
       if (candidates.length > 0) {
         const fallbackFile = path.join(dir, candidates[0]);
         const data = fs.readFileSync(fallbackFile);

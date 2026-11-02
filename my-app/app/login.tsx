@@ -47,10 +47,26 @@ export default function LoginScreen() {
       if (showAdminFields) {
         await MobileAuthService.adminLogin(email, password, secretCode);
         setIsLoading(false);
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.location.assign('/admin');
+          return;
+        }
         router.replace('/admin' as any);
       } else {
-        await MobileAuthService.login(email, password);
+        const sess = await MobileAuthService.login(email, password);
         setIsLoading(false);
+        if (sess.role === 'admin') {
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.location.assign('/admin');
+            return;
+          }
+          router.replace('/admin' as any);
+          return;
+        }
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.location.assign('/');
+          return;
+        }
         router.replace('/(tabs)');
       }
     } catch (err: any) {
