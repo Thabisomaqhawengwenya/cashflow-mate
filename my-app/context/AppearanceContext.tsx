@@ -11,6 +11,13 @@ export type ThemePaletteId =
   | 'obsidian_night'
   | 'terracotta_ledger'
   | 'royal_plum'
+  | 'crimson_velvet'
+  | 'sahara_gold'
+  | 'ocean_teal'
+  | 'indigo_volt'
+  | 'forest_olive'
+  | 'cyber_magenta'
+  | 'graphite_steel'
   | 'custom';
 export type CornerGeometry = 'pill' | 'squircle' | 'sharp';
 
@@ -104,6 +111,76 @@ export const THEME_PALETTES: Record<Exclude<ThemePaletteId, 'custom'>, ThemePale
     accent: '#C4B5FD',
     surfaceTint: '#F3E8FF',
     badgeText: '#5B21B6',
+  },
+  crimson_velvet: {
+    id: 'crimson_velvet',
+    name: 'Crimson Velvet & Rose',
+    subtitle: 'Rich burgundy wine canvas with ruby red & rose quartz highlights',
+    headerBg: '#2A0A18',
+    primary: '#E11D48',
+    accent: '#FDA4AF',
+    surfaceTint: '#FFE4E6',
+    badgeText: '#9F1239',
+  },
+  sahara_gold: {
+    id: 'sahara_gold',
+    name: 'Sahara Bronze & Gold',
+    subtitle: 'Warm espresso bronze canvas with bullion gold & champagne accents',
+    headerBg: '#261C0A',
+    primary: '#D97706',
+    accent: '#FDE68A',
+    surfaceTint: '#FEF3C7',
+    badgeText: '#92400E',
+  },
+  ocean_teal: {
+    id: 'ocean_teal',
+    name: 'Zambezi Deep Teal',
+    subtitle: 'Deep river teal canvas with turquoise & aqua marine highlights',
+    headerBg: '#06282A',
+    primary: '#0D9488',
+    accent: '#5EEAD4',
+    surfaceTint: '#CCFBF1',
+    badgeText: '#115E59',
+  },
+  indigo_volt: {
+    id: 'indigo_volt',
+    name: 'Midnight Indigo Volt',
+    subtitle: 'Cosmic indigo canvas with electric iris & periwinkle glow',
+    headerBg: '#111336',
+    primary: '#4F46E5',
+    accent: '#A5B4FC',
+    surfaceTint: '#E0E7FF',
+    badgeText: '#3730A3',
+  },
+  forest_olive: {
+    id: 'forest_olive',
+    name: 'Savanna Olive & Lime',
+    subtitle: 'Deep botanical olive canvas with vibrant moss & chartreuse accents',
+    headerBg: '#1A2614',
+    primary: '#4D7C0F',
+    accent: '#BEF264',
+    surfaceTint: '#ECFCCB',
+    badgeText: '#3F6212',
+  },
+  cyber_magenta: {
+    id: 'cyber_magenta',
+    name: 'Mulberry & Magenta',
+    subtitle: 'Dark mulberry canvas with hot pink & orchid blossom highlights',
+    headerBg: '#240B28',
+    primary: '#DB2777',
+    accent: '#F9A8D4',
+    surfaceTint: '#FCE7F3',
+    badgeText: '#9D174D',
+  },
+  graphite_steel: {
+    id: 'graphite_steel',
+    name: 'Monochrome Graphite Steel',
+    subtitle: 'Minimalist architectural zinc canvas with titanium silver accents',
+    headerBg: '#18181B',
+    primary: '#3F3F46',
+    accent: '#E4E4E7',
+    surfaceTint: '#F4F4F5',
+    badgeText: '#27272A',
   },
 };
 

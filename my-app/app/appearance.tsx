@@ -32,7 +32,7 @@ const NAV_STYLES: Array<{
     title: 'Floating Pill Dock',
     subtitle: 'Detached stadium capsule floating above the bottom edge with active pill tags',
     badge: 'POPULAR',
-    icon: ' albums-outline' as any,
+    icon: 'albums-outline' as any,
   },
   {
     id: 'compact_pill',
@@ -83,47 +83,99 @@ const GEOMETRY_OPTIONS: Array<{
   },
 ];
 
-const HEADER_SWATCHES = [
-  '#06152E', // Deep Royal Navy
-  '#0C382E', // Heritage Emerald Pine
-  '#090D16', // Obsidian Carbon
-  '#1E1035', // Imperial Plum
-  '#27150E', // Espresso Clay
-  '#1E1B4B', // Midnight Indigo
-  '#31102F', // Burgundy Wine
-  '#0F2942', // Atlantic Slate
-  '#111827', // Graphite Dark
-  '#042F2E', // Deep Ocean Teal
+interface NamedColorOption {
+  name: string;
+  hex: string;
+}
+
+const HEADER_COLOR_OPTIONS: NamedColorOption[] = [
+  { name: 'Royal Navy', hex: '#06152E' },
+  { name: 'Heritage Emerald Pine', hex: '#0C382E' },
+  { name: 'Obsidian Carbon', hex: '#090D16' },
+  { name: 'Imperial Plum', hex: '#1E1035' },
+  { name: 'Espresso Terracotta', hex: '#27150E' },
+  { name: 'Midnight Indigo', hex: '#1E1B4B' },
+  { name: 'Crimson Burgundy', hex: '#2A0A18' },
+  { name: 'Sahara Bronze', hex: '#261C0A' },
+  { name: 'Zambezi Deep Teal', hex: '#06282A' },
+  { name: 'Cosmic Indigo', hex: '#111336' },
+  { name: 'Savanna Olive', hex: '#1A2614' },
+  { name: 'Dark Mulberry', hex: '#240B28' },
+  { name: 'Graphite Zinc', hex: '#18181B' },
+  { name: 'Atlantic Deep Slate', hex: '#0F2942' },
+  { name: 'Charcoal Obsidian', hex: '#111827' },
+  { name: 'Deep Ocean Abyss', hex: '#042F2E' },
+  { name: 'Royal Cobalt Night', hex: '#0A1E46' },
+  { name: 'Hunter Forest', hex: '#0B2B1E' },
+  { name: 'Roasted Mocha', hex: '#231712' },
+  { name: 'Aubergine Night', hex: '#210F26' },
+  { name: 'Dark Prussian Blue', hex: '#082032' },
+  { name: 'Onyx Pitch Black', hex: '#050507' },
+  { name: 'Copper Canyon', hex: '#2D140C' },
+  { name: 'Nordic Slate', hex: '#1E293B' },
 ];
 
-const PRIMARY_SWATCHES = [
-  '#1565D8', // Electric Blue
-  '#059669', // Emerald Green
-  '#7C3AED', // Royal Violet
-  '#E11D48', // Crimson Rose
-  '#D97706', // Amber Gold
-  '#EA580C', // Terracotta Orange
-  '#0284C7', // Sky Cobalt
-  '#DB2777', // Vivid Magenta
-  '#4F46E5', // Indigo Volt
-  '#0D9488', // Tropical Teal
+const PRIMARY_COLOR_OPTIONS: NamedColorOption[] = [
+  { name: 'Electric Royal Blue', hex: '#1565D8' },
+  { name: 'Emerald Mint Green', hex: '#059669' },
+  { name: 'Royal Amethyst Violet', hex: '#7C3AED' },
+  { name: 'Crimson Ruby Rose', hex: '#E11D48' },
+  { name: 'Sahara Amber Gold', hex: '#D97706' },
+  { name: 'Market Terracotta', hex: '#EA580C' },
+  { name: 'Cobalt Sky Blue', hex: '#0284C7' },
+  { name: 'Vivid Mulberry Pink', hex: '#DB2777' },
+  { name: 'Indigo Volt', hex: '#4F46E5' },
+  { name: 'Zambezi Teal', hex: '#0D9488' },
+  { name: 'Savanna Moss Green', hex: '#4D7C0F' },
+  { name: 'Sapphire Ocean', hex: '#2563EB' },
+  { name: 'Jade Forest', hex: '#16A34A' },
+  { name: 'Scarlet Vermilion', hex: '#DC2626' },
+  { name: 'Tangerine Flame', hex: '#F97316' },
+  { name: 'Cyan Electric', hex: '#0891B2' },
+  { name: 'Orchid Fuchsia', hex: '#C026D3' },
+  { name: 'Purple Majesty', hex: '#9333EA' },
+  { name: 'Warm Bronze', hex: '#B45309' },
+  { name: 'Graphite Steel', hex: '#3F3F46' },
+  { name: 'Slate Titanium', hex: '#475569' },
+  { name: 'Coral Sunset', hex: '#F43F5E' },
+  { name: 'Turquoise Reef', hex: '#14B8A6' },
+  { name: 'Deep Ultramarine', hex: '#1D4ED8' },
 ];
 
-const ACCENT_SWATCHES = [
-  '#55D7FF', // Cyan Glow
-  '#34D399', // Mint Neon
-  '#FBBF24', // Champagne Gold
-  '#C4B5FD', // Soft Orchid
-  '#FB7185', // Coral Rose
-  '#FDBA74', // Warm Peach
-  '#38BDF8', // Ice Sky
-  '#A3E635', // Chartreuse Lime
-  '#F472B6', // Pink Quartz
-  '#E2E8F0', // Platinum Silver
+const ACCENT_COLOR_OPTIONS: NamedColorOption[] = [
+  { name: 'Electric Sky Cyan', hex: '#55D7FF' },
+  { name: 'Luminous Mint', hex: '#34D399' },
+  { name: 'Champagne Gold', hex: '#FBBF24' },
+  { name: 'Soft Lavender Orchid', hex: '#C4B5FD' },
+  { name: 'Coral Rose Quartz', hex: '#FB7185' },
+  { name: 'Warm Sunset Peach', hex: '#FDBA74' },
+  { name: 'Arctic Ice Blue', hex: '#38BDF8' },
+  { name: 'Chartreuse Lime', hex: '#A3E635' },
+  { name: 'Pink Blossom', hex: '#F472B6' },
+  { name: 'Aqua Marine', hex: '#5EEAD4' },
+  { name: 'Periwinkle Glow', hex: '#A5B4FC' },
+  { name: 'Sunburst Lemon', hex: '#FDE047' },
+  { name: 'Spring Emerald', hex: '#6EE7B7' },
+  { name: 'Neon Magenta', hex: '#F0ABFC' },
+  { name: 'Amber Honey', hex: '#FCD34D' },
+  { name: 'Platinum Silver', hex: '#E2E8F0' },
+  { name: 'Neon Cyan', hex: '#22D3EE' },
+  { name: 'Electric Lime', hex: '#BEF264' },
+  { name: 'Rose Petal', hex: '#FDA4AF' },
+  { name: 'Golden Apricot', hex: '#F59E0B' },
+  { name: 'Sky Periwinkle', hex: '#93C5FD' },
+  { name: 'Turquoise Mist', hex: '#99F6E4' },
+  { name: ' Lilac Frost', hex: '#DDD6FE' },
+  { name: 'Pure Alabaster White', hex: '#FFFFFF' },
 ];
 
 function isValidHex(val: string): boolean {
   return /^#[0-9A-Fa-f]{6}$/.test(val.trim());
+}
+
+function getColorName(options: NamedColorOption[], hex: string): string {
+  const found = options.find((o) => o.hex.toUpperCase() === hex.toUpperCase());
+  return found ? `${found.name} (${found.hex.toUpperCase()})` : `Custom (${hex.toUpperCase()})`;
 }
 
 export default function AppearanceScreen() {
@@ -144,6 +196,12 @@ export default function AppearanceScreen() {
     setCustomColors,
     resetAppearance,
   } = useAppearance();
+
+  // Dropdown open states
+  const [isPaletteDropdownOpen, setIsPaletteDropdownOpen] = useState(false);
+  const [openChannelDropdown, setOpenChannelDropdown] = useState<
+    'headerBg' | 'primary' | 'accent' | null
+  >(null);
 
   const [hexHeader, setHexHeader] = useState(customColors.headerBg);
   const [hexPrimary, setHexPrimary] = useState(customColors.primary);
@@ -167,6 +225,12 @@ export default function AppearanceScreen() {
     }
   };
 
+  const toggleChannelDropdown = (channel: 'headerBg' | 'primary' | 'accent') => {
+    setOpenChannelDropdown((prev) => (prev === channel ? null : channel));
+  };
+
+  const presetKeys = Object.keys(THEME_PALETTES) as Array<Exclude<ThemePaletteId, 'custom'>>;
+
   return (
     <View style={[styles.screenWrapper, { backgroundColor: palette.headerBg }]}>
       {/* 1. Header + Live Interactive Preview Stage */}
@@ -183,7 +247,7 @@ export default function AppearanceScreen() {
           <View style={styles.titleCol}>
             <Text style={styles.headerTitle}>Appearance & UI Studio</Text>
             <Text style={[styles.headerSub, { color: palette.accent }]}>
-              DARK THEME • CUSTOM COLORS • NAV BAR • GEOMETRY
+              DARK THEME • COLOR DROPDOWNS • NAV BAR • GEOMETRY
             </Text>
           </View>
           <Pressable
@@ -297,7 +361,12 @@ export default function AppearanceScreen() {
               ]}
             >
               <View style={styles.modeIconHeader}>
-                <View style={[styles.modePreviewCircle, { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' }]}>
+                <View
+                  style={[
+                    styles.modePreviewCircle,
+                    { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
+                  ]}
+                >
                   <Ionicons name="sunny" size={18} color="#F59E0B" />
                 </View>
                 {!isDarkMode && <M3Badge label="ACTIVE" variant="mint" />}
@@ -323,7 +392,12 @@ export default function AppearanceScreen() {
               ]}
             >
               <View style={styles.modeIconHeader}>
-                <View style={[styles.modePreviewCircle, { backgroundColor: '#0F172A', borderColor: '#334155' }]}>
+                <View
+                  style={[
+                    styles.modePreviewCircle,
+                    { backgroundColor: '#0F172A', borderColor: '#334155' },
+                  ]}
+                >
                   <Ionicons name="moon" size={18} color="#38BDF8" />
                 </View>
                 {isDarkMode && <M3Badge label="ACTIVE" variant="mint" />}
@@ -332,101 +406,156 @@ export default function AppearanceScreen() {
                 Obsidian Dark Theme
               </Text>
               <Text style={[styles.modeSub, { color: surfaces.textMuted }]}>
-                Deep midnight slate surfaces (`#0B111E`) for night & low-glare use
+                Deep midnight slate surfaces (#0B111E) for night & low-glare use
               </Text>
             </Pressable>
           </View>
 
-          {/* SECTION 2: Preset Palettes & Custom Color Studio */}
+          {/* SECTION 2: Preset Theme Dropdown & Custom Color Dropdowns */}
           <Text style={[styles.sectionTitle, { color: surfaces.textPrimary, marginTop: 22 }]}>
-            2. Brand Atmosphere & Custom Color Picker
+            2. Brand Theme & Color Dropdowns
           </Text>
           <Text style={[styles.sectionSub, { color: surfaces.textMuted }]}>
-            Pick a curated preset palette or craft your own custom colors below.
+            Open the dropdown to choose from 13 preset palettes or select your own custom colors from 72+ shades.
           </Text>
 
-          <View style={styles.paletteGrid}>
-            {(Object.keys(THEME_PALETTES) as Array<Exclude<ThemePaletteId, 'custom'>>).map(
-              (key) => {
+          {/* Master Theme Palette Dropdown Trigger */}
+          <Text style={[styles.fieldLabel, { color: surfaces.textPrimary }]}>
+            Preset Theme Palette ({presetKeys.length + 1} Themes Available)
+          </Text>
+          <Pressable
+            onPress={() => setIsPaletteDropdownOpen(!isPaletteDropdownOpen)}
+            style={[
+              styles.dropdownTrigger,
+              {
+                backgroundColor: surfaces.cardBg,
+                borderRadius: cardRadius,
+                borderColor: isPaletteDropdownOpen ? palette.primary : surfaces.border,
+                borderWidth: isPaletteDropdownOpen ? 2 : 1,
+              },
+            ]}
+          >
+            <View style={styles.dropdownTriggerLeft}>
+              <View style={styles.swatchRowCompact}>
+                <View style={[styles.swatchCircle, { backgroundColor: palette.headerBg }]} />
+                <View style={[styles.swatchCircle, { backgroundColor: palette.primary }]} />
+                <View style={[styles.swatchCircle, { backgroundColor: palette.accent }]} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dropdownValueTitle, { color: surfaces.textPrimary }]}>
+                  {palette.name}
+                </Text>
+                <Text
+                  style={[styles.dropdownValueSub, { color: surfaces.textMuted }]}
+                  numberOfLines={1}
+                >
+                  {palette.subtitle}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.dropdownRightRow}>
+              <M3Badge
+                label={themeId === 'custom' ? 'CUSTOM' : 'PRESET'}
+                variant={themeId === 'custom' ? 'mint' : 'primary'}
+              />
+              <Ionicons
+                name={isPaletteDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={surfaces.textPrimary}
+              />
+            </View>
+          </Pressable>
+
+          {/* Expanded Preset Theme Dropdown Menu */}
+          {isPaletteDropdownOpen && (
+            <View
+              style={[
+                styles.dropdownMenuCard,
+                {
+                  backgroundColor: surfaces.cardBg,
+                  borderRadius: cardRadius,
+                  borderColor: surfaces.border,
+                },
+              ]}
+            >
+              {presetKeys.map((key) => {
                 const item = THEME_PALETTES[key];
                 const selected = themeId === key;
                 return (
                   <Pressable
                     key={key}
-                    onPress={() => setThemeId(key)}
+                    onPress={() => {
+                      setThemeId(key);
+                      setIsPaletteDropdownOpen(false);
+                    }}
                     style={[
-                      styles.paletteCard,
-                      {
-                        backgroundColor: surfaces.cardBg,
-                        borderRadius: cardRadius,
-                        borderColor: selected ? item.primary : surfaces.border,
-                        borderWidth: selected ? 2 : 1,
-                      },
+                      styles.dropdownOptionRow,
+                      { borderBottomColor: surfaces.border },
+                      selected && { backgroundColor: surfaces.cardElevatedBg },
                     ]}
                   >
-                    <View style={styles.swatchRow}>
+                    <View style={styles.swatchRowCompact}>
                       <View style={[styles.swatchCircle, { backgroundColor: item.headerBg }]} />
                       <View style={[styles.swatchCircle, { backgroundColor: item.primary }]} />
                       <View style={[styles.swatchCircle, { backgroundColor: item.accent }]} />
-                      {selected && (
-                        <View style={{ marginLeft: 'auto' }}>
-                          <M3Badge label="ACTIVE" variant="mint" />
-                        </View>
-                      )}
                     </View>
-                    <Text style={[styles.paletteName, { color: surfaces.textPrimary }]}>
-                      {item.name}
-                    </Text>
-                    <Text
-                      style={[styles.paletteSub, { color: surfaces.textMuted }]}
-                      numberOfLines={2}
-                    >
-                      {item.subtitle}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.dropdownOptionTitle, { color: surfaces.textPrimary }]}>
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={[styles.dropdownOptionSub, { color: surfaces.textMuted }]}
+                        numberOfLines={1}
+                      >
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                    {selected && (
+                      <Ionicons name="checkmark-circle" size={20} color={item.primary} />
+                    )}
                   </Pressable>
                 );
-              }
-            )}
+              })}
 
-            {/* Custom Palette Card */}
-            <Pressable
-              onPress={() => setThemeId('custom')}
-              style={[
-                styles.paletteCard,
-                {
-                  backgroundColor: surfaces.cardBg,
-                  borderRadius: cardRadius,
-                  borderColor: themeId === 'custom' ? customColors.primary : surfaces.border,
-                  borderWidth: themeId === 'custom' ? 2 : 1,
-                },
-              ]}
-            >
-              <View style={styles.swatchRow}>
-                <View
-                  style={[styles.swatchCircle, { backgroundColor: customColors.headerBg }]}
-                />
-                <View
-                  style={[styles.swatchCircle, { backgroundColor: customColors.primary }]}
-                />
-                <View
-                  style={[styles.swatchCircle, { backgroundColor: customColors.accent }]}
-                />
+              {/* Custom Option inside Dropdown */}
+              <Pressable
+                onPress={() => {
+                  setThemeId('custom');
+                  setIsPaletteDropdownOpen(false);
+                }}
+                style={[
+                  styles.dropdownOptionRow,
+                  { borderBottomWidth: 0 },
+                  themeId === 'custom' && { backgroundColor: surfaces.cardElevatedBg },
+                ]}
+              >
+                <View style={styles.swatchRowCompact}>
+                  <View
+                    style={[styles.swatchCircle, { backgroundColor: customColors.headerBg }]}
+                  />
+                  <View
+                    style={[styles.swatchCircle, { backgroundColor: customColors.primary }]}
+                  />
+                  <View
+                    style={[styles.swatchCircle, { backgroundColor: customColors.accent }]}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dropdownOptionTitle, { color: surfaces.textPrimary }]}>
+                    Custom Trader Palette (User Colors)
+                  </Text>
+                  <Text style={[styles.dropdownOptionSub, { color: surfaces.textMuted }]}>
+                    Use your own custom colors selected below
+                  </Text>
+                </View>
                 {themeId === 'custom' && (
-                  <View style={{ marginLeft: 'auto' }}>
-                    <M3Badge label="CUSTOM" variant="mint" />
-                  </View>
+                  <Ionicons name="checkmark-circle" size={20} color={customColors.primary} />
                 )}
-              </View>
-              <Text style={[styles.paletteName, { color: surfaces.textPrimary }]}>
-                Custom Trader Colors
-              </Text>
-              <Text style={[styles.paletteSub, { color: surfaces.textMuted }]} numberOfLines={2}>
-                Your own custom Header, Primary Button, and Highlight colors
-              </Text>
-            </Pressable>
-          </View>
+              </Pressable>
+            </View>
+          )}
 
-          {/* Interactive Custom Color Builder Card */}
+          {/* Custom Color Studio with 3 Expandable Color Dropdowns */}
           <View
             style={[
               styles.customBuilderCard,
@@ -440,23 +569,23 @@ export default function AppearanceScreen() {
             <View style={styles.customHeaderRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.customBuilderTitle, { color: surfaces.textPrimary }]}>
-                  Custom Color Studio — Choose Your Own Colors
+                  Custom Color Dropdowns — Choose Your Own Colors
                 </Text>
                 <Text style={[styles.customBuilderSub, { color: surfaces.textMuted }]}>
-                  Tap any color swatch, type a `#HEX` code, or click the color wheel box to pick any shade.
+                  Open each color dropdown below to pick from 24 shades per channel, or enter any #HEX code.
                 </Text>
               </View>
               <M3Badge
-                label={themeId === 'custom' ? 'CUSTOM ACTIVE' : 'TAP TO CUSTOMIZE'}
+                label={themeId === 'custom' ? 'CUSTOM ACTIVE' : 'TAP ANY COLOR'}
                 variant={themeId === 'custom' ? 'mint' : 'primary'}
               />
             </View>
 
-            {/* Channel A: Header & Sidebar Canvas */}
+            {/* DROPDOWN A: Header & Sidebar Canvas Color */}
             <View style={styles.colorChannelBlock}>
               <View style={styles.channelLabelRow}>
                 <Text style={[styles.channelTitle, { color: surfaces.textPrimary }]}>
-                  A. Header & Sidebar Canvas Color
+                  A. Header & Sidebar Canvas Color (24 Shades)
                 </Text>
                 <View style={styles.hexInputGroup}>
                   {Platform.OS === 'web' ? (
@@ -467,23 +596,16 @@ export default function AppearanceScreen() {
                         handleHexInput('headerBg', e.target.value, setHexHeader)
                       }
                       style={{
-                        width: 30,
-                        height: 30,
+                        width: 28,
+                        height: 28,
                         border: 'none',
                         borderRadius: 6,
                         cursor: 'pointer',
                         backgroundColor: 'transparent',
                       }}
-                      title="Pick any Header color"
+                      title="Open color wheel"
                     />
-                  ) : (
-                    <View
-                      style={[
-                        styles.colorPreviewBox,
-                        { backgroundColor: customColors.headerBg },
-                      ]}
-                    />
-                  )}
+                  ) : null}
                   <TextInput
                     style={[
                       styles.hexInput,
@@ -501,33 +623,94 @@ export default function AppearanceScreen() {
                   />
                 </View>
               </View>
-              <View style={styles.swatchStrip}>
-                {HEADER_SWATCHES.map((hex) => {
-                  const active =
-                    customColors.headerBg.toUpperCase() === hex.toUpperCase() &&
-                    themeId === 'custom';
-                  return (
-                    <Pressable
-                      key={hex}
-                      onPress={() => handleHexInput('headerBg', hex, setHexHeader)}
-                      style={[
-                        styles.pickSwatch,
-                        { backgroundColor: hex },
-                        active && styles.pickSwatchActive,
-                      ]}
-                    >
-                      {active && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-                    </Pressable>
-                  );
-                })}
-              </View>
+
+              <Pressable
+                onPress={() => toggleChannelDropdown('headerBg')}
+                style={[
+                  styles.colorDropdownBtn,
+                  {
+                    backgroundColor: surfaces.cardElevatedBg,
+                    borderColor:
+                      openChannelDropdown === 'headerBg' ? palette.primary : surfaces.border,
+                  },
+                ]}
+              >
+                <View style={styles.colorDropdownBtnLeft}>
+                  <View
+                    style={[
+                      styles.colorDropdownSwatch,
+                      { backgroundColor: customColors.headerBg },
+                    ]}
+                  />
+                  <Text style={[styles.colorDropdownText, { color: surfaces.textPrimary }]}>
+                    {getColorName(HEADER_COLOR_OPTIONS, customColors.headerBg)}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={openChannelDropdown === 'headerBg' ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={surfaces.textPrimary}
+                />
+              </Pressable>
+
+              {openChannelDropdown === 'headerBg' && (
+                <View
+                  style={[
+                    styles.colorDropdownList,
+                    {
+                      backgroundColor: surfaces.inputBg,
+                      borderColor: surfaces.border,
+                    },
+                  ]}
+                >
+                  {HEADER_COLOR_OPTIONS.map((opt) => {
+                    const isSelected =
+                      customColors.headerBg.toUpperCase() === opt.hex.toUpperCase();
+                    return (
+                      <Pressable
+                        key={opt.hex}
+                        onPress={() => {
+                          handleHexInput('headerBg', opt.hex, setHexHeader);
+                          setOpenChannelDropdown(null);
+                        }}
+                        style={[
+                          styles.colorDropdownItem,
+                          isSelected && {
+                            backgroundColor: surfaces.cardElevatedBg,
+                            borderColor: palette.primary,
+                            borderWidth: 1,
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[styles.colorItemDot, { backgroundColor: opt.hex }]}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[styles.colorItemName, { color: surfaces.textPrimary }]}
+                            numberOfLines={1}
+                          >
+                            {opt.name}
+                          </Text>
+                          <Text style={[styles.colorItemHex, { color: surfaces.textMuted }]}>
+                            {opt.hex}
+                          </Text>
+                        </View>
+                        {isSelected && (
+                          <Ionicons name="checkmark-circle" size={16} color={palette.primary} />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
-            {/* Channel B: Primary Button & Active Tab Color */}
+            {/* DROPDOWN B: Primary Buttons & Active Tab Color */}
             <View style={styles.colorChannelBlock}>
               <View style={styles.channelLabelRow}>
                 <Text style={[styles.channelTitle, { color: surfaces.textPrimary }]}>
-                  B. Primary Buttons & Active Tab Color
+                  B. Primary Buttons & Active Tab Color (24 Shades)
                 </Text>
                 <View style={styles.hexInputGroup}>
                   {Platform.OS === 'web' ? (
@@ -538,23 +721,16 @@ export default function AppearanceScreen() {
                         handleHexInput('primary', e.target.value, setHexPrimary)
                       }
                       style={{
-                        width: 30,
-                        height: 30,
+                        width: 28,
+                        height: 28,
                         border: 'none',
                         borderRadius: 6,
                         cursor: 'pointer',
                         backgroundColor: 'transparent',
                       }}
-                      title="Pick any Primary button color"
+                      title="Open color wheel"
                     />
-                  ) : (
-                    <View
-                      style={[
-                        styles.colorPreviewBox,
-                        { backgroundColor: customColors.primary },
-                      ]}
-                    />
-                  )}
+                  ) : null}
                   <TextInput
                     style={[
                       styles.hexInput,
@@ -572,33 +748,94 @@ export default function AppearanceScreen() {
                   />
                 </View>
               </View>
-              <View style={styles.swatchStrip}>
-                {PRIMARY_SWATCHES.map((hex) => {
-                  const active =
-                    customColors.primary.toUpperCase() === hex.toUpperCase() &&
-                    themeId === 'custom';
-                  return (
-                    <Pressable
-                      key={hex}
-                      onPress={() => handleHexInput('primary', hex, setHexPrimary)}
-                      style={[
-                        styles.pickSwatch,
-                        { backgroundColor: hex },
-                        active && styles.pickSwatchActive,
-                      ]}
-                    >
-                      {active && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-                    </Pressable>
-                  );
-                })}
-              </View>
+
+              <Pressable
+                onPress={() => toggleChannelDropdown('primary')}
+                style={[
+                  styles.colorDropdownBtn,
+                  {
+                    backgroundColor: surfaces.cardElevatedBg,
+                    borderColor:
+                      openChannelDropdown === 'primary' ? palette.primary : surfaces.border,
+                  },
+                ]}
+              >
+                <View style={styles.colorDropdownBtnLeft}>
+                  <View
+                    style={[
+                      styles.colorDropdownSwatch,
+                      { backgroundColor: customColors.primary },
+                    ]}
+                  />
+                  <Text style={[styles.colorDropdownText, { color: surfaces.textPrimary }]}>
+                    {getColorName(PRIMARY_COLOR_OPTIONS, customColors.primary)}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={openChannelDropdown === 'primary' ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={surfaces.textPrimary}
+                />
+              </Pressable>
+
+              {openChannelDropdown === 'primary' && (
+                <View
+                  style={[
+                    styles.colorDropdownList,
+                    {
+                      backgroundColor: surfaces.inputBg,
+                      borderColor: surfaces.border,
+                    },
+                  ]}
+                >
+                  {PRIMARY_COLOR_OPTIONS.map((opt) => {
+                    const isSelected =
+                      customColors.primary.toUpperCase() === opt.hex.toUpperCase();
+                    return (
+                      <Pressable
+                        key={opt.hex}
+                        onPress={() => {
+                          handleHexInput('primary', opt.hex, setHexPrimary);
+                          setOpenChannelDropdown(null);
+                        }}
+                        style={[
+                          styles.colorDropdownItem,
+                          isSelected && {
+                            backgroundColor: surfaces.cardElevatedBg,
+                            borderColor: palette.primary,
+                            borderWidth: 1,
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[styles.colorItemDot, { backgroundColor: opt.hex }]}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[styles.colorItemName, { color: surfaces.textPrimary }]}
+                            numberOfLines={1}
+                          >
+                            {opt.name}
+                          </Text>
+                          <Text style={[styles.colorItemHex, { color: surfaces.textMuted }]}>
+                            {opt.hex}
+                          </Text>
+                        </View>
+                        {isSelected && (
+                          <Ionicons name="checkmark-circle" size={16} color={opt.hex} />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
-            {/* Channel C: Highlight & Glow Accent Color */}
+            {/* DROPDOWN C: Highlight & Glow Accent Color */}
             <View style={[styles.colorChannelBlock, { marginBottom: 0 }]}>
               <View style={styles.channelLabelRow}>
                 <Text style={[styles.channelTitle, { color: surfaces.textPrimary }]}>
-                  C. Highlight & Glow Accent Color
+                  C. Highlight & Glow Accent Color (24 Shades)
                 </Text>
                 <View style={styles.hexInputGroup}>
                   {Platform.OS === 'web' ? (
@@ -609,23 +846,16 @@ export default function AppearanceScreen() {
                         handleHexInput('accent', e.target.value, setHexAccent)
                       }
                       style={{
-                        width: 30,
-                        height: 30,
+                        width: 28,
+                        height: 28,
                         border: 'none',
                         borderRadius: 6,
                         cursor: 'pointer',
                         backgroundColor: 'transparent',
                       }}
-                      title="Pick any Accent highlight color"
+                      title="Open color wheel"
                     />
-                  ) : (
-                    <View
-                      style={[
-                        styles.colorPreviewBox,
-                        { backgroundColor: customColors.accent },
-                      ]}
-                    />
-                  )}
+                  ) : null}
                   <TextInput
                     style={[
                       styles.hexInput,
@@ -643,26 +873,87 @@ export default function AppearanceScreen() {
                   />
                 </View>
               </View>
-              <View style={styles.swatchStrip}>
-                {ACCENT_SWATCHES.map((hex) => {
-                  const active =
-                    customColors.accent.toUpperCase() === hex.toUpperCase() &&
-                    themeId === 'custom';
-                  return (
-                    <Pressable
-                      key={hex}
-                      onPress={() => handleHexInput('accent', hex, setHexAccent)}
-                      style={[
-                        styles.pickSwatch,
-                        { backgroundColor: hex },
-                        active && styles.pickSwatchActive,
-                      ]}
-                    >
-                      {active && <Ionicons name="checkmark" size={14} color="#0F172A" />}
-                    </Pressable>
-                  );
-                })}
-              </View>
+
+              <Pressable
+                onPress={() => toggleChannelDropdown('accent')}
+                style={[
+                  styles.colorDropdownBtn,
+                  {
+                    backgroundColor: surfaces.cardElevatedBg,
+                    borderColor:
+                      openChannelDropdown === 'accent' ? palette.primary : surfaces.border,
+                  },
+                ]}
+              >
+                <View style={styles.colorDropdownBtnLeft}>
+                  <View
+                    style={[
+                      styles.colorDropdownSwatch,
+                      { backgroundColor: customColors.accent },
+                    ]}
+                  />
+                  <Text style={[styles.colorDropdownText, { color: surfaces.textPrimary }]}>
+                    {getColorName(ACCENT_COLOR_OPTIONS, customColors.accent)}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={openChannelDropdown === 'accent' ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={surfaces.textPrimary}
+                />
+              </Pressable>
+
+              {openChannelDropdown === 'accent' && (
+                <View
+                  style={[
+                    styles.colorDropdownList,
+                    {
+                      backgroundColor: surfaces.inputBg,
+                      borderColor: surfaces.border,
+                    },
+                  ]}
+                >
+                  {ACCENT_COLOR_OPTIONS.map((opt) => {
+                    const isSelected =
+                      customColors.accent.toUpperCase() === opt.hex.toUpperCase();
+                    return (
+                      <Pressable
+                        key={opt.hex}
+                        onPress={() => {
+                          handleHexInput('accent', opt.hex, setHexAccent);
+                          setOpenChannelDropdown(null);
+                        }}
+                        style={[
+                          styles.colorDropdownItem,
+                          isSelected && {
+                            backgroundColor: surfaces.cardElevatedBg,
+                            borderColor: palette.primary,
+                            borderWidth: 1,
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[styles.colorItemDot, { backgroundColor: opt.hex }]}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[styles.colorItemName, { color: surfaces.textPrimary }]}
+                            numberOfLines={1}
+                          >
+                            {opt.name}
+                          </Text>
+                          <Text style={[styles.colorItemHex, { color: surfaces.textMuted }]}>
+                            {opt.hex}
+                          </Text>
+                        </View>
+                        {isSelected && (
+                          <Ionicons name="checkmark-circle" size={16} color={palette.primary} />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
             </View>
           </View>
 
@@ -931,6 +1222,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 14,
   },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
   modeToggleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -964,38 +1261,63 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
-  paletteGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  paletteCard: {
-    width: '48%',
-    minWidth: 200,
-    flexGrow: 1,
-    padding: 14,
-  },
-  swatchRow: {
+  dropdownTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  dropdownTriggerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  swatchRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   swatchCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(128,128,128,0.25)',
+    borderColor: 'rgba(128,128,128,0.28)',
   },
-  paletteName: {
+  dropdownValueTitle: {
     fontSize: 14,
     fontWeight: '800',
-    marginBottom: 3,
   },
-  paletteSub: {
+  dropdownValueSub: {
     fontSize: 11,
-    lineHeight: 15,
+    marginTop: 2,
+  },
+  dropdownRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dropdownMenuCard: {
+    marginTop: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  dropdownOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  dropdownOptionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  dropdownOptionSub: {
+    fontSize: 11,
+    marginTop: 1,
   },
   customBuilderCard: {
     marginTop: 14,
@@ -1025,7 +1347,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
     flexWrap: 'wrap',
     gap: 8,
   },
@@ -1038,41 +1360,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  colorPreviewBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(128,128,128,0.3)',
-  },
   hexInput: {
-    width: 92,
-    height: 34,
+    width: 88,
+    height: 32,
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     fontSize: 12,
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  swatchStrip: {
+  colorDropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
+  colorDropdownBtnLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  colorDropdownSwatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(128,128,128,0.35)',
+  },
+  colorDropdownText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  colorDropdownList: {
+    marginTop: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 8,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 6,
+  },
+  colorDropdownItem: {
+    width: '48%',
+    minWidth: 180,
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     gap: 8,
   },
-  pickSwatch: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  colorItemDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: 'rgba(128,128,128,0.3)',
   },
-  pickSwatchActive: {
-    borderWidth: 2.5,
-    borderColor: '#FFFFFF',
-    transform: [{ scale: 1.08 }],
+  colorItemName: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  colorItemHex: {
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   optionCard: {
     padding: 16,
