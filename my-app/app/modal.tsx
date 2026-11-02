@@ -24,6 +24,7 @@ import {
   SecuritySettings,
 } from '@/services/security';
 import { MobileAuthService, UserSession } from '@/services/auth';
+import { MobileAdminService, FraudCategory, TicketCategory } from '@/services/admin';
 import { MobileBackupService } from '@/services/backup';
 import { MobileExchangeService, ExchangeRateConfig } from '@/services/exchangeRates';
 import { MobileSyncService, SyncStatus } from '@/services/sync';
@@ -70,6 +71,75 @@ export default function ModalScreen() {
   const [editUsername, setEditUsername] = useState('Mr Q');
   const [editStallName, setEditStallName] = useState('Mbare Fresh Produce & Tuckshop');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Report Problem to Admin Support State
+  const [showProblemForm, setShowProblemForm] = useState(false);
+  const [problemSubject, setProblemSubject] = useState('');
+  const [problemDesc, setProblemDesc] = useState('');
+  const [problemCategory, setProblemCategory] = useState<TicketCategory>('bug_report');
+
+  // Report Scammer / Defaulter to Admin Watchlist State
+  const [showScammerForm, setShowScammerForm] = useState(false);
+  const [scammerName, setScammerName] = useState('');
+  const [scammerPhone, setScammerPhone] = useState('');
+  const [scammerAmount, setScammerAmount] = useState('');
+  const [scammerEvidence, setScammerEvidence] = useState('');
+  const [scammerCategory, setScammerCategory] = useState<FraudCategory>('fake_ecocash_sms');
+
+  const handleReportProblemToAdmin = async () => {
+    if (!problemSubject.trim() || !problemDesc.trim()) {
+      Alert.alert('Missing Details', 'Please enter a short subject and description of the problem.');
+      return;
+    }
+    await MobileAdminService.submitSupportTicket({
+      userId: session?.userId || 'usr_active',
+      userName: session?.name || editUsername || 'Trader',
+      userEmail: session?.email || 'trader@cashflowmate.co.zw',
+      businessName: business?.name || editStallName || 'Market Stall',
+      city: 'Harare',
+      category: problemCategory,
+      priority: 'high',
+      subject: problemSubject.trim(),
+      description: problemDesc.trim(),
+    });
+    setProblemSubject('');
+    setProblemDesc('');
+    setShowProblemForm(false);
+    Alert.alert(
+      'Ticket Sent to Admin HQ',
+      'Your problem report has been logged in the Admin Support Helpdesk queue.'
+    );
+  };
+
+  const handleFlagIndividualToAdmin = async () => {
+    if (!scammerName.trim() || !scammerPhone.trim() || !scammerEvidence.trim()) {
+      Alert.alert(
+        'Missing Details',
+        'Please enter the person name, phone number, and what happened.'
+      );
+      return;
+    }
+    await MobileAdminService.addReportedIndividual({
+      reportedName: scammerName.trim(),
+      phoneNumber: scammerPhone.trim(),
+      cityMarket: 'Harare Market',
+      category: scammerCategory,
+      severity: 'high',
+      reportedByTrader: `${session?.name || editUsername} (${business?.name || editStallName})`,
+      reportedByEmail: session?.email || 'trader@cashflowmate.co.zw',
+      amountInvolvedUsd: Number(scammerAmount) || 0,
+      evidenceSummary: scammerEvidence.trim(),
+    });
+    setScammerName('');
+    setScammerPhone('');
+    setScammerAmount('');
+    setScammerEvidence('');
+    setShowScammerForm(false);
+    Alert.alert(
+      'Reported to Admin Watchlist',
+      'This individual has been flagged for the Admin Trust & Safety team.'
+    );
+  };
 
   useEffect(() => {
     MobileStorageService.getBusiness().then((biz) => {
@@ -772,6 +842,121 @@ export default function ModalScreen() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
           </View>
+
+          {/* Item 6b: Report a Problem to Admin Support */}
+          <Pressable
+            onPress={() => setShowProblemForm(!showProblemForm)}
+            style={styles.settingItem}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+                <Ionicons name="construct-outline" size={18} color={EmeraldTokens.pastelAmberText} />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Report a Problem to Admin HQ</Text>
+                <Text style={styles.settingSub}>Submit app bug, CSV error, or support ticket</Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showProblemForm ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
+          </Pressable>
+
+          {showProblemForm && (
+            <View style={styles.expandedSectionBox}>
+              <Text style={styles.pinExplanation}>
+                Describe the problem you are experiencing. It will appear immediately in the Admin
+                Support Helpdesk queue.
+              </Text>
+              <M3Input
+                label="Problem Subject"
+                value={problemSubject}
+                onChangeText={setProblemSubject}
+                placeholder="e.g., EcoCash SMS amount not parsing"
+              />
+              <M3Input
+                label="Detailed Description"
+                value={problemDesc}
+                onChangeText={setProblemDesc}
+                placeholder="Explain what happened..."
+                multiline
+                numberOfLines={3}
+              />
+              <M3Button
+                label="SEND TICKET TO ADMIN SUPPORT"
+                variant="mint"
+                size="md"
+                onPress={handleReportProblemToAdmin}
+                style={{ marginTop: 8 }}
+              />
+            </View>
+          )}
+
+          {/* Item 6c: Report Fraudulent Individual / Defaulter to Watchlist */}
+          <Pressable
+            onPress={() => setShowScammerForm(!showScammerForm)}
+            style={styles.settingItem}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
+                <Ionicons name="warning-outline" size={18} color={EmeraldTokens.pastelRoseText} />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Flag Scammer or Credit Defaulter</Text>
+                <Text style={styles.settingSub}>Alert Admin & network watchlist of fraud</Text>
+              </View>
+            </View>
+            <Ionicons
+              name={showScammerForm ? 'chevron-up' : 'chevron-forward'}
+              size={18}
+              color={EmeraldTokens.textSubtle}
+            />
+          </Pressable>
+
+          {showScammerForm && (
+            <View style={styles.expandedSectionBox}>
+              <Text style={styles.pinExplanation}>
+                Report a fake EcoCash SMS sender, counterfeit note suspect, or runaway credit
+                defaulter to the Admin Trust & Safety team.
+              </Text>
+              <M3Input
+                label="Individual Name or Alias"
+                value={scammerName}
+                onChangeText={setScammerName}
+                placeholder="e.g., Blessing Chikwanda"
+              />
+              <M3Input
+                label="Phone Number"
+                value={scammerPhone}
+                onChangeText={setScammerPhone}
+                placeholder="e.g., +263 77..."
+              />
+              <M3Input
+                label="USD Amount Involved ($)"
+                value={scammerAmount}
+                onChangeText={setScammerAmount}
+                placeholder="e.g., 120"
+                keyboardType="decimal-pad"
+              />
+              <M3Input
+                label="Incident Evidence Summary"
+                value={scammerEvidence}
+                onChangeText={setScammerEvidence}
+                placeholder="Describe fake SMS, defaulted invoice, or scam..."
+                multiline
+                numberOfLines={3}
+              />
+              <M3Button
+                label="SUBMIT TO ADMIN FRAUD WATCHLIST"
+                variant="filled"
+                size="md"
+                onPress={handleFlagIndividualToAdmin}
+                style={{ marginTop: 8 }}
+              />
+            </View>
+          )}
 
           {/* Item 7: Restore Demo Data */}
           <Pressable onPress={handleReset} style={styles.settingItem}>

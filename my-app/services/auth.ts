@@ -3,7 +3,7 @@ import { MobileStorageService, CurrencyCode } from './storage';
 
 export const STORAGE_KEY_AUTH_SESSION = '@cashflow_user_session_v2';
 export const STORAGE_KEY_HAS_ACCOUNT = '@cashflow_has_registered_account_v1';
-export const STORAGE_KEY_REGISTERED_USERS = '@cashflow_registered_users_v1';
+export const STORAGE_KEY_REGISTERED_USERS = '@cashflow_registered_users_v2';
 export const STORAGE_KEY_ADMIN_SECRET = '@cashflow_admin_secret_code_v1';
 
 export const DEFAULT_ADMIN_SECRET_CODE = 'CFM-HQ-2026';
@@ -27,11 +27,18 @@ export interface StoredTraderAccount {
   name: string;
   username: string;
   email: string;
+  phone?: string;
+  city?: string;
   password?: string;
   businessName: string;
   currency: CurrencyCode;
   tier?: 'starter' | 'pro' | 'enterprise';
-  status?: 'active' | 'suspended';
+  status?: 'active' | 'suspended' | 'flagged';
+  kycVerified?: boolean;
+  txCount?: number;
+  monthlyVolumeUsd?: number;
+  flagsCount?: number;
+  lastActive?: string;
   createdAt?: string;
 }
 
@@ -55,10 +62,17 @@ const SEED_TRADER_ACCOUNTS: StoredTraderAccount[] = [
     name: 'Mr Q',
     username: 'Mr Q',
     email: 'mrq@mbaretuckshop.co.zw',
+    phone: '+263 77 200 1001',
+    city: 'Harare (Mbare Musika)',
     businessName: 'Mbare Fresh Produce & Tuckshop',
     currency: 'USD',
     tier: 'enterprise',
     status: 'active',
+    kycVerified: true,
+    txCount: 142,
+    monthlyVolumeUsd: 4850,
+    flagsCount: 0,
+    lastActive: '2 mins ago',
     createdAt: '2026-10-15',
   },
   {
@@ -66,10 +80,17 @@ const SEED_TRADER_ACCOUNTS: StoredTraderAccount[] = [
     name: 'Chipo Ndlovu',
     username: 'Mai Chipo',
     email: 'chipo@bulawayotraders.co.zw',
+    phone: '+263 71 388 4412',
+    city: 'Bulawayo (Renkini)',
     businessName: 'Bulawayo Wholesale Grocery Stall #12',
     currency: 'ZAR',
     tier: 'pro',
     status: 'active',
+    kycVerified: true,
+    txCount: 98,
+    monthlyVolumeUsd: 3120,
+    flagsCount: 0,
+    lastActive: '18 mins ago',
     createdAt: '2026-10-19',
   },
   {
@@ -77,10 +98,17 @@ const SEED_TRADER_ACCOUNTS: StoredTraderAccount[] = [
     name: 'Farai Mutasa',
     username: 'Farai Agro',
     email: 'farai@mutarehardware.co.zw',
+    phone: '+263 77 419 9022',
+    city: 'Mutare (Sakubva)',
     businessName: 'Mutare Timber & Hardware Depot',
     currency: 'USD',
     tier: 'pro',
     status: 'active',
+    kycVerified: true,
+    txCount: 76,
+    monthlyVolumeUsd: 2690,
+    flagsCount: 0,
+    lastActive: '1 hour ago',
     createdAt: '2026-10-24',
   },
   {
@@ -88,11 +116,54 @@ const SEED_TRADER_ACCOUNTS: StoredTraderAccount[] = [
     name: 'Tariro Moyo',
     username: 'Tariro Fashion',
     email: 'tariro@gweruboutique.co.zw',
+    phone: '+263 78 551 3090',
+    city: 'Gweru (CBD Hub)',
     businessName: 'Gweru CBD Bales & Runner Hub',
     currency: 'ZWG',
     tier: 'starter',
     status: 'active',
+    kycVerified: false,
+    txCount: 34,
+    monthlyVolumeUsd: 780,
+    flagsCount: 0,
+    lastActive: '3 hours ago',
     createdAt: '2026-10-29',
+  },
+  {
+    userId: 'usr_seed_005',
+    name: 'Tawanda Zhou',
+    username: 'Tawanda Border',
+    email: 'tawanda@beitbridgerunners.co.zw',
+    phone: '+263 77 901 2241',
+    city: 'Beitbridge (Border Post)',
+    businessName: 'Cross-Border Clearing & ZAR Float Stall',
+    currency: 'ZAR',
+    tier: 'pro',
+    status: 'flagged',
+    kycVerified: false,
+    txCount: 61,
+    monthlyVolumeUsd: 1940,
+    flagsCount: 2,
+    lastActive: 'Yesterday',
+    createdAt: '2026-10-27',
+  },
+  {
+    userId: 'usr_seed_006',
+    name: 'Nyasha Gumbo',
+    username: 'Nyasha Agro',
+    email: 'nyasha@masvingofresh.co.zw',
+    phone: '+263 71 774 1180',
+    city: 'Masvingo (Chitima Market)',
+    businessName: 'Chitima Grain & Poultry Supply',
+    currency: 'USD',
+    tier: 'enterprise',
+    status: 'active',
+    kycVerified: true,
+    txCount: 115,
+    monthlyVolumeUsd: 3910,
+    flagsCount: 0,
+    lastActive: '42 mins ago',
+    createdAt: '2026-10-21',
   },
 ];
 
@@ -363,6 +434,8 @@ export class MobileAuthService {
     userId?: string;
     name: string;
     email: string;
+    phone?: string;
+    city?: string;
     businessName: string;
     currency: CurrencyCode;
     tier: 'starter' | 'pro' | 'enterprise';
@@ -379,6 +452,8 @@ export class MobileAuthService {
         name: data.name.trim(),
         username: data.name.trim(),
         email: data.email.trim().toLowerCase(),
+        ...(data.phone ? { phone: data.phone.trim() } : {}),
+        ...(data.city ? { city: data.city.trim() } : {}),
         businessName: data.businessName.trim(),
         currency: data.currency,
         tier: data.tier,
@@ -390,17 +465,33 @@ export class MobileAuthService {
         name: data.name.trim(),
         username: data.name.trim(),
         email: data.email.trim().toLowerCase(),
+        phone: data.phone?.trim() || '+263 77 000 0000',
+        city: data.city?.trim() || 'Harare',
         password: data.password || 'trader123',
         businessName: data.businessName.trim() || `${data.name.trim()}'s Stall`,
         currency: data.currency,
         tier: data.tier,
         status: 'active',
+        kycVerified: true,
+        txCount: 0,
+        monthlyVolumeUsd: 0,
+        flagsCount: 0,
+        lastActive: 'Just now',
         createdAt: new Date().toISOString().slice(0, 10),
       });
     }
 
     await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(accounts));
     return accounts;
+  }
+
+  static async adminToggleKyc(userId: string): Promise<StoredTraderAccount[]> {
+    const accounts = await this.getAllAccounts();
+    const updated = accounts.map((acc) =>
+      acc.userId === userId ? { ...acc, kycVerified: !acc.kycVerified } : acc
+    );
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
+    return updated;
   }
 
   static async adminToggleAccountStatus(userId: string): Promise<StoredTraderAccount[]> {
