@@ -17,6 +17,12 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon',
 };
 
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+};
+
 const server = http.createServer((req, res) => {
   let reqPath = req.url.split('?')[0];
   let filePath = path.join(DIST_DIR, reqPath);
@@ -27,15 +33,34 @@ const server = http.createServer((req, res) => {
       const ext = path.extname(filePath);
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       const data = fs.readFileSync(filePath);
-      res.writeHead(200, { 'Content-Type': contentType });
+      res.writeHead(200, { 'Content-Type': contentType, ...NO_CACHE_HEADERS });
       return res.end(data);
+    }
+
+    // If a stale chunk hash was requested after a rebuild (e.g. /_expo/static/js/web/login-oldhash.js),
+    // automatically match the latest file with the same route prefix in that directory!
+    const dir = path.dirname(filePath);
+    const base = path.basename(filePath);
+    const dashIdx = base.lastIndexOf('-');
+    if (dashIdx > 0 && base.endsWith('.js') && fs.existsSync(dir)) {
+      const prefix = base.slice(0, dashIdx + 1);
+      const candidates = fs.readdirSync(dir).filter((f) => f.startsWith(prefix) && f.endsWith('.js'));
+      if (candidates.length > 0) {
+        const fallbackFile = path.join(dir, candidates[0]);
+        const data = fs.readFileSync(fallbackFile);
+        res.writeHead(200, {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          ...NO_CACHE_HEADERS,
+        });
+        return res.end(data);
+      }
     }
   }
 
   // Fallback to index.html for Expo Router SPA client routing
   const indexPath = path.join(DIST_DIR, 'index.html');
   const data = fs.readFileSync(indexPath);
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...NO_CACHE_HEADERS });
   res.end(data);
 });
 

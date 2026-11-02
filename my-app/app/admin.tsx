@@ -323,6 +323,10 @@ export default function AdminCommandCenterScreen() {
 
   const handleLogoutAdmin = async () => {
     await MobileAuthService.logout();
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.assign('/login');
+      return;
+    }
     router.replace('/login' as any);
   };
 

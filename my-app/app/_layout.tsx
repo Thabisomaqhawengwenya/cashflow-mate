@@ -6,10 +6,11 @@ import {
   ThemeProvider,
   useSegments,
   router,
+  ErrorBoundaryProps,
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -18,10 +19,44 @@ import { AppearanceProvider } from '@/context/AppearanceContext';
 import { MobileAuthService } from '@/services/auth';
 import { BlueTokens } from '@/constants/Colors';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+/**
+ * Custom ErrorBoundary that automatically recovers from stale Metro web chunk hashes
+ * (e.g. "Requiring unknown module '769'") after a bundle rebuild.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      error?.message &&
+      (error.message.includes('Requiring unknown module') ||
+        error.message.includes('Loading chunk') ||
+        error.message.includes('dynamically imported module'))
+    ) {
+      // Perform a clean full page reload to pick up the fresh Metro bundle manifest
+      window.location.reload();
+    }
+  }, [error]);
+
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorTitle}>Refreshing Application Bundle...</Text>
+      <Text style={styles.errorSub}>{error?.message || 'An unexpected navigation error occurred.'}</Text>
+      <Pressable
+        onPress={() => {
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.location.assign('/login');
+          } else {
+            retry();
+          }
+        }}
+        style={styles.errorRetryBtn}
+      >
+        <Text style={styles.errorRetryText}>Continue to Sign In</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
@@ -130,5 +165,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999,
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: '#06152E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  errorSub: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    marginBottom: 22,
+  },
+  errorRetryBtn: {
+    backgroundColor: '#1565D8',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 9999,
+  },
+  errorRetryText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

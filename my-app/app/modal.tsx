@@ -256,6 +256,10 @@ export default function ModalScreen() {
 
   const handleSignOut = async () => {
     await MobileAuthService.logout();
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.assign('/login');
+      return;
+    }
     router.replace('/login' as any);
   };
 
@@ -276,9 +280,14 @@ export default function ModalScreen() {
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
           <Text style={styles.headerTitle}>Profile & Security</Text>
-          <View style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
-          </View>
+          <Pressable
+            onPress={() => router.push('/appearance' as any)}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Open Appearance and Theme Settings"
+          >
+            <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+          </Pressable>
         </View>
       </View>
 

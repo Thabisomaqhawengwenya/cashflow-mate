@@ -366,14 +366,14 @@ export default function OverviewScreen() {
               />
             </Pressable>
 
-            {/* Profile & Notifications Bell */}
+            {/* Profile & Settings Gear */}
             <Pressable
               onPress={() => router.push('/modal')}
               accessibilityRole="button"
               accessibilityLabel="Open settings and profile"
               style={styles.iconButton}
             >
-              <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
+              <Ionicons name="settings-outline" size={19} color="#FFFFFF" />
               {pendingCount > 0 && <View style={styles.bellBadge} />}
             </Pressable>
           </View>
