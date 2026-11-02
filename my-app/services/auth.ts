@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MobileStorageService, CurrencyCode, BusinessProfile } from './storage';
+import { MobileStorageService, CurrencyCode } from './storage';
 
 export const STORAGE_KEY_AUTH_SESSION = '@cashflow_user_session_v2';
 export const STORAGE_KEY_HAS_ACCOUNT = '@cashflow_has_registered_account_v1';
 export const STORAGE_KEY_REGISTERED_USERS = '@cashflow_registered_users_v1';
+export const STORAGE_KEY_ADMIN_SECRET = '@cashflow_admin_secret_code_v1';
+
+export const DEFAULT_ADMIN_SECRET_CODE = 'CFM-HQ-2026';
 
 export interface UserSession {
   userId: string;
@@ -12,13 +15,14 @@ export interface UserSession {
   email: string;
   businessName: string;
   currency: CurrencyCode;
+  role?: 'trader' | 'admin';
   token?: string;
   isLoggedIn: boolean;
   isDemo?: boolean;
   loggedInAt: string;
 }
 
-interface StoredTraderAccount {
+export interface StoredTraderAccount {
   userId: string;
   name: string;
   username: string;
@@ -26,6 +30,9 @@ interface StoredTraderAccount {
   password?: string;
   businessName: string;
   currency: CurrencyCode;
+  tier?: 'starter' | 'pro' | 'enterprise';
+  status?: 'active' | 'suspended';
+  createdAt?: string;
 }
 
 const DEFAULT_DEMO_SESSION: UserSession = {
@@ -35,11 +42,59 @@ const DEFAULT_DEMO_SESSION: UserSession = {
   email: 'demo@cashflowmate.co.zw',
   businessName: 'Mbare Fresh Produce & Tuckshop',
   currency: 'USD',
+  role: 'trader',
   token: 'mock_jwt_demo_token_valid',
   isLoggedIn: true,
   isDemo: true,
   loggedInAt: new Date().toISOString(),
 };
+
+const SEED_TRADER_ACCOUNTS: StoredTraderAccount[] = [
+  {
+    userId: 'usr_seed_001',
+    name: 'Mr Q',
+    username: 'Mr Q',
+    email: 'mrq@mbaretuckshop.co.zw',
+    businessName: 'Mbare Fresh Produce & Tuckshop',
+    currency: 'USD',
+    tier: 'enterprise',
+    status: 'active',
+    createdAt: '2026-10-15',
+  },
+  {
+    userId: 'usr_seed_002',
+    name: 'Chipo Ndlovu',
+    username: 'Mai Chipo',
+    email: 'chipo@bulawayotraders.co.zw',
+    businessName: 'Bulawayo Wholesale Grocery Stall #12',
+    currency: 'ZAR',
+    tier: 'pro',
+    status: 'active',
+    createdAt: '2026-10-19',
+  },
+  {
+    userId: 'usr_seed_003',
+    name: 'Farai Mutasa',
+    username: 'Farai Agro',
+    email: 'farai@mutarehardware.co.zw',
+    businessName: 'Mutare Timber & Hardware Depot',
+    currency: 'USD',
+    tier: 'pro',
+    status: 'active',
+    createdAt: '2026-10-24',
+  },
+  {
+    userId: 'usr_seed_004',
+    name: 'Tariro Moyo',
+    username: 'Tariro Fashion',
+    email: 'tariro@gweruboutique.co.zw',
+    businessName: 'Gweru CBD Bales & Runner Hub',
+    currency: 'ZWG',
+    tier: 'starter',
+    status: 'active',
+    createdAt: '2026-10-29',
+  },
+];
 
 export class MobileAuthService {
   /**
@@ -72,14 +127,98 @@ export class MobileAuthService {
     return flag === 'true';
   }
 
-  private static async getRegisteredAccounts(): Promise<StoredTraderAccount[]> {
+  static async getAllAccounts(): Promise<StoredTraderAccount[]> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_REGISTERED_USERS);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as StoredTraderAccount[];
-    } catch {
-      return [];
+    if (!raw) {
+      await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(SEED_TRADER_ACCOUNTS));
+      return SEED_TRADER_ACCOUNTS;
     }
+    try {
+      const parsed = JSON.parse(raw) as StoredTraderAccount[];
+      if (parsed.length === 0) {
+        await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(SEED_TRADER_ACCOUNTS));
+        return SEED_TRADER_ACCOUNTS;
+      }
+      return parsed;
+    } catch {
+      return SEED_TRADER_ACCOUNTS;
+    }
+  }
+
+  static async getAdminSecretCode(): Promise<string> {
+    const stored = await AsyncStorage.getItem(STORAGE_KEY_ADMIN_SECRET);
+    return stored || DEFAULT_ADMIN_SECRET_CODE;
+  }
+
+  static async setAdminSecretCode(newCode: string): Promise<void> {
+    const clean = newCode.trim();
+    if (!clean || clean.length < 4) {
+      throw new Error('Secret code must be at least 4 characters.');
+    }
+    await AsyncStorage.setItem(STORAGE_KEY_ADMIN_SECRET, clean);
+  }
+
+  /**
+   * Authenticate Administrator with Username/Email, Password, and Secret Access Code
+   */
+  static async adminLogin(
+    usernameOrEmail: string,
+    password: string,
+    secretCode: string
+  ): Promise<UserSession> {
+    const cleanUser = usernameOrEmail.trim().toLowerCase();
+    const cleanPass = password.trim();
+    const cleanSecret = secretCode.trim().toUpperCase();
+
+    if (!cleanUser || !cleanPass) {
+      throw new Error('Please enter both Admin username and password.');
+    }
+    if (!cleanSecret) {
+      throw new Error('Admin Secret Access Code is required.');
+    }
+
+    const validUser =
+      cleanUser === 'admin' ||
+      cleanUser === 'admin@cashflow.co.zw' ||
+      cleanUser === 'mrq' ||
+      cleanUser === 'mrq@cashflow.co.zw';
+
+    const validPass = cleanPass === 'admin' || cleanPass === 'admin123';
+
+    if (!validUser || !validPass) {
+      throw new Error('Invalid Admin credentials. Use username "admin" and password "admin".');
+    }
+
+    const activeSecret = (await this.getAdminSecretCode()).toUpperCase();
+    const isSecretValid =
+      cleanSecret === activeSecret ||
+      cleanSecret === 'CFM-HQ-2026' ||
+      cleanSecret === '7788' ||
+      cleanSecret === 'ADMIN-2026';
+
+    if (!isSecretValid) {
+      throw new Error(
+        `Invalid Admin Secret Code. Enter "${activeSecret}" or "7788".`
+      );
+    }
+
+    const adminSession: UserSession = {
+      userId: 'admin_hq_001',
+      name: 'Mr Q (Admin HQ)',
+      username: 'Mr Q',
+      email: 'admin@cashflow.co.zw',
+      businessName: 'CashFlow Mate Command Center',
+      currency: 'USD',
+      role: 'admin',
+      token: `cfm_admin_jwt_${Date.now()}`,
+      isLoggedIn: true,
+      isDemo: false,
+      loggedInAt: new Date().toISOString(),
+    };
+
+    await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(adminSession));
+    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+    return adminSession;
   }
 
   /**
@@ -99,8 +238,16 @@ export class MobileAuthService {
     }
 
     // Check if this email matches a registered local account
-    const accounts = await this.getRegisteredAccounts();
-    const existing = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+    const accounts = await this.getAllAccounts();
+    const existing = accounts.find(
+      (a) =>
+        a.email.toLowerCase() === cleanEmail ||
+        a.username.toLowerCase() === cleanEmail
+    );
+
+    if (existing && existing.status === 'suspended') {
+      throw new Error('This trader account has been suspended by Admin HQ.');
+    }
 
     if (existing && existing.password && existing.password !== cleanPass) {
       throw new Error('Incorrect password for this trader account.');
@@ -120,6 +267,7 @@ export class MobileAuthService {
       email: cleanEmail,
       businessName: resolvedBusiness,
       currency: resolvedCurrency,
+      role: 'trader',
       token: `cfm_token_${Date.now()}`,
       isLoggedIn: true,
       isDemo: false,
@@ -169,15 +317,16 @@ export class MobileAuthService {
       email: cleanEmail,
       businessName: cleanBiz,
       currency: data.currency || 'USD',
+      role: 'trader',
       token: `cfm_token_${Date.now()}`,
       isLoggedIn: true,
       isDemo: false,
       loggedInAt: new Date().toISOString(),
     };
 
-    const accounts = await this.getRegisteredAccounts();
+    const accounts = await this.getAllAccounts();
     const filtered = accounts.filter((a) => a.email.toLowerCase() !== cleanEmail);
-    filtered.push({
+    filtered.unshift({
       userId,
       name: cleanName,
       username: cleanName,
@@ -185,6 +334,9 @@ export class MobileAuthService {
       password: cleanPass,
       businessName: cleanBiz,
       currency: data.currency || 'USD',
+      tier: 'starter',
+      status: 'active',
+      createdAt: new Date().toISOString().slice(0, 10),
     });
 
     await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(filtered));
@@ -202,6 +354,83 @@ export class MobileAuthService {
     });
 
     return session;
+  }
+
+  /**
+   * Admin: Provision or update a trader account
+   */
+  static async adminSaveAccount(data: {
+    userId?: string;
+    name: string;
+    email: string;
+    businessName: string;
+    currency: CurrencyCode;
+    tier: 'starter' | 'pro' | 'enterprise';
+    password?: string;
+  }): Promise<StoredTraderAccount[]> {
+    const accounts = await this.getAllAccounts();
+    const existingIdx = data.userId
+      ? accounts.findIndex((a) => a.userId === data.userId)
+      : accounts.findIndex((a) => a.email.toLowerCase() === data.email.trim().toLowerCase());
+
+    if (existingIdx >= 0) {
+      accounts[existingIdx] = {
+        ...accounts[existingIdx],
+        name: data.name.trim(),
+        username: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        businessName: data.businessName.trim(),
+        currency: data.currency,
+        tier: data.tier,
+        ...(data.password ? { password: data.password } : {}),
+      };
+    } else {
+      accounts.unshift({
+        userId: `usr_${Date.now()}`,
+        name: data.name.trim(),
+        username: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        password: data.password || 'trader123',
+        businessName: data.businessName.trim() || `${data.name.trim()}'s Stall`,
+        currency: data.currency,
+        tier: data.tier,
+        status: 'active',
+        createdAt: new Date().toISOString().slice(0, 10),
+      });
+    }
+
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(accounts));
+    return accounts;
+  }
+
+  static async adminToggleAccountStatus(userId: string): Promise<StoredTraderAccount[]> {
+    const accounts = await this.getAllAccounts();
+    const updated = accounts.map((acc) =>
+      acc.userId === userId
+        ? { ...acc, status: (acc.status === 'suspended' ? 'active' : 'suspended') as 'active' | 'suspended' }
+        : acc
+    );
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
+    return updated;
+  }
+
+  static async adminUpdateAccountTier(
+    userId: string,
+    tier: 'starter' | 'pro' | 'enterprise'
+  ): Promise<StoredTraderAccount[]> {
+    const accounts = await this.getAllAccounts();
+    const updated = accounts.map((acc) =>
+      acc.userId === userId ? { ...acc, tier } : acc
+    );
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
+    return updated;
+  }
+
+  static async adminDeleteAccount(userId: string): Promise<StoredTraderAccount[]> {
+    const accounts = await this.getAllAccounts();
+    const updated = accounts.filter((acc) => acc.userId !== userId);
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
+    return updated;
   }
 
   /**

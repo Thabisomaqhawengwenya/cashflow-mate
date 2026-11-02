@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   Platform,
-  Alert,
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,30 +15,56 @@ import { DesignTokens } from '@/constants/DesignTokens';
 import { MobileAuthService } from '@/services/auth';
 import { M3Input } from '@/components/M3/M3Input';
 import { M3Button } from '@/components/M3/M3Button';
+import { M3Badge } from '@/components/M3/M3Badge';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export default function LoginScreen() {
+  const { palette, surfaces } = useAppearance();
+  const [loginMode, setLoginMode] = useState<'trader' | 'admin'>('trader');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [secretCode, setSecretCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSecretCode, setShowSecretCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isTypingAdmin =
+    email.trim().toLowerCase() === 'admin' ||
+    email.trim().toLowerCase() === 'admin@cashflow.co.zw';
+
+  const showAdminFields = loginMode === 'admin' || isTypingAdmin;
 
   const handleLogin = async () => {
     setError(null);
     if (!email.trim() || !password.trim()) {
-      setError('Please enter both your email and password.');
+      setError('Please enter both your username/email and password.');
       return;
     }
 
     setIsLoading(true);
     try {
-      await MobileAuthService.login(email, password);
-      setIsLoading(false);
-      router.replace('/(tabs)');
+      if (showAdminFields) {
+        await MobileAuthService.adminLogin(email, password, secretCode);
+        setIsLoading(false);
+        router.replace('/admin' as any);
+      } else {
+        await MobileAuthService.login(email, password);
+        setIsLoading(false);
+        router.replace('/(tabs)');
+      }
     } catch (err: any) {
       setIsLoading(false);
       setError(err.message || 'Login failed. Please check your credentials.');
     }
+  };
+
+  const handleQuickFillAdmin = () => {
+    setLoginMode('admin');
+    setEmail('admin');
+    setPassword('admin');
+    setSecretCode('CFM-HQ-2026');
+    setError(null);
   };
 
   const handleDemoLogin = async () => {
@@ -49,7 +74,7 @@ export default function LoginScreen() {
       await MobileAuthService.demoLogin();
       setIsLoading(false);
       router.replace('/(tabs)');
-    } catch (err: any) {
+    } catch {
       setIsLoading(false);
       setError('Could not initialize demo session.');
     }
@@ -57,11 +82,11 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      style={[styles.keyboardContainer, { backgroundColor: palette.headerBg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: palette.headerBg }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -69,6 +94,36 @@ export default function LoginScreen() {
         {/* 1. Header Hero Canvas */}
         <View style={styles.header}>
           <View style={styles.topBar}>
+            <Pressable
+              onPress={() => {
+                setLoginMode(loginMode === 'admin' ? 'trader' : 'admin');
+                setError(null);
+              }}
+              style={[
+                styles.adminSwitchPill,
+                loginMode === 'admin' && {
+                  backgroundColor: 'rgba(245, 158, 11, 0.22)',
+                  borderColor: '#F59E0B',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Toggle Admin HQ Login"
+            >
+              <Ionicons
+                name="shield-checkmark"
+                size={14}
+                color={loginMode === 'admin' ? '#FBBF24' : palette.accent}
+              />
+              <Text
+                style={[
+                  styles.adminSwitchText,
+                  { color: loginMode === 'admin' ? '#FBBF24' : palette.accent },
+                ]}
+              >
+                {loginMode === 'admin' ? 'Admin HQ Mode Active' : 'Admin HQ Portal'}
+              </Text>
+            </Pressable>
+
             <Pressable
               onPress={handleDemoLogin}
               style={styles.skipButton}
@@ -81,29 +136,112 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.brandRow}>
-            <View style={styles.logoBadge}>
-              <Ionicons name="wallet" size={26} color={EmeraldTokens.mintDarkText} />
+            <View style={[styles.logoBadge, { backgroundColor: palette.primary }]}>
+              <Ionicons
+                name={showAdminFields ? 'shield-half' : 'wallet'}
+                size={26}
+                color="#FFFFFF"
+              />
             </View>
             <View>
               <Text style={styles.brandTitle}>CashFlow Mate</Text>
-              <Text style={styles.brandSubtitle}>ZIM MARKET TILL OS</Text>
+              <Text style={[styles.brandSubtitle, { color: palette.accent }]}>
+                {showAdminFields ? 'DESKTOP ADMIN COMMAND CENTER' : 'ZIM MARKET TILL OS'}
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.heroGreeting}>Welcome Back</Text>
+          <Text style={styles.heroGreeting}>
+            {showAdminFields ? 'Admin Command Sign In' : 'Welcome Back'}
+          </Text>
           <Text style={styles.heroSub}>
-            Sign in to access your multi-drawer cashbox and records.
+            {showAdminFields
+              ? 'Enter your Admin credentials and Secret Access Code to launch the Desktop Command Center.'
+              : 'Sign in to access your multi-drawer cashbox and records.'}
           </Text>
 
           <View style={styles.statusPill}>
             <View style={styles.pulseDot} />
-            <Text style={styles.statusPillText}>OFFLINE FIRST • ZERO DATA READY</Text>
+            <Text style={styles.statusPillText}>
+              {showAdminFields
+                ? 'SECRET CODE REQUIRED • DESKTOP CONSOLE READY'
+                : 'OFFLINE FIRST • ZERO DATA READY'}
+            </Text>
           </View>
         </View>
 
-        {/* 2. Curved White Body Card */}
-        <View style={styles.sheetCard}>
-          <Text style={styles.formTitle}>Trader Sign In</Text>
+        {/* 2. Curved Body Card */}
+        <View style={[styles.sheetCard, { backgroundColor: surfaces.cardBg }]}>
+          {/* Mode Switcher Tabs */}
+          <View style={[styles.modeTabContainer, { backgroundColor: surfaces.cardElevatedBg }]}>
+            <Pressable
+              onPress={() => {
+                setLoginMode('trader');
+                setError(null);
+              }}
+              style={[
+                styles.modeTabBtn,
+                !showAdminFields && [
+                  styles.modeTabBtnActive,
+                  { backgroundColor: surfaces.cardBg },
+                ],
+              ]}
+            >
+              <Ionicons
+                name="storefront-outline"
+                size={15}
+                color={!showAdminFields ? palette.primary : surfaces.textMuted}
+              />
+              <Text
+                style={[
+                  styles.modeTabText,
+                  { color: !showAdminFields ? surfaces.textPrimary : surfaces.textMuted },
+                ]}
+              >
+                Trader Till Sign In
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                setLoginMode('admin');
+                setError(null);
+              }}
+              style={[
+                styles.modeTabBtn,
+                showAdminFields && [
+                  styles.modeTabBtnActive,
+                  { backgroundColor: surfaces.cardBg },
+                ],
+              ]}
+            >
+              <Ionicons
+                name="desktop-outline"
+                size={15}
+                color={showAdminFields ? '#D97706' : surfaces.textMuted}
+              />
+              <Text
+                style={[
+                  styles.modeTabText,
+                  { color: showAdminFields ? surfaces.textPrimary : surfaces.textMuted },
+                ]}
+              >
+                Admin HQ (Desktop)
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.formHeaderRow}>
+            <Text style={[styles.formTitle, { color: surfaces.textPrimary }]}>
+              {showAdminFields ? 'Administrator Verification' : 'Trader Sign In'}
+            </Text>
+            {showAdminFields && (
+              <Pressable onPress={handleQuickFillAdmin} style={styles.quickFillBadge}>
+                <Ionicons name="key-outline" size={13} color="#B45309" />
+                <Text style={styles.quickFillText}>Auto-Fill Admin</Text>
+              </Pressable>
+            )}
+          </View>
 
           {error ? (
             <View style={styles.errorBanner}>
@@ -113,8 +251,10 @@ export default function LoginScreen() {
           ) : null}
 
           <M3Input
-            label="Trader Email Address"
-            placeholder="e.g. tinashe@mbaretuckshop.co.zw"
+            label={showAdminFields ? 'Admin Username or Email' : 'Trader Email or Username'}
+            placeholder={
+              showAdminFields ? 'admin (or admin@cashflow.co.zw)' : 'e.g. mrq@mbaretuckshop.co.zw'
+            }
             value={email}
             onChangeText={(txt) => {
               setEmail(txt);
@@ -128,7 +268,7 @@ export default function LoginScreen() {
           <View style={styles.passwordContainer}>
             <M3Input
               label="Password"
-              placeholder="Enter your account password"
+              placeholder={showAdminFields ? 'Enter admin password (admin)' : 'Enter your account password'}
               value={password}
               onChangeText={(txt) => {
                 setPassword(txt);
@@ -145,26 +285,73 @@ export default function LoginScreen() {
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color={EmeraldTokens.textMuted}
+                color={surfaces.textMuted}
               />
             </Pressable>
           </View>
 
+          {/* Secret Code Field when in Admin Mode */}
+          {showAdminFields && (
+            <View style={styles.secretCodeSection}>
+              <View style={styles.passwordContainer}>
+                <M3Input
+                  label="Admin Secret Access Code"
+                  placeholder="Enter secret code (CFM-HQ-2026 or 7788)"
+                  value={secretCode}
+                  onChangeText={(txt) => {
+                    setSecretCode(txt);
+                    setError(null);
+                  }}
+                  secureTextEntry={!showSecretCode}
+                  autoCapitalize="characters"
+                />
+                <Pressable
+                  onPress={() => setShowSecretCode(!showSecretCode)}
+                  style={styles.eyeToggle}
+                  accessibilityLabel={showSecretCode ? 'Hide secret code' : 'Show secret code'}
+                >
+                  <Ionicons
+                    name={showSecretCode ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={surfaces.textMuted}
+                  />
+                </Pressable>
+              </View>
+              <View style={styles.secretHintRow}>
+                <M3Badge label="SECRET CODE" variant="amber" />
+                <Text style={[styles.secretHintText, { color: surfaces.textMuted }]}>
+                  Default HQ Code: <Text style={{ fontWeight: '800', color: surfaces.textPrimary }}>CFM-HQ-2026</Text> (or PIN <Text style={{ fontWeight: '800', color: surfaces.textPrimary }}>7788</Text>)
+                </Text>
+              </View>
+            </View>
+          )}
+
           <View style={styles.buttonSpacing}>
             <M3Button
-              label={isLoading ? 'Signing In...' : 'Sign In to Till'}
+              label={
+                isLoading
+                  ? 'Verifying...'
+                  : showAdminFields
+                  ? 'Launch Desktop Admin Console'
+                  : 'Sign In to Till'
+              }
               onPress={handleLogin}
               isLoading={isLoading}
               variant="mint"
               size="lg"
+              icon={
+                showAdminFields ? (
+                  <Ionicons name="shield-checkmark-outline" size={18} color="#FFFFFF" />
+                ) : undefined
+              }
             />
           </View>
 
           {/* Divider */}
           <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR EXPLORE</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: surfaces.border }]} />
+            <Text style={[styles.dividerText, { color: surfaces.textMuted }]}>OR EXPLORE</Text>
+            <View style={[styles.dividerLine, { backgroundColor: surfaces.border }]} />
           </View>
 
           {/* Demo Login Quick Action */}
@@ -173,17 +360,19 @@ export default function LoginScreen() {
             onPress={handleDemoLogin}
             variant="tonal"
             size="lg"
-            icon={<Ionicons name="storefront-outline" size={18} color={EmeraldTokens.deepPine} />}
+            icon={<Ionicons name="storefront-outline" size={18} color={surfaces.textPrimary} />}
           />
 
           {/* Sign Up Link */}
           <View style={styles.footerRow}>
-            <Text style={styles.footerPrompt}>New to CashFlow Mate?</Text>
+            <Text style={[styles.footerPrompt, { color: surfaces.textMuted }]}>
+              New to CashFlow Mate?
+            </Text>
             <Pressable
               onPress={() => router.push('/signup' as any)}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
-              <Text style={styles.signUpLink}>Create Account</Text>
+              <Text style={[styles.signUpLink, { color: palette.primary }]}>Create Account</Text>
             </Pressable>
           </View>
         </View>
@@ -209,11 +398,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: Platform.OS === 'ios' ? 54 : 36,
     paddingBottom: 28,
+    maxWidth: 640,
+    width: '100%',
+    alignSelf: 'center',
   },
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+  },
+  adminSwitchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: DesignTokens.shapes.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    gap: 6,
+  },
+  adminSwitchText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   skipButton: {
     flexDirection: 'row',
@@ -242,11 +450,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    shadowColor: EmeraldTokens.mintCta,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
   },
   brandTitle: {
     fontSize: 20,
@@ -304,7 +507,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 24,
     paddingBottom: 40,
     shadowColor: BlueTokens.darkNavy,
     shadowOffset: { width: 0, height: -4 },
@@ -315,11 +518,59 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
+  modeTabContainer: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 14,
+    marginBottom: 18,
+    gap: 6,
+  },
+  modeTabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
+  modeTabBtnActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  modeTabText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  formHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
   formTitle: {
     fontSize: 18,
     fontWeight: '800',
     color: EmeraldTokens.textSlate,
-    marginBottom: 18,
+  },
+  quickFillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    gap: 5,
+  },
+  quickFillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#B45309',
   },
   errorBanner: {
     flexDirection: 'row',
@@ -344,6 +595,19 @@ const styles = StyleSheet.create({
     right: 14,
     top: 36,
     padding: 4,
+  },
+  secretCodeSection: {
+    marginTop: 4,
+  },
+  secretHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  secretHintText: {
+    fontSize: 11,
+    flex: 1,
   },
   buttonSpacing: {
     marginTop: 18,
@@ -370,7 +634,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 26,
+    marginTop: 22,
     gap: 6,
   },
   footerPrompt: {

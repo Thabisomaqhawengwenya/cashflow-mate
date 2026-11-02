@@ -99,6 +99,7 @@ function RootLayoutNav() {
               <Stack.Screen name="invoices" options={{ headerShown: false }} />
               <Stack.Screen name="contacts" options={{ headerShown: false }} />
               <Stack.Screen name="appearance" options={{ headerShown: false }} />
+              <Stack.Screen name="admin" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
             </Stack>
 

@@ -194,6 +194,7 @@ export const DesktopSidebar: React.FC = () => {
             { label: 'Quotes', icon: 'document-text-outline', route: '/invoices' },
             { label: 'Contacts', icon: 'briefcase-outline', route: '/contacts' },
             { label: 'UI Studio', icon: 'color-palette-outline', route: '/appearance' },
+            { label: 'Admin HQ', icon: 'shield-half-outline', route: '/admin' },
           ].map((tool) => (
             <Pressable
               key={tool.route}
