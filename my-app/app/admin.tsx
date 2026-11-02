@@ -31,6 +31,12 @@ import {
   ReportedIndividual,
   UserProblemTicket,
   SystemBroadcast,
+  SubscriptionPaymentRecord,
+  AdminAuditLogEntry,
+  ParserRuleConfig,
+  PushCampaignRecord,
+  AdminStaffMember,
+  PlatformFeatureFlag,
   FraudCategory,
   FRAUD_CATEGORY_LABELS,
   TICKET_CATEGORY_LABELS,
@@ -38,43 +44,50 @@ import {
 import { generateLicenseKey, LicenseTier } from '@/services/licensing';
 import { useAppearance } from '@/context/AppearanceContext';
 
-type AdminTab =
-  | 'overview'
-  | 'users'
-  | 'reported_individuals'
-  | 'support_tickets'
-  | 'licenses'
-  | 'security';
+type AdminPageId =
+  | 'revenue_billing'
+  | 'merchant_crm'
+  | 'fraud_watchlist'
+  | 'support_helpdesk'
+  | 'ai_parser_ops'
+  | 'campaigns_broadcasts'
+  | 'rbac_feature_flags'
+  | 'audit_security';
 
-export default function AdminCommandCenterScreen() {
+export default function AdminBackOfficePortalScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 900;
+  const isDesktop = width >= 920;
   const { palette } = useAppearance();
   const activeBrandColor = palette.primary;
 
   const [session, setSession] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [activePage, setActivePage] = useState<AdminPageId>('revenue_billing');
 
-  // Multi-User Platform State
+  // Back-Office Data State
   const [accounts, setAccounts] = useState<StoredTraderAccount[]>([]);
   const [reportedList, setReportedList] = useState<ReportedIndividual[]>([]);
   const [tickets, setTickets] = useState<UserProblemTicket[]>([]);
   const [broadcast, setBroadcast] = useState<SystemBroadcast | null>(null);
+  const [payments, setPayments] = useState<SubscriptionPaymentRecord[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLogEntry[]>([]);
+  const [parserRules, setParserRules] = useState<ParserRuleConfig[]>([]);
+  const [campaigns, setCampaigns] = useState<PushCampaignRecord[]>([]);
+  const [adminTeam, setAdminTeam] = useState<AdminStaffMember[]>([]);
+  const [featureFlags, setFeatureFlags] = useState<PlatformFeatureFlag[]>([]);
   const [rates, setRates] = useState<ExchangeRateConfig | null>(null);
   const [adminSecret, setAdminSecret] = useState('CFM-HQ-2026');
 
-  // Filters & Search
+  // Search & Filters
   const [userSearch, setUserSearch] = useState('');
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'flagged' | 'suspended'>('all');
   const [reportedSearch, setReportedSearch] = useState('');
   const [reportedFilter, setReportedFilter] = useState<'all' | 'investigating' | 'blacklisted' | 'cleared'>('all');
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved'>('all');
+  const [auditFilter, setAuditFilter] = useState<'ALL' | AdminAuditLogEntry['eventType']>('ALL');
 
-  // Inspect User Modal
+  // Modals & Forms
   const [inspectedUser, setInspectedUser] = useState<StoredTraderAccount | null>(null);
-
-  // Provision New Trader Modal
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -82,35 +95,48 @@ export default function AdminCommandCenterScreen() {
   const [newUserCity, setNewUserCity] = useState('Harare (Mbare Musika)');
   const [newUserBiz, setNewUserBiz] = useState('');
   const [newUserTier, setNewUserTier] = useState<'starter' | 'pro' | 'enterprise'>('pro');
-  const [newUserCurrency, setNewUserCurrency] = useState<CurrencyCode>('USD');
+  const [newUserCurrency] = useState<CurrencyCode>('USD');
 
-  // Log Reported Individual Modal
+  // Watchlist Modal
   const [showAddReportedModal, setShowAddReportedModal] = useState(false);
   const [repName, setRepName] = useState('');
   const [repPhone, setRepPhone] = useState('');
   const [repNatId, setRepNatId] = useState('');
   const [repCity, setRepCity] = useState('Mbare Musika, Harare');
   const [repCategory, setRepCategory] = useState<FraudCategory>('fake_ecocash_sms');
-  const [repSeverity, setRepSeverity] = useState<'critical' | 'high' | 'medium'>('high');
+  const [repSeverity] = useState<'critical' | 'high' | 'medium'>('high');
   const [repAmount, setRepAmount] = useState('120');
   const [repEvidence, setRepEvidence] = useState('');
 
-  // Admin Notes / Replies Drafts
-  const [ticketReplyDrafts, setTicketReplyDrafts] = useState<Record<string, string>>({});
-  const [reportNoteDrafts, setReportNoteDrafts] = useState<Record<string, string>>({});
+  // Parser Rule Form
+  const [showAddParserModal, setShowAddParserModal] = useState(false);
+  const [newParserProvider, setNewParserProvider] = useState('');
+  const [newParserChannel, setNewParserChannel] = useState<ParserRuleConfig['channelType']>('Mobile Money SMS');
+  const [newParserPattern, setNewParserPattern] = useState('');
 
-  // Broadcast Editor State
-  const [bcastTitle, setBcastTitle] = useState('');
-  const [bcastMessage, setBcastMessage] = useState('');
-  const [bcastLevel, setBcastLevel] = useState<'info' | 'warning' | 'critical'>('warning');
-  const [bcastActive, setBcastActive] = useState(true);
+  // Admin Team Member Modal
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffEmail, setNewStaffEmail] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<AdminStaffMember['role']>('Support Engineer');
+  const [newStaffPerms, setNewStaffPerms] = useState('User Support Tickets, SMS/CSV Parser Rules, Trader PIN Reset');
 
-  // License Key Generator State
+  // Campaign Composer State
+  const [campTitle, setCampTitle] = useState('');
+  const [campBody, setCampBody] = useState('');
+  const [campTarget, setCampTarget] = useState<PushCampaignRecord['targetAudience']>('All Registered Traders');
+  const [campUrgency, setCampUrgency] = useState<PushCampaignRecord['urgency']>('warning');
+
+  // License Key Studio State
   const [genUserId, setGenUserId] = useState('mrq@mbaretuckshop.co.zw');
   const [genTier, setGenTier] = useState<Exclude<LicenseTier, 'starter'>>('enterprise');
   const [generatedKey, setGeneratedKey] = useState('');
 
-  // Security & Rates State
+  // Drafts for Replies & Notes
+  const [ticketReplyDrafts, setTicketReplyDrafts] = useState<Record<string, string>>({});
+  const [reportNoteDrafts, setReportNoteDrafts] = useState<Record<string, string>>({});
+
+  // Security & Rates Inputs
   const [newSecretInput, setNewSecretInput] = useState('');
   const [zigRateInput, setZigRateInput] = useState('26.5');
   const [zarRateInput, setZarRateInput] = useState('18.2');
@@ -120,16 +146,36 @@ export default function AdminCommandCenterScreen() {
     setStatusBanner(msg);
     setTimeout(() => {
       setStatusBanner((prev) => (prev === msg ? null : prev));
-    }, 4000);
+    }, 4200);
   };
 
-  const loadAllAdminData = useCallback(async () => {
-    const [sess, accs, repList, tktList, bcast, fx, secCode] = await Promise.all([
+  const loadAllBackOfficeData = useCallback(async () => {
+    const [
+      sess,
+      accs,
+      repList,
+      tktList,
+      bcast,
+      payList,
+      audList,
+      prsList,
+      cmpList,
+      teamList,
+      flagList,
+      fx,
+      secCode,
+    ] = await Promise.all([
       MobileAuthService.getSession(),
       MobileAuthService.getAllAccounts(),
       MobileAdminService.getReportedIndividuals(),
       MobileAdminService.getSupportTickets(),
       MobileAdminService.getSystemBroadcast(),
+      MobileAdminService.getSubscriptionPayments(),
+      MobileAdminService.getAuditLogs(),
+      MobileAdminService.getParserRules(),
+      MobileAdminService.getPushCampaigns(),
+      MobileAdminService.getAdminTeam(),
+      MobileAdminService.getFeatureFlags(),
       MobileExchangeService.getRates(),
       MobileAuthService.getAdminSecretCode(),
     ]);
@@ -139,10 +185,12 @@ export default function AdminCommandCenterScreen() {
     setReportedList(repList);
     setTickets(tktList);
     setBroadcast(bcast);
-    setBcastTitle(bcast.title);
-    setBcastMessage(bcast.message);
-    setBcastLevel(bcast.level);
-    setBcastActive(bcast.active);
+    setPayments(payList);
+    setAuditLogs(audList);
+    setParserRules(prsList);
+    setCampaigns(cmpList);
+    setAdminTeam(teamList);
+    setFeatureFlags(flagList);
     setRates(fx);
     setZigRateInput(String(fx.usdToZwg));
     setZarRateInput(String(fx.usdToZar));
@@ -159,46 +207,74 @@ export default function AdminCommandCenterScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadAllAdminData();
-    }, [loadAllAdminData])
+      loadAllBackOfficeData();
+    }, [loadAllBackOfficeData])
   );
 
-  // Computed Multi-User Platform Telemetry
-  const totalUsers = accounts.length;
-  const activeUsersCount = accounts.filter((a) => a.status !== 'suspended').length;
-  const flaggedUsersCount = accounts.filter((a) => a.status === 'flagged' || (a.flagsCount ?? 0) > 0).length;
-  const totalMonthlyVolumeUsd = accounts.reduce((sum, a) => sum + (a.monthlyVolumeUsd || 0), 0);
-  const totalPlatformTxCount = accounts.reduce((sum, a) => sum + (a.txCount || 0), 0);
-
+  // Computed SaaS Revenue & Platform Telemetry
+  const proSubscribers = accounts.filter((a) => a.tier === 'pro').length;
+  const entSubscribers = accounts.filter((a) => a.tier === 'enterprise').length;
+  const starterUsers = accounts.filter((a) => !a.tier || a.tier === 'starter').length;
+  const mrrUsd = proSubscribers * 5 + entSubscribers * 15;
+  const arrUsd = mrrUsd * 12;
+  const pendingPaymentsCount = payments.filter((p) => p.status === 'pending_verification').length;
   const openTicketsCount = tickets.filter((t) => t.status !== 'resolved').length;
-  const urgentTicketsCount = tickets.filter((t) => t.status !== 'resolved' && t.priority === 'urgent').length;
-
   const blacklistedCount = reportedList.filter((r) => r.status === 'blacklisted').length;
-  const investigatingCount = reportedList.filter((r) => r.status === 'investigating').length;
-  const totalFraudExposureUsd = reportedList.reduce((sum, r) => sum + r.amountInvolvedUsd, 0);
+  const degradedParsersCount = parserRules.filter((r) => r.status !== 'active').length;
 
-  // Regional hub aggregation
-  const citySummary = React.useMemo(() => {
-    const map: Record<string, { city: string; traders: number; volume: number; txCount: number; flagged: number }> = {};
-    accounts.forEach((acc) => {
-      const cityKey = acc.city || 'Harare';
-      if (!map[cityKey]) {
-        map[cityKey] = { city: cityKey, traders: 0, volume: 0, txCount: 0, flagged: 0 };
-      }
-      map[cityKey].traders += 1;
-      map[cityKey].volume += acc.monthlyVolumeUsd || 0;
-      map[cityKey].txCount += acc.txCount || 0;
-      if (acc.status === 'flagged' || (acc.flagsCount ?? 0) > 0) {
-        map[cityKey].flagged += 1;
-      }
+  // Handlers: Revenue & Licensing
+  const handleApprovePayment = async (payment: SubscriptionPaymentRecord) => {
+    const signedKey = generateLicenseKey({
+      traderName: payment.traderEmail,
+      tier: payment.planTier,
+      expiresYear: 2029,
     });
-    return Object.values(map).sort((a, b) => b.volume - a.volume);
-  }, [accounts]);
+    const updatedPayments = await MobileAdminService.approveSubscriptionPayment(
+      payment.id,
+      signedKey
+    );
+    setPayments(updatedPayments);
+    const matchingUser = accounts.find(
+      (a) => a.email.toLowerCase() === payment.traderEmail.toLowerCase()
+    );
+    if (matchingUser) {
+      const updatedAccs = await MobileAuthService.adminUpdateAccountTier(
+        matchingUser.userId,
+        payment.planTier
+      );
+      setAccounts(updatedAccs);
+    }
+    const updatedLogs = await MobileAdminService.getAuditLogs();
+    setAuditLogs(updatedLogs);
+    showToast(`Verified ${payment.invoiceRef} and issued ${signedKey} to ${payment.traderName}.`);
+  };
 
-  // Handlers: Users
+  const handleGenerateKey = (targetUser?: string, targetTier?: Exclude<LicenseTier, 'starter'>) => {
+    const uid = (targetUser ?? genUserId).trim() || 'trader@cashflowmate.co.zw';
+    const tierToUse = targetTier ?? genTier;
+    const key = generateLicenseKey({
+      traderName: uid,
+      tier: tierToUse,
+      expiresYear: 2029,
+    });
+    setGeneratedKey(key);
+    showToast(`Minted ${tierToUse.toUpperCase()} HMAC-SHA256 key for ${uid}.`);
+  };
+
+  const handleCopyKey = async () => {
+    if (!generatedKey) return;
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(generatedKey);
+      showToast('Copied signed activation key to clipboard.');
+    } else {
+      showToast(`Key ready: ${generatedKey}`);
+    }
+  };
+
+  // Handlers: Merchant CRM & KYC
   const handleCreateTrader = async () => {
     if (!newUserName.trim() || !newUserEmail.trim()) {
-      showToast('Please enter both Trader Name and Email address.');
+      showToast('Please enter both Merchant Name and Email address.');
       return;
     }
     const updated = await MobileAuthService.adminSaveAccount({
@@ -206,35 +282,68 @@ export default function AdminCommandCenterScreen() {
       email: newUserEmail,
       phone: newUserPhone,
       city: newUserCity,
-      businessName: newUserBiz || `${newUserName}'s Market Stall`,
+      businessName: newUserBiz || `${newUserName}'s Stall`,
       currency: newUserCurrency,
       tier: newUserTier,
     });
     setAccounts(updated);
+    await MobileAdminService.appendAuditLog({
+      actor: 'System Administrator',
+      actorRole: 'Super Admin',
+      eventType: 'USER_MODERATION',
+      severity: 'info',
+      target: `${newUserName} (${newUserEmail})`,
+      summary: `Provisioned new ${newUserTier.toUpperCase()} merchant account in ${newUserCity}.`,
+    });
+    setAuditLogs(await MobileAdminService.getAuditLogs());
     setNewUserName('');
     setNewUserEmail('');
     setNewUserPhone('');
     setNewUserBiz('');
     setShowAddUserModal(false);
-    showToast(`Provisioned trader account for ${newUserName}.`);
+    showToast(`Provisioned merchant account for ${newUserName}.`);
   };
 
   const handleToggleUserStatus = async (userId: string) => {
     const updated = await MobileAuthService.adminToggleAccountStatus(userId);
     setAccounts(updated);
+    const target = updated.find((u) => u.userId === userId);
     if (inspectedUser?.userId === userId) {
-      setInspectedUser(updated.find((u) => u.userId === userId) || null);
+      setInspectedUser(target || null);
     }
-    showToast('Updated trader account status.');
+    if (target) {
+      await MobileAdminService.appendAuditLog({
+        actor: 'System Administrator',
+        actorRole: 'Super Admin',
+        eventType: 'USER_MODERATION',
+        severity: target.status === 'suspended' ? 'warning' : 'info',
+        target: `${target.name} (${target.email})`,
+        summary: `Changed merchant account status to ${(target.status || 'active').toUpperCase()}.`,
+      });
+      setAuditLogs(await MobileAdminService.getAuditLogs());
+    }
+    showToast('Updated merchant account status.');
   };
 
   const handleToggleUserKyc = async (userId: string) => {
     const updated = await MobileAuthService.adminToggleKyc(userId);
     setAccounts(updated);
+    const target = updated.find((u) => u.userId === userId);
     if (inspectedUser?.userId === userId) {
-      setInspectedUser(updated.find((u) => u.userId === userId) || null);
+      setInspectedUser(target || null);
     }
-    showToast('Updated trader KYC verification badge.');
+    if (target) {
+      await MobileAdminService.appendAuditLog({
+        actor: 'System Administrator',
+        actorRole: 'Billing & KYC Auditor',
+        eventType: 'USER_MODERATION',
+        severity: 'info',
+        target: `${target.name} (${target.businessName})`,
+        summary: `${target.kycVerified ? 'Approved' : 'Revoked'} merchant KYC verification badge.`,
+      });
+      setAuditLogs(await MobileAdminService.getAuditLogs());
+    }
+    showToast('Updated merchant KYC verification status.');
   };
 
   const handleCycleUserTier = async (acc: StoredTraderAccount) => {
@@ -246,17 +355,30 @@ export default function AdminCommandCenterScreen() {
     if (inspectedUser?.userId === acc.userId) {
       setInspectedUser(updated.find((u) => u.userId === acc.userId) || null);
     }
-    showToast(`Upgraded ${acc.name} to ${nextTier.toUpperCase()} tier.`);
+    showToast(`Updated ${acc.name} subscription tier to ${nextTier.toUpperCase()}.`);
+  };
+
+  const handleResetUserPin = async (acc: StoredTraderAccount) => {
+    await MobileAdminService.appendAuditLog({
+      actor: 'System Administrator',
+      actorRole: 'Support Desk',
+      eventType: 'SECURITY_ALERT',
+      severity: 'info',
+      target: `${acc.name} (${acc.email})`,
+      summary: 'Dispatched temporary 4-digit Till Master PIN reset override token to merchant.',
+    });
+    setAuditLogs(await MobileAdminService.getAuditLogs());
+    showToast(`Sent 4-Digit Till PIN reset override to ${acc.name} (${acc.phone || acc.email}).`);
   };
 
   const handleDeleteUser = async (userId: string, name: string) => {
     const updated = await MobileAuthService.adminDeleteAccount(userId);
     setAccounts(updated);
     if (inspectedUser?.userId === userId) setInspectedUser(null);
-    showToast(`Removed ${name} from platform directory.`);
+    showToast(`Removed ${name} from platform merchant directory.`);
   };
 
-  // Handlers: Reported Individuals
+  // Handlers: Watchlist
   const handleAddReportedIndividual = async () => {
     if (!repName.trim() || !repPhone.trim() || !repEvidence.trim()) {
       showToast('Please enter the reported name, phone number, and evidence summary.');
@@ -269,13 +391,14 @@ export default function AdminCommandCenterScreen() {
       cityMarket: repCity.trim() || 'Harare',
       category: repCategory,
       severity: repSeverity,
-      reportedByTrader: 'Admin HQ Security Desk',
-      reportedByEmail: 'admin@cashflowmate.co.zw',
+      reportedByTrader: 'Admin Trust & Safety Desk',
+      reportedByEmail: 'safety@cashflowmate.co.zw',
       amountInvolvedUsd: Number(repAmount) || 0,
       evidenceSummary: repEvidence.trim(),
-      adminNotes: 'Logged directly by Admin Command Center.',
+      adminNotes: 'Logged directly by Admin Trust & Safety Desk.',
     });
     setReportedList(updated);
+    setAuditLogs(await MobileAdminService.getAuditLogs());
     setRepName('');
     setRepPhone('');
     setRepNatId('');
@@ -291,6 +414,7 @@ export default function AdminCommandCenterScreen() {
     const note = reportNoteDrafts[id];
     const updated = await MobileAdminService.updateReportedStatus(id, status, note);
     setReportedList(updated);
+    setAuditLogs(await MobileAdminService.getAuditLogs());
     showToast(`Watchlist record updated to ${status.toUpperCase()}.`);
   };
 
@@ -313,43 +437,99 @@ export default function AdminCommandCenterScreen() {
         : {}),
     });
     setTickets(updated);
+    setAuditLogs(await MobileAdminService.getAuditLogs());
     showToast(`Ticket ${ticket.ticketNumber} marked as ${nextStatus.replace('_', ' ').toUpperCase()}.`);
   };
 
-  // Handlers: Broadcast, Licenses, Security
-  const handleSaveBroadcast = async () => {
-    const next = await MobileAdminService.saveSystemBroadcast({
-      title: bcastTitle.trim() || 'Platform Notice',
-      message: bcastMessage.trim(),
-      level: bcastLevel,
-      active: bcastActive,
-    });
-    setBroadcast(next);
-    showToast(bcastActive ? 'Published live broadcast alert to all user tills.' : 'Broadcast banner hidden.');
+  // Handlers: AI & Parser Rules
+  const handleToggleParserRule = async (id: string) => {
+    const updated = await MobileAdminService.toggleParserRuleStatus(id);
+    setParserRules(updated);
+    showToast('Cycled SMS/CSV parser rule operational state.');
   };
 
-  const handleGenerateKey = (targetUser?: string, targetTier?: Exclude<LicenseTier, 'starter'>) => {
-    const uid = (targetUser ?? genUserId).trim() || 'trader@cashflowmate.co.zw';
-    const tierToUse = targetTier ?? genTier;
-    const key = generateLicenseKey({
-      traderName: uid,
-      tier: tierToUse,
-      expiresYear: 2029,
-    });
-    setGeneratedKey(key);
-    showToast(`Generated ${tierToUse.toUpperCase()} HMAC-SHA256 key for ${uid}.`);
-  };
-
-  const handleCopyKey = async () => {
-    if (!generatedKey) return;
-    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-      await navigator.clipboard.writeText(generatedKey);
-      showToast('Copied activation key to clipboard.');
-    } else {
-      showToast(`Key ready: ${generatedKey}`);
+  const handleAddParserRule = async () => {
+    if (!newParserProvider.trim() || !newParserPattern.trim()) {
+      showToast('Enter provider name and sample regex/header pattern.');
+      return;
     }
+    const updated = await MobileAdminService.addParserRule({
+      providerName: newParserProvider.trim(),
+      channelType: newParserChannel,
+      patternSample: newParserPattern.trim(),
+    });
+    setParserRules(updated);
+    setNewParserProvider('');
+    setNewParserPattern('');
+    setShowAddParserModal(false);
+    showToast(`Deployed new parsing template for ${newParserProvider.trim()}.`);
   };
 
+  // Handlers: Campaigns & Broadcasts
+  const handleSendCampaign = async () => {
+    if (!campTitle.trim() || !campBody.trim()) {
+      showToast('Please enter both Campaign Headline and Message Body.');
+      return;
+    }
+    const targetCount =
+      campTarget === 'All Registered Traders'
+        ? accounts.length
+        : campTarget === 'Starter Tier Upsell'
+        ? starterUsers || 1
+        : campTarget === 'Pro & Enterprise'
+        ? proSubscribers + entSubscribers
+        : 2;
+
+    const updated = await MobileAdminService.sendPushCampaign({
+      title: campTitle.trim(),
+      body: campBody.trim(),
+      targetAudience: campTarget,
+      urgency: campUrgency,
+      deliveredCount: targetCount,
+    });
+    setCampaigns(updated);
+    setBroadcast(await MobileAdminService.getSystemBroadcast());
+    setAuditLogs(await MobileAdminService.getAuditLogs());
+    setCampTitle('');
+    setCampBody('');
+    showToast(`Broadcast dispatched to ${targetCount} merchant tills (${campTarget}).`);
+  };
+
+  // Handlers: RBAC & Feature Flags
+  const handleToggleFeatureFlag = async (key: string) => {
+    const updated = await MobileAdminService.toggleFeatureFlag(key);
+    setFeatureFlags(updated);
+    setAuditLogs(await MobileAdminService.getAuditLogs());
+    const flag = updated.find((f) => f.key === key);
+    showToast(`${flag?.name}: ${flag?.enabled ? 'ENABLED' : 'DISABLED'}.`);
+  };
+
+  const handleAddAdminStaff = async () => {
+    if (!newStaffName.trim() || !newStaffEmail.trim()) {
+      showToast('Enter staff member full name and email.');
+      return;
+    }
+    const updated = await MobileAdminService.addAdminStaffMember({
+      name: newStaffName.trim(),
+      email: newStaffEmail.trim(),
+      role: newStaffRole,
+      permissionsSummary: newStaffPerms.trim(),
+    });
+    setAdminTeam(updated);
+    setAuditLogs(await MobileAdminService.getAuditLogs());
+    setNewStaffName('');
+    setNewStaffEmail('');
+    setShowAddAdminModal(false);
+    showToast(`Added ${newStaffName.trim()} to Admin Team (${newStaffRole}).`);
+  };
+
+  const handleToggleStaffStatus = async (id: string) => {
+    const updated = await MobileAdminService.toggleAdminStaffStatus(id);
+    setAdminTeam(updated);
+    showToast('Updated Admin team member status.');
+  };
+
+  // Handlers: Security Vault & Export
   const handleSaveSecretCode = async () => {
     if (newSecretInput.trim().length < 4) {
       showToast('Admin secret code must be at least 4 characters.');
@@ -357,7 +537,16 @@ export default function AdminCommandCenterScreen() {
     }
     await MobileAuthService.setAdminSecretCode(newSecretInput.trim());
     setAdminSecret(newSecretInput.trim());
-    showToast(`Updated Admin Login Secret Code to "${newSecretInput.trim()}".`);
+    await MobileAdminService.appendAuditLog({
+      actor: 'System Administrator',
+      actorRole: 'Super Admin',
+      eventType: 'ADMIN_AUTH',
+      severity: 'critical',
+      target: 'Admin 2FA Secret Access Code',
+      summary: `Rotated Desktop Admin Login Secret Code to "${newSecretInput.trim()}".`,
+    });
+    setAuditLogs(await MobileAdminService.getAuditLogs());
+    showToast(`Rotated Admin Login Secret Code to "${newSecretInput.trim()}".`);
   };
 
   const handleSaveRates = async () => {
@@ -372,24 +561,28 @@ export default function AdminCommandCenterScreen() {
       usdToZar: zar,
     });
     setRates(nextRates);
-    showToast(`Updated global reference exchange rates (1 USD = ${zig} ZiG | ${zar} ZAR).`);
+    showToast(`Updated platform exchange rates (1 USD = ${zig} ZiG | ${zar} ZAR).`);
   };
 
   const handleExportGovernanceSnapshot = () => {
     const payload = {
       exportedAt: new Date().toISOString(),
-      platformSummary: {
-        totalRegisteredTraders: totalUsers,
-        activeTraders: activeUsersCount,
-        monthlyPlatformVolumeUsd: totalMonthlyVolumeUsd,
-        openSupportTickets: openTicketsCount,
-        blacklistedIndividuals: blacklistedCount,
+      saasMetrics: {
+        mrrUsd,
+        arrUsd,
+        proSubscribers,
+        entSubscribers,
+        totalMerchants: accounts.length,
       },
-      registeredTraders: accounts,
+      merchants: accounts,
+      subscriptionPayments: payments,
       reportedIndividualsWatchlist: reportedList,
-      userSupportTickets: tickets,
-      systemBroadcast: broadcast,
-      exchangeRates: rates,
+      supportTickets: tickets,
+      parserRules,
+      pushCampaigns: campaigns,
+      adminTeamRbac: adminTeam,
+      featureFlags,
+      immutableAuditLogs: auditLogs,
     };
     const jsonString = JSON.stringify(payload, null, 2);
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -397,12 +590,12 @@ export default function AdminCommandCenterScreen() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `cashflow-mate-multiuser-governance-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `cashflow-mate-admin-backoffice-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast('Downloaded full multi-user platform governance JSON snapshot.');
+      showToast('Downloaded full Admin Back-Office JSON compliance archive.');
     } else {
-      showToast('Prepared multi-user governance snapshot.');
+      showToast('Prepared Admin Back-Office archive.');
     }
   };
 
@@ -415,7 +608,7 @@ export default function AdminCommandCenterScreen() {
     router.replace('/login' as any);
   };
 
-  // Filtered Lists
+  // Filtered Collections
   const filteredAccounts = accounts.filter((acc) => {
     if (userStatusFilter !== 'all' && (acc.status || 'active') !== userStatusFilter) return false;
     if (!userSearch.trim()) return true;
@@ -447,8 +640,14 @@ export default function AdminCommandCenterScreen() {
     return true;
   });
 
-  const navItems: {
-    id: AdminTab;
+  const filteredAuditLogs = auditLogs.filter((log) => {
+    if (auditFilter !== 'ALL' && log.eventType !== auditFilter) return false;
+    return true;
+  });
+
+  // Dedicated Admin-Only Back-Office Pages
+  const adminPages: {
+    id: AdminPageId;
     label: string;
     sub: string;
     icon: keyof typeof Ionicons.glyphMap;
@@ -456,51 +655,67 @@ export default function AdminCommandCenterScreen() {
     badgeColor?: string;
   }[] = [
     {
-      id: 'overview',
-      label: 'Platform Overview',
-      sub: 'Multi-User & City Telemetry',
-      icon: 'grid-outline',
+      id: 'revenue_billing',
+      label: 'SaaS Revenue & Billing',
+      sub: `$${mrrUsd}/mo MRR & License Keys`,
+      icon: 'card-outline',
+      badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined,
+      badgeColor: '#10B981',
     },
     {
-      id: 'users',
-      label: 'Trader Directory',
-      sub: `${totalUsers} Registered Accounts`,
-      icon: 'people-outline',
-      badge: totalUsers,
+      id: 'merchant_crm',
+      label: 'Merchant CRM & KYC',
+      sub: `${accounts.length} Registered Businesses`,
+      icon: 'business-outline',
+      badge: accounts.length,
     },
     {
-      id: 'reported_individuals',
-      label: 'Reported Individuals',
-      sub: 'Scammers & Defaulters Watchlist',
-      icon: 'warning-outline',
+      id: 'fraud_watchlist',
+      label: 'Fraud & Scammer Watchlist',
+      sub: 'Reported Individuals & Defaulters',
+      icon: 'skull-outline',
       badge: reportedList.length,
       badgeColor: '#EF4444',
     },
     {
-      id: 'support_tickets',
-      label: 'User Problems & Helpdesk',
-      sub: 'Bug Reports & Trader Issues',
-      icon: 'Build-outline' as any,
+      id: 'support_helpdesk',
+      label: 'Support & Bug Helpdesk',
+      sub: 'User Problem Tickets & Replies',
+      icon: 'construct-outline',
       badge: openTicketsCount,
       badgeColor: '#F59E0B',
     },
     {
-      id: 'licenses',
-      label: 'License Key Studio',
-      sub: 'Pro & Enterprise Provisioning',
-      icon: 'key-outline',
+      id: 'ai_parser_ops',
+      label: 'AI & Parser Engine Ops',
+      sub: 'Gemini Cost & SMS/CSV Templates',
+      icon: 'hardware-chip-outline',
+      badge: degradedParsersCount > 0 ? degradedParsersCount : undefined,
+      badgeColor: '#F59E0B',
     },
     {
-      id: 'security',
-      label: 'Security & Broadcasts',
-      sub: 'Secret Code, FX & Audit Export',
+      id: 'campaigns_broadcasts',
+      label: 'Push Campaigns & Alerts',
+      sub: 'Regional & Tier Announcements',
+      icon: 'megaphone-outline',
+    },
+    {
+      id: 'rbac_feature_flags',
+      label: 'Admin Team & Feature Flags',
+      sub: 'Staff RBAC & Module Switches',
+      icon: 'options-outline',
+    },
+    {
+      id: 'audit_security',
+      label: 'Audit Log & Security Vault',
+      sub: `${auditLogs.length} Immutable Events & 2FA`,
       icon: 'shield-checkmark-outline',
     },
   ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Top Desktop Command Header */}
+      {/* Top Admin Back-Office Bar */}
       <View style={[styles.topHeader, { backgroundColor: '#071714' }]}>
         <View style={styles.topHeaderLeft}>
           <View style={[styles.adminShieldBadge, { backgroundColor: activeBrandColor }]}>
@@ -510,11 +725,11 @@ export default function AdminCommandCenterScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={styles.topHeaderTitle}>CASHFLOW MATE</Text>
               <View style={styles.hqPill}>
-                <Text style={styles.hqPillText}>MULTI-USER ADMIN CONSOLE</Text>
+                <Text style={styles.hqPillText}>SAAS ADMIN BACK-OFFICE</Text>
               </View>
             </View>
             <Text style={styles.topHeaderSub}>
-              National Trader Governance, Fraud Watchlist & Support Helpdesk • Logged in as{' '}
+              Platform Operations, SaaS Revenue, Fraud Watchlist & RBAC Governance • Operator:{' '}
               {session?.name || 'System Administrator'}
             </Text>
           </View>
@@ -523,7 +738,7 @@ export default function AdminCommandCenterScreen() {
         <View style={styles.topHeaderRight}>
           <View style={styles.secretIndicator}>
             <Ionicons name="finger-print-outline" size={14} color="#34D399" />
-            <Text style={styles.secretIndicatorText}>CODE: {adminSecret}</Text>
+            <Text style={styles.secretIndicatorText}>2FA CODE: {adminSecret}</Text>
           </View>
 
           <Pressable style={styles.signOutBtn} onPress={handleAdminSignOut}>
@@ -533,7 +748,7 @@ export default function AdminCommandCenterScreen() {
         </View>
       </View>
 
-      {/* Live Status Toast */}
+      {/* Live Feedback Banner */}
       {statusBanner && (
         <View style={styles.toastBanner}>
           <Ionicons name="checkmark-circle" size={18} color="#34D399" />
@@ -546,18 +761,16 @@ export default function AdminCommandCenterScreen() {
 
       {/* Main Split Workspace */}
       <View style={[styles.workspace, !isDesktop && { flexDirection: 'column' }]}>
-        {/* Left Command Rail */}
+        {/* Left Dedicated Admin Navigation Rail */}
         <View style={[styles.sideRail, !isDesktop && styles.sideRailMobile]}>
-          <Text style={styles.railSectionTitle}>GOVERNANCE MODULES</Text>
+          <Text style={styles.railSectionTitle}>ADMIN BACK-OFFICE PAGES</Text>
           <ScrollView
             horizontal={!isDesktop}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={!isDesktop ? { gap: 8 } : { gap: 6 }}
+            contentContainerStyle={!isDesktop ? { gap: 8 } : { gap: 5 }}
           >
-            {navItems.map((item) => {
-              const active = activeTab === item.id;
-              const iconName =
-                item.id === 'support_tickets' ? 'construct-outline' : item.icon;
+            {adminPages.map((item) => {
+              const active = activePage === item.id;
               return (
                 <Pressable
                   key={item.id}
@@ -569,7 +782,7 @@ export default function AdminCommandCenterScreen() {
                     },
                     !isDesktop && styles.railItemMobile,
                   ]}
-                  onPress={() => setActiveTab(item.id)}
+                  onPress={() => setActivePage(item.id)}
                 >
                   <View
                     style={[
@@ -578,7 +791,7 @@ export default function AdminCommandCenterScreen() {
                     ]}
                   >
                     <Ionicons
-                      name={iconName}
+                      name={item.icon}
                       size={18}
                       color={active ? '#071714' : '#94A3B8'}
                     />
@@ -613,35 +826,35 @@ export default function AdminCommandCenterScreen() {
             <View style={styles.railFooterCard}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={styles.onlineDot} />
-                <Text style={styles.railFooterTitle}>NATIONAL NETWORK LIVE</Text>
+                <Text style={styles.railFooterTitle}>ADMIN PORTAL ISOLATED</Text>
               </View>
               <Text style={styles.railFooterSub}>
-                Monitoring {totalUsers} registered trader tills across {citySummary.length} cities.
-                Admin view is strictly separated from individual user cashboxes.
+                User cashbox screens are disabled for Admin roles. Managing {accounts.length}{' '}
+                merchants & ${arrUsd}/yr ARR.
               </Text>
             </View>
           )}
         </View>
 
-        {/* Right Content Canvas */}
+        {/* Right Admin Page Canvas */}
         <ScrollView
           style={styles.canvasScroll}
           contentContainerStyle={styles.canvasContent}
           showsVerticalScrollIndicator={false}
         >
           {/* =========================================================
-              TAB 1: MULTI-USER PLATFORM OVERVIEW & REGIONAL ANALYTICS
+              PAGE 1: PLATFORM SAAS REVENUE, BILLING & SUBSCRIPTIONS
              ========================================================= */}
-          {activeTab === 'overview' && (
+          {activePage === 'revenue_billing' && (
             <>
               <View style={styles.sectionHeaderRow}>
                 <View>
                   <Text style={styles.pageTitle}>
-                    Multi-User Platform Overview & Trust Telemetry
+                    Platform SaaS Revenue, Billing & License Provisioning
                   </Text>
                   <Text style={styles.pageSubtitle}>
-                    High-level supervision across all registered traders, regional market hubs,
-                    reported scammers/defaulters, and user support queues
+                    Track CashFlow Mate company subscription revenue (MRR/ARR), approve merchant
+                    EcoCash/InnBucks upgrade payments, and mint cryptographic activation keys
                   </Text>
                 </View>
                 <Pressable
@@ -649,311 +862,268 @@ export default function AdminCommandCenterScreen() {
                   onPress={handleExportGovernanceSnapshot}
                 >
                   <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.primaryCtaBtnText}>Export Platform Audit JSON</Text>
+                  <Text style={styles.primaryCtaBtnText}>Export SaaS Revenue Report</Text>
                 </Pressable>
               </View>
 
-              {/* 4 Multi-User Platform KPI Cards */}
+              {/* 4 SaaS Company Revenue KPIs */}
               <View style={[styles.kpiGrid, !isDesktop && { flexDirection: 'column' }]}>
-                <Pressable
-                  style={[styles.kpiCard, { borderTopColor: '#0C3E35', borderTopWidth: 4 }]}
-                  onPress={() => setActiveTab('users')}
-                >
+                <View style={[styles.kpiCard, { borderTopColor: '#10B981', borderTopWidth: 4 }]}>
                   <View style={styles.kpiTopRow}>
-                    <Text style={styles.kpiLabel}>REGISTERED TRADERS</Text>
-                    <View style={[styles.kpiIconCircle, { backgroundColor: '#E8F5EF' }]}>
-                      <Ionicons name="people" size={18} color="#0C3E35" />
+                    <Text style={styles.kpiLabel}>MONTHLY RECURRING REV (MRR)</Text>
+                    <View style={[styles.kpiIconCircle, { backgroundColor: '#DCFCE7' }]}>
+                      <Ionicons name="cash-outline" size={18} color="#15803D" />
                     </View>
                   </View>
-                  <Text style={styles.kpiValue}>{totalUsers} Tills</Text>
+                  <Text style={[styles.kpiValue, { color: '#065F46' }]}>${mrrUsd}.00 / mo</Text>
                   <Text style={styles.kpiMeta}>
-                    {activeUsersCount} Active • {flaggedUsersCount} Flagged • {citySummary.length}{' '}
-                    Cities
+                    Projected ARR: ${arrUsd.toLocaleString()}.00 / yr
                   </Text>
-                </Pressable>
+                </View>
 
-                <Pressable
-                  style={[styles.kpiCard, { borderTopColor: '#2563EB', borderTopWidth: 4 }]}
-                  onPress={() => setActiveTab('users')}
-                >
+                <View style={[styles.kpiCard, { borderTopColor: '#2563EB', borderTopWidth: 4 }]}>
                   <View style={styles.kpiTopRow}>
-                    <Text style={styles.kpiLabel}>NETWORK MONTHLY VOLUME</Text>
+                    <Text style={styles.kpiLabel}>ENTERPRISE SYNDICATES ($15)</Text>
                     <View style={[styles.kpiIconCircle, { backgroundColor: '#DBEAFE' }]}>
-                      <Ionicons name="stats-chart" size={18} color="#2563EB" />
+                      <Ionicons name="diamond-outline" size={18} color="#1D4ED8" />
                     </View>
                   </View>
-                  <Text style={[styles.kpiValue, { color: '#1D4ED8' }]}>
-                    ${totalMonthlyVolumeUsd.toLocaleString()}
-                  </Text>
+                  <Text style={styles.kpiValue}>{entSubscribers} Merchants</Text>
                   <Text style={styles.kpiMeta}>
-                    {totalPlatformTxCount} total transactions across all users
+                    ${entSubscribers * 15}/mo • Multi-stall & priority support
                   </Text>
-                </Pressable>
+                </View>
 
-                <Pressable
-                  style={[styles.kpiCard, { borderTopColor: '#DC2626', borderTopWidth: 4 }]}
-                  onPress={() => setActiveTab('reported_individuals')}
-                >
+                <View style={[styles.kpiCard, { borderTopColor: '#7C3AED', borderTopWidth: 4 }]}>
                   <View style={styles.kpiTopRow}>
-                    <Text style={styles.kpiLabel}>REPORTED INDIVIDUALS</Text>
-                    <View style={[styles.kpiIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                      <Ionicons name="alert-circle" size={18} color="#DC2626" />
+                    <Text style={styles.kpiLabel}>PRO TRADERS ($5/MO)</Text>
+                    <View style={[styles.kpiIconCircle, { backgroundColor: '#EDE9FE' }]}>
+                      <Ionicons name="star-outline" size={18} color="#6D28D9" />
                     </View>
                   </View>
-                  <Text style={[styles.kpiValue, { color: '#DC2626' }]}>
-                    {reportedList.length} Watchlist
-                  </Text>
+                  <Text style={styles.kpiValue}>{proSubscribers} Merchants</Text>
                   <Text style={styles.kpiMeta}>
-                    {blacklistedCount} Blacklisted • {investigatingCount} Investigating ($
-                    {totalFraudExposureUsd} exposure)
+                    ${proSubscribers * 5}/mo • {starterUsers} Starter free tier users
                   </Text>
-                </Pressable>
+                </View>
 
-                <Pressable
-                  style={[styles.kpiCard, { borderTopColor: '#D97706', borderTopWidth: 4 }]}
-                  onPress={() => setActiveTab('support_tickets')}
-                >
+                <View style={[styles.kpiCard, { borderTopColor: '#D97706', borderTopWidth: 4 }]}>
                   <View style={styles.kpiTopRow}>
-                    <Text style={styles.kpiLabel}>USER PROBLEM REPORTS</Text>
+                    <Text style={styles.kpiLabel}>PENDING VERIFICATION</Text>
                     <View style={[styles.kpiIconCircle, { backgroundColor: '#FEF3C7' }]}>
-                      <Ionicons name="construct" size={18} color="#D97706" />
+                      <Ionicons name="time-outline" size={18} color="#B45309" />
                     </View>
                   </View>
                   <Text style={[styles.kpiValue, { color: '#B45309' }]}>
-                    {openTicketsCount} Open Issues
+                    {pendingPaymentsCount} Payments
                   </Text>
                   <Text style={styles.kpiMeta}>
-                    {urgentTicketsCount} Urgent priority • {tickets.length} Total tickets logged
+                    Awaiting EcoCash/InnBucks ref approval
                   </Text>
-                </Pressable>
+                </View>
               </View>
 
-              {/* Two-Column Split: Regional Breakdown + Urgent Action Queues */}
-              <View style={[styles.twoColRow, !isDesktop && { flexDirection: 'column' }]}>
-                {/* Left: Regional City Market Breakdown */}
-                <View style={[styles.panelCard, { flex: 1.25 }]}>
-                  <View style={styles.panelHeaderRow}>
-                    <Text style={styles.panelTitle}>
-                      Regional Trader Distribution (Zimbabwe Hubs)
+              {/* Subscription Payment Ledger Table */}
+              <View style={[styles.panelCard, { marginBottom: 18 }]}>
+                <View style={styles.panelHeaderRow}>
+                  <Text style={styles.panelTitle}>
+                    Merchant Subscription Payments & License Issuance Ledger
+                  </Text>
+                  <M3Badge label={`${payments.length} INVOICES`} variant="primary" />
+                </View>
+
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.th, { flex: 1 }]}>INVOICE REF</Text>
+                  <Text style={[styles.th, { flex: 1.5 }]}>MERCHANT & CITY</Text>
+                  <Text style={[styles.th, { flex: 1 }]}>PLAN & METHOD</Text>
+                  <Text style={[styles.th, { flex: 0.7 }]}>AMOUNT</Text>
+                  <Text style={[styles.th, { flex: 1.5 }]}>ISSUED LICENSE KEY</Text>
+                  <Text style={[styles.th, { flex: 1, textAlign: 'right' }]}>STATUS / ACTION</Text>
+                </View>
+
+                {payments.map((pay) => (
+                  <View key={pay.id} style={styles.tableRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.ticketCode}>{pay.invoiceRef}</Text>
+                      <Text style={styles.rowMicro}>{pay.paidAt}</Text>
+                    </View>
+                    <View style={{ flex: 1.5 }}>
+                      <Text style={styles.rowTitle}>{pay.traderName}</Text>
+                      <Text style={styles.rowSub}>
+                        {pay.businessName} • {pay.city}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <M3Badge
+                        label={pay.planTier.toUpperCase()}
+                        variant={pay.planTier === 'enterprise' ? 'mint' : 'primary'}
+                      />
+                      <Text style={[styles.rowMicro, { marginTop: 3 }]}>{pay.paymentMethod}</Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.cellMono,
+                        { flex: 0.7, fontWeight: '900', color: '#065F46' },
+                      ]}
+                    >
+                      ${pay.amountUsd.toFixed(2)}
                     </Text>
-                    <M3Badge label={`${citySummary.length} MARKETS`} variant="primary" />
-                  </View>
-
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.th, { flex: 1.6 }]}>CITY / MARKET HUB</Text>
-                    <Text style={[styles.th, { flex: 0.7 }]}>TRADERS</Text>
-                    <Text style={[styles.th, { flex: 0.8 }]}>TX COUNT</Text>
-                    <Text style={[styles.th, { flex: 1, textAlign: 'right' }]}>MONTHLY VOL</Text>
-                  </View>
-
-                  {citySummary.map((row) => (
-                    <View key={row.city} style={styles.tableRow}>
-                      <View style={{ flex: 1.6, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Ionicons name="location" size={15} color="#0C3E35" />
-                        <Text style={styles.rowTitle}>{row.city}</Text>
-                      </View>
-                      <Text style={[styles.cellMono, { flex: 0.7 }]}>{row.traders} stalls</Text>
-                      <Text style={[styles.cellMono, { flex: 0.8 }]}>{row.txCount} tx</Text>
+                    <View style={{ flex: 1.5 }}>
                       <Text
+                        selectable
                         style={[
                           styles.cellMono,
-                          { flex: 1, textAlign: 'right', fontWeight: '800', color: '#0C3E35' },
+                          {
+                            fontSize: 11,
+                            color:
+                              pay.status === 'pending_verification' ? '#D97706' : '#0F172A',
+                            fontWeight: '700',
+                          },
                         ]}
                       >
-                        ${row.volume.toLocaleString()}
+                        {pay.licenseKeyIssued}
                       </Text>
+                      <Text style={styles.rowMicro}>Expires {pay.expiresAt}</Text>
                     </View>
-                  ))}
-                </View>
-
-                {/* Right: System-Wide Broadcast Banner Control */}
-                <View style={[styles.panelCard, { flex: 1 }]}>
-                  <View style={styles.panelHeaderRow}>
-                    <Text style={styles.panelTitle}>Network-Wide Trader Broadcast</Text>
-                    <M3Badge
-                      label={bcastActive ? 'LIVE ON TILLS' : 'HIDDEN'}
-                      variant={bcastActive ? 'inflow' : 'neutral'}
-                    />
-                  </View>
-                  <Text style={styles.panelHelper}>
-                    Push an instant security alert or system notice to the top of all traders&apos;
-                    screens nationwide.
-                  </Text>
-
-                  <Text style={styles.inputLabel}>Alert Title</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={bcastTitle}
-                    onChangeText={setBcastTitle}
-                    placeholder="e.g., Security Alert: Fake EcoCash SMS Scammers"
-                    placeholderTextColor="#94A3B8"
-                  />
-
-                  <Text style={[styles.inputLabel, { marginTop: 10 }]}>Broadcast Message</Text>
-                  <TextInput
-                    style={[styles.input, { minHeight: 66, textAlignVertical: 'top' }]}
-                    value={bcastMessage}
-                    onChangeText={setBcastMessage}
-                    multiline
-                    placeholder="Enter announcement for all traders..."
-                    placeholderTextColor="#94A3B8"
-                  />
-
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginTop: 12,
-                      gap: 8,
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                      {(['info', 'warning', 'critical'] as const).map((lvl) => (
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                      {pay.status === 'pending_verification' ? (
                         <Pressable
-                          key={lvl}
                           style={[
-                            styles.miniChoicePill,
-                            bcastLevel === lvl && {
-                              backgroundColor: '#0C3E35',
-                              borderColor: '#0C3E35',
-                            },
+                            styles.smallActionBtn,
+                            { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' },
                           ]}
-                          onPress={() => setBcastLevel(lvl)}
+                          onPress={() => handleApprovePayment(pay)}
                         >
-                          <Text
-                            style={[
-                              styles.miniChoiceText,
-                              bcastLevel === lvl && { color: '#FFFFFF' },
-                            ]}
-                          >
-                            {lvl.toUpperCase()}
+                          <Ionicons name="checkmark-circle" size={14} color="#166534" />
+                          <Text style={[styles.smallActionText, { color: '#166534' }]}>
+                            Approve & Mint Key
                           </Text>
                         </Pressable>
-                      ))}
+                      ) : (
+                        <M3Badge label="PAID & ACTIVE" variant="inflow" />
+                      )}
                     </View>
-
-                    <Pressable
-                      style={[
-                        styles.miniChoicePill,
-                        bcastActive
-                          ? { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' }
-                          : { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
-                      ]}
-                      onPress={() => setBcastActive(!bcastActive)}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: '800',
-                          color: bcastActive ? '#166534' : '#475569',
-                        }}
-                      >
-                        {bcastActive ? 'ACTIVE' : 'MUTED'}
-                      </Text>
-                    </Pressable>
                   </View>
-
-                  <Pressable
-                    style={[
-                      styles.primaryCtaBtn,
-                      { backgroundColor: activeBrandColor, marginTop: 14, justifyContent: 'center' },
-                    ]}
-                    onPress={handleSaveBroadcast}
-                  >
-                    <Ionicons name="megaphone-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.primaryCtaBtnText}>Update Broadcast Banner</Text>
-                  </Pressable>
-                </View>
+                ))}
               </View>
 
-              {/* Quick Triage Preview: Latest Reported Scammers & Latest User Problem Reports */}
+              {/* Embedded HMAC-SHA256 License Key Studio */}
               <View style={[styles.twoColRow, !isDesktop && { flexDirection: 'column' }]}>
-                {/* Latest Reported Individuals */}
                 <View style={[styles.panelCard, { flex: 1 }]}>
-                  <View style={styles.panelHeaderRow}>
-                    <Text style={styles.panelTitle}>Recent Reported Individuals</Text>
-                    <Pressable onPress={() => setActiveTab('reported_individuals')}>
-                      <Text style={styles.linkText}>Open Full Watchlist →</Text>
-                    </Pressable>
+                  <Text style={styles.panelTitle}>
+                    HMAC-SHA256 Cryptographic License Key Generator
+                  </Text>
+                  <Text style={styles.panelHelper}>
+                    Select any registered merchant or enter an email to mint an offline activation
+                    key (`CFM-PRO-...` / `CFM-ENT-...`).
+                  </Text>
+
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                    {accounts.map((acc) => (
+                      <Pressable
+                        key={acc.userId}
+                        style={[
+                          styles.miniChoicePill,
+                          genUserId === acc.email && {
+                            backgroundColor: '#0C3E35',
+                            borderColor: '#0C3E35',
+                          },
+                        ]}
+                        onPress={() => {
+                          setGenUserId(acc.email);
+                          handleGenerateKey(acc.email, genTier);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.miniChoiceText,
+                            genUserId === acc.email && { color: '#FFFFFF' },
+                          ]}
+                        >
+                          {acc.name}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
-                  {reportedList.slice(0, 3).map((rep) => (
-                    <View key={rep.id} style={styles.triageItem}>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Text style={styles.rowTitle}>{rep.reportedName}</Text>
-                          <M3Badge
-                            label={rep.status.toUpperCase()}
-                            variant={rep.status === 'blacklisted' ? 'outflow' : 'amber'}
-                          />
-                        </View>
-                        <Text style={styles.rowSub}>
-                          {rep.phoneNumber} • {rep.cityMarket} •{' '}
-                          {FRAUD_CATEGORY_LABELS[rep.category]}
+
+                  <Text style={styles.inputLabel}>Target Merchant Email / Identifier</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={genUserId}
+                    onChangeText={setGenUserId}
+                    autoCapitalize="none"
+                  />
+
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+                    {(['pro', 'enterprise'] as const).map((t) => (
+                      <Pressable
+                        key={t}
+                        style={[
+                          styles.tierOptionBtn,
+                          genTier === t && {
+                            backgroundColor: '#0C3E35',
+                            borderColor: '#0C3E35',
+                          },
+                        ]}
+                        onPress={() => {
+                          setGenTier(t);
+                          handleGenerateKey(genUserId, t);
+                        }}
+                      >
+                        <Ionicons
+                          name={t === 'enterprise' ? 'diamond' : 'star'}
+                          size={16}
+                          color={genTier === t ? '#34D399' : '#64748B'}
+                        />
+                        <Text
+                          style={[
+                            styles.tierOptionText,
+                            genTier === t && { color: '#FFFFFF' },
+                          ]}
+                        >
+                          {t === 'pro' ? 'Pro Plan ($5/mo)' : 'Enterprise Plan ($15/mo)'}
                         </Text>
-                        <Text style={styles.triageSnippet} numberOfLines={2}>
-                          Reported by {rep.reportedByTrader}: &ldquo;{rep.evidenceSummary}&rdquo;
-                        </Text>
-                      </View>
-                      <Text style={styles.exposureAmount}>${rep.amountInvolvedUsd}</Text>
-                    </View>
-                  ))}
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
 
-                {/* Latest User Problem Tickets */}
-                <View style={[styles.panelCard, { flex: 1 }]}>
-                  <View style={styles.panelHeaderRow}>
-                    <Text style={styles.panelTitle}>Recent User Problem Tickets</Text>
-                    <Pressable onPress={() => setActiveTab('support_tickets')}>
-                      <Text style={styles.linkText}>Open Support Desk →</Text>
-                    </Pressable>
+                <View style={[styles.panelCard, { flex: 1, backgroundColor: '#071714' }]}>
+                  <M3Badge label="SIGNED ACTIVATION TOKEN" variant="mint" />
+                  <Text style={[styles.panelTitle, { color: '#FFFFFF', marginTop: 10 }]}>
+                    Ready for Merchant Activation
+                  </Text>
+                  <Text style={[styles.panelHelper, { color: '#94A3B8' }]}>
+                    Bound to <Text style={{ color: '#34D399', fontWeight: '700' }}>{genUserId}</Text>{' '}
+                    ({genTier.toUpperCase()})
+                  </Text>
+                  <View style={styles.generatedKeyBox}>
+                    <Text selectable style={styles.generatedKeyText}>
+                      {generatedKey}
+                    </Text>
                   </View>
-                  {tickets.slice(0, 3).map((tkt) => (
-                    <View key={tkt.id} style={styles.triageItem}>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Text style={styles.ticketCode}>{tkt.ticketNumber}</Text>
-                          <Text style={styles.rowTitle} numberOfLines={1}>
-                            {tkt.subject}
-                          </Text>
-                        </View>
-                        <Text style={styles.rowSub}>
-                          {tkt.userName} ({tkt.businessName} • {tkt.city})
-                        </Text>
-                        <Text style={styles.triageSnippet} numberOfLines={2}>
-                          {tkt.description}
-                        </Text>
-                      </View>
-                      <M3Badge
-                        label={tkt.priority.toUpperCase()}
-                        variant={
-                          tkt.priority === 'urgent'
-                            ? 'outflow'
-                            : tkt.priority === 'high'
-                            ? 'amber'
-                            : 'neutral'
-                        }
-                      />
-                    </View>
-                  ))}
+                  <Pressable style={styles.copyKeyBtn} onPress={handleCopyKey}>
+                    <Ionicons name="copy-outline" size={18} color="#071714" />
+                    <Text style={styles.copyKeyBtnText}>Copy Activation Key</Text>
+                  </Pressable>
                 </View>
               </View>
             </>
           )}
 
           {/* =========================================================
-              TAB 2: MULTI-USER TRADER DIRECTORY & ACCOUNT INSPECTOR
+              PAGE 2: MERCHANT CRM & KYC VERIFICATION
              ========================================================= */}
-          {activeTab === 'users' && (
+          {activePage === 'merchant_crm' && (
             <>
               <View style={styles.sectionHeaderRow}>
                 <View>
                   <Text style={styles.pageTitle}>
-                    Multi-User Trader Directory ({accounts.length} Accounts)
+                    Merchant CRM, KYC Verification & Account Moderation ({accounts.length})
                   </Text>
                   <Text style={styles.pageSubtitle}>
-                    Supervise all registered traders across Zimbabwe, verify KYC status, manage
-                    subscription tiers, or suspend flagged accounts
+                    Verify merchant KYC documents, reset locked 4-digit counter PINs, upgrade
+                    subscription plans, or suspend abusive accounts
                   </Text>
                 </View>
                 <Pressable
@@ -961,11 +1131,10 @@ export default function AdminCommandCenterScreen() {
                   onPress={() => setShowAddUserModal(true)}
                 >
                   <Ionicons name="person-add-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.primaryCtaBtnText}>+ Provision Trader Account</Text>
+                  <Text style={styles.primaryCtaBtnText}>+ Provision Merchant Account</Text>
                 </Pressable>
               </View>
 
-              {/* Filter & Search Bar */}
               <View style={styles.filterToolbar}>
                 <View style={styles.searchBox}>
                   <Ionicons name="search-outline" size={18} color="#64748B" />
@@ -973,7 +1142,7 @@ export default function AdminCommandCenterScreen() {
                     style={styles.searchInput}
                     value={userSearch}
                     onChangeText={setUserSearch}
-                    placeholder="Search trader name, business, city, phone, or email..."
+                    placeholder="Search merchant name, stall, city hub, phone, or email..."
                     placeholderTextColor="#94A3B8"
                   />
                 </View>
@@ -1003,16 +1172,14 @@ export default function AdminCommandCenterScreen() {
                 </View>
               </View>
 
-              {/* Multi-User Table */}
               <View style={styles.panelCard}>
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.th, { flex: 1.5 }]}>TRADER & EMAIL</Text>
+                  <Text style={[styles.th, { flex: 1.5 }]}>MERCHANT & CONTACT</Text>
                   <Text style={[styles.th, { flex: 1.6 }]}>BUSINESS & CITY HUB</Text>
-                  <Text style={[styles.th, { flex: 0.9 }]}>KYC / TIER</Text>
-                  <Text style={[styles.th, { flex: 0.9 }]}>ACTIVITY & VOL</Text>
+                  <Text style={[styles.th, { flex: 0.9 }]}>PLAN & KYC</Text>
                   <Text style={[styles.th, { flex: 0.8 }]}>STATUS</Text>
-                  <Text style={[styles.th, { flex: 1.6, textAlign: 'right' }]}>
-                    GOVERNANCE ACTIONS
+                  <Text style={[styles.th, { flex: 1.8, textAlign: 'right' }]}>
+                    CRM & MODERATION ACTIONS
                   </Text>
                 </View>
 
@@ -1032,7 +1199,7 @@ export default function AdminCommandCenterScreen() {
                           {acc.businessName}
                         </Text>
                         <Text style={styles.rowSub}>{acc.city || 'Harare'}</Text>
-                        <Text style={styles.rowMicro}>Active: {acc.lastActive || 'Today'}</Text>
+                        <Text style={styles.rowMicro}>Last active: {acc.lastActive || 'Today'}</Text>
                       </View>
 
                       <View style={{ flex: 0.9, gap: 4, alignItems: 'flex-start' }}>
@@ -1061,15 +1228,6 @@ export default function AdminCommandCenterScreen() {
                         </Pressable>
                       </View>
 
-                      <View style={{ flex: 0.9 }}>
-                        <Text style={[styles.cellMono, { fontWeight: '800', color: '#0F172A' }]}>
-                          ${(acc.monthlyVolumeUsd || 0).toLocaleString()}
-                        </Text>
-                        <Text style={styles.rowSub}>
-                          {acc.txCount || 0} tx • {acc.currency}
-                        </Text>
-                      </View>
-
                       <View style={{ flex: 0.8 }}>
                         <M3Badge
                           label={
@@ -1083,7 +1241,7 @@ export default function AdminCommandCenterScreen() {
 
                       <View
                         style={{
-                          flex: 1.6,
+                          flex: 1.8,
                           flexDirection: 'row',
                           justifyContent: 'flex-end',
                           gap: 6,
@@ -1100,11 +1258,11 @@ export default function AdminCommandCenterScreen() {
 
                         <Pressable
                           style={styles.smallActionBtn}
-                          onPress={() => handleCycleUserTier(acc)}
+                          onPress={() => handleResetUserPin(acc)}
                         >
-                          <Ionicons name="ribbon-outline" size={14} color="#2563EB" />
+                          <Ionicons name="keypad-outline" size={14} color="#2563EB" />
                           <Text style={[styles.smallActionText, { color: '#2563EB' }]}>
-                            Tier
+                            Reset PIN
                           </Text>
                         </Pressable>
 
@@ -1143,18 +1301,18 @@ export default function AdminCommandCenterScreen() {
           )}
 
           {/* =========================================================
-              TAB 3: REPORTED INDIVIDUALS & FRAUD WATCHLIST
+              PAGE 3: TRUST, SAFETY & FRAUD WATCHLIST (REPORTED INDIVIDUALS)
              ========================================================= */}
-          {activeTab === 'reported_individuals' && (
+          {activePage === 'fraud_watchlist' && (
             <>
               <View style={styles.sectionHeaderRow}>
                 <View>
                   <Text style={styles.pageTitle}>
-                    Reported Individuals & Fraud Watchlist ({reportedList.length} Cases)
+                    Trust, Safety & Fraud Watchlist ({reportedList.length} Reported Cases)
                   </Text>
                   <Text style={styles.pageSubtitle}>
-                    Investigate scammers, fake EcoCash/InnBucks SMS senders, counterfeit note
-                    suspects, and runaway credit defaulters reported by traders
+                    Investigate individuals reported by merchants for forged EcoCash/InnBucks SMS,
+                    counterfeit USD notes, or runaway credit default
                   </Text>
                 </View>
                 <Pressable
@@ -1166,7 +1324,6 @@ export default function AdminCommandCenterScreen() {
                 </Pressable>
               </View>
 
-              {/* Filter & Search Toolbar */}
               <View style={styles.filterToolbar}>
                 <View style={styles.searchBox}>
                   <Ionicons name="search-outline" size={18} color="#64748B" />
@@ -1204,7 +1361,6 @@ export default function AdminCommandCenterScreen() {
                 </View>
               </View>
 
-              {/* Watchlist Cards */}
               <View style={{ gap: 14 }}>
                 {filteredReported.map((rep) => (
                   <View
@@ -1257,7 +1413,7 @@ export default function AdminCommandCenterScreen() {
                           />
                           <View style={styles.reportCountPill}>
                             <Text style={styles.reportCountPillText}>
-                              {rep.reportsCount} TRADER REPORT{rep.reportsCount > 1 ? 'S' : ''}
+                              {rep.reportsCount} MERCHANT REPORT{rep.reportsCount > 1 ? 'S' : ''}
                             </Text>
                           </View>
                         </View>
@@ -1286,39 +1442,30 @@ export default function AdminCommandCenterScreen() {
                           </Text>
                           <Text style={styles.metaField}>
                             <Text style={styles.metaFieldStrong}>Reported By: </Text>
-                            {rep.reportedByTrader} ({rep.reportedByEmail})
+                            {rep.reportedByTrader}
                           </Text>
                         </View>
 
                         <View style={styles.evidenceBox}>
-                          <Text style={styles.evidenceLabel}>TRADER EVIDENCE & INCIDENT LOG:</Text>
+                          <Text style={styles.evidenceLabel}>MERCHANT INCIDENT EVIDENCE:</Text>
                           <Text style={styles.evidenceText}>{rep.evidenceSummary}</Text>
                           {rep.adminNotes && (
                             <Text style={styles.adminNoteDisplay}>
-                              Admin Resolution Note: {rep.adminNotes}
+                              Trust & Safety Note: {rep.adminNotes}
                             </Text>
                           )}
                         </View>
                       </View>
 
-                      <View
-                        style={{
-                          alignItems: isDesktop ? 'flex-end' : 'flex-start',
-                          justifyContent: 'space-between',
-                          minWidth: 155,
-                        }}
-                      >
-                        <View style={{ alignItems: isDesktop ? 'flex-end' : 'flex-start' }}>
-                          <Text style={styles.kpiLabel}>AMOUNT EXPOSED</Text>
-                          <Text style={[styles.kpiValue, { color: '#DC2626', fontSize: 22 }]}>
-                            ${rep.amountInvolvedUsd.toFixed(2)}
-                          </Text>
-                          <Text style={styles.rowMicro}>Logged {rep.createdAt}</Text>
-                        </View>
+                      <View style={{ alignItems: isDesktop ? 'flex-end' : 'flex-start' }}>
+                        <Text style={styles.kpiLabel}>EXPOSURE AMOUNT</Text>
+                        <Text style={[styles.kpiValue, { color: '#DC2626', fontSize: 22 }]}>
+                          ${rep.amountInvolvedUsd.toFixed(2)}
+                        </Text>
+                        <Text style={styles.rowMicro}>Reported {rep.createdAt}</Text>
                       </View>
                     </View>
 
-                    {/* Admin Investigation Note + Action Bar */}
                     <View
                       style={{
                         flexDirection: isDesktop ? 'row' : 'column',
@@ -1336,7 +1483,7 @@ export default function AdminCommandCenterScreen() {
                         onChangeText={(txt) =>
                           setReportNoteDrafts((prev) => ({ ...prev, [rep.id]: txt }))
                         }
-                        placeholder="Add Admin verification note or warning details..."
+                        placeholder="Add Trust & Safety verification note..."
                         placeholderTextColor="#94A3B8"
                       />
 
@@ -1363,7 +1510,7 @@ export default function AdminCommandCenterScreen() {
                         >
                           <Ionicons name="search-outline" size={14} color="#B45309" />
                           <Text style={[styles.smallActionText, { color: '#B45309' }]}>
-                            Mark Investigating
+                            Investigating
                           </Text>
                         </Pressable>
 
@@ -1376,7 +1523,7 @@ export default function AdminCommandCenterScreen() {
                         >
                           <Ionicons name="checkmark-done-outline" size={14} color="#166534" />
                           <Text style={[styles.smallActionText, { color: '#166534' }]}>
-                            Clear / Resolved
+                            Clear
                           </Text>
                         </Pressable>
 
@@ -1395,18 +1542,18 @@ export default function AdminCommandCenterScreen() {
           )}
 
           {/* =========================================================
-              TAB 4: USER PROBLEMS & SUPPORT HELPDESK
+              PAGE 4: USER PROBLEMS & SUPPORT HELPDESK
              ========================================================= */}
-          {activeTab === 'support_tickets' && (
+          {activePage === 'support_helpdesk' && (
             <>
               <View style={styles.sectionHeaderRow}>
                 <View>
                   <Text style={styles.pageTitle}>
-                    User Problems & Support Helpdesk ({tickets.length} Tickets)
+                    Support Helpdesk & User Problem Tickets ({tickets.length})
                   </Text>
                   <Text style={styles.pageSubtitle}>
-                    Review technical issues, CSV bank import bugs, SMS parser requests, and billing
-                    inquiries submitted by traders across the platform
+                    Triage technical bugs, bank CSV import issues, SMS parser requests, and PIN
+                    recovery tickets submitted by users
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -1484,21 +1631,21 @@ export default function AdminCommandCenterScreen() {
                     </View>
 
                     <Text style={[styles.rowSub, { marginTop: 6 }]}>
-                      Submitted by <Text style={{ fontWeight: '800', color: '#0F172A' }}>{tkt.userName}</Text> ({tkt.userEmail}) •{' '}
-                      {tkt.businessName} • {tkt.city} • {tkt.createdAt}
+                      Merchant:{' '}
+                      <Text style={{ fontWeight: '800', color: '#0F172A' }}>{tkt.userName}</Text> (
+                      {tkt.userEmail}) • {tkt.businessName} • {tkt.city} • {tkt.createdAt}
                     </Text>
 
                     <View style={styles.evidenceBox}>
-                      <Text style={styles.evidenceLabel}>USER PROBLEM DESCRIPTION:</Text>
+                      <Text style={styles.evidenceLabel}>USER PROBLEM REPORT:</Text>
                       <Text style={styles.evidenceText}>{tkt.description}</Text>
                       {tkt.adminReply && (
                         <Text style={styles.adminNoteDisplay}>
-                          Official Admin Reply: {tkt.adminReply}
+                          Official Support Reply: {tkt.adminReply}
                         </Text>
                       )}
                     </View>
 
-                    {/* Admin Reply & Status Controls */}
                     <View
                       style={{
                         flexDirection: isDesktop ? 'row' : 'column',
@@ -1513,7 +1660,7 @@ export default function AdminCommandCenterScreen() {
                         onChangeText={(txt) =>
                           setTicketReplyDrafts((prev) => ({ ...prev, [tkt.id]: txt }))
                         }
-                        placeholder="Write official Admin response or troubleshooting solution for this trader..."
+                        placeholder="Type official support response or resolution instructions..."
                         placeholderTextColor="#94A3B8"
                       />
 
@@ -1540,18 +1687,9 @@ export default function AdminCommandCenterScreen() {
                         >
                           <Ionicons name="checkmark-circle-outline" size={14} color="#166534" />
                           <Text style={[styles.smallActionText, { color: '#166534' }]}>
-                            Resolve Issue
+                            Resolve Ticket
                           </Text>
                         </Pressable>
-
-                        {tkt.status === 'resolved' && (
-                          <Pressable
-                            style={styles.smallActionBtn}
-                            onPress={() => handleUpdateTicket(tkt, 'open')}
-                          >
-                            <Text style={styles.smallActionText}>Reopen</Text>
-                          </Pressable>
-                        )}
                       </View>
                     </View>
                   </View>
@@ -1561,97 +1699,215 @@ export default function AdminCommandCenterScreen() {
           )}
 
           {/* =========================================================
-              TAB 5: LICENSE KEY STUDIO & SUBSCRIPTIONS
+              PAGE 5: AI & PARSER ENGINE OPERATIONS MONITOR
              ========================================================= */}
-          {activeTab === 'licenses' && (
+          {activePage === 'ai_parser_ops' && (
             <>
               <View style={styles.sectionHeaderRow}>
                 <View>
                   <Text style={styles.pageTitle}>
-                    HMAC-SHA256 License Key Studio & Multi-User Provisioning
+                    AI & Parser Engine Operations (Gemini AI + SMS/CSV Rules)
                   </Text>
                   <Text style={styles.pageSubtitle}>
-                    Select any registered trader below or enter an email/ID to mint offline
-                    cryptographic activation keys (`CFM-PRO-...` / `CFM-ENT-...`)
+                    Monitor Gemini AI API token consumption across merchants and maintain live
+                    EcoCash, InnBucks, and Zimbabwean Bank CSV parsing templates
+                  </Text>
+                </View>
+                <Pressable
+                  style={[styles.primaryCtaBtn, { backgroundColor: activeBrandColor }]}
+                  onPress={() => setShowAddParserModal(true)}
+                >
+                  <Ionicons name="code-slash-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.primaryCtaBtnText}>+ Add Bank / SMS Parser Rule</Text>
+                </Pressable>
+              </View>
+
+              {/* AI & Parser Telemetry Cards */}
+              <View style={[styles.kpiGrid, !isDesktop && { flexDirection: 'column' }]}>
+                <View style={[styles.kpiCard, { borderTopColor: '#0C3E35', borderTopWidth: 4 }]}>
+                  <Text style={styles.kpiLabel}>GEMINI 2.5 FLASH API CALLS (30D)</Text>
+                  <Text style={[styles.kpiValue, { marginTop: 6 }]}>14,280 reqs</Text>
+                  <Text style={styles.kpiMeta}>Avg Latency: 640ms • 99.92% Uptime</Text>
+                </View>
+
+                <View style={[styles.kpiCard, { borderTopColor: '#2563EB', borderTopWidth: 4 }]}>
+                  <Text style={styles.kpiLabel}>MONTHLY AI TOKEN COST</Text>
+                  <Text style={[styles.kpiValue, { color: '#1D4ED8', marginTop: 6 }]}>$4.18 USD</Text>
+                  <Text style={styles.kpiMeta}>Grounded deterministic prompts active</Text>
+                </View>
+
+                <View style={[styles.kpiCard, { borderTopColor: '#10B981', borderTopWidth: 4 }]}>
+                  <Text style={styles.kpiLabel}>SMS & CSV PARSED (30D)</Text>
+                  <Text style={[styles.kpiValue, { color: '#065F46', marginTop: 6 }]}>9,685 docs</Text>
+                  <Text style={styles.kpiMeta}>EcoCash, InnBucks, CBZ, Steward, Mukuru</Text>
+                </View>
+
+                <View style={[styles.kpiCard, { borderTopColor: '#D97706', borderTopWidth: 4 }]}>
+                  <Text style={styles.kpiLabel}>UNRECOGNIZED SMS FORMATS</Text>
+                  <Text style={[styles.kpiValue, { color: '#B45309', marginTop: 6 }]}>
+                    {degradedParsersCount} Degraded
+                  </Text>
+                  <Text style={styles.kpiMeta}>InnBucks ZAR remittance regex flagged</Text>
+                </View>
+              </View>
+
+              {/* Parser Rules Engine Table */}
+              <View style={styles.panelCard}>
+                <View style={styles.panelHeaderRow}>
+                  <Text style={styles.panelTitle}>
+                    Zimbabwe Mobile Money & Bank CSV Parser Templates
+                  </Text>
+                  <M3Badge label={`${parserRules.length} ACTIVE PROVIDERS`} variant="mint" />
+                </View>
+
+                {parserRules.map((rule) => (
+                  <View key={rule.id} style={styles.tableRow}>
+                    <View style={{ flex: 1.5 }}>
+                      <Text style={styles.rowTitle}>{rule.providerName}</Text>
+                      <Text style={styles.rowSub}>{rule.channelType}</Text>
+                      <Text style={[styles.cellMono, { fontSize: 11, color: '#64748B', marginTop: 4 }]}>
+                        Pattern: {rule.patternSample}
+                      </Text>
+                    </View>
+
+                    <View style={{ flex: 0.9 }}>
+                      <Text style={[styles.cellMono, { fontWeight: '900', color: '#0F172A' }]}>
+                        {rule.successRatePct}% accuracy
+                      </Text>
+                      <Text style={styles.rowMicro}>
+                        {rule.parsedCount30d} ok • {rule.failedCount30d} failed
+                      </Text>
+                    </View>
+
+                    <View style={{ flex: 0.7 }}>
+                      <M3Badge
+                        label={rule.status.toUpperCase()}
+                        variant={
+                          rule.status === 'active'
+                            ? 'inflow'
+                            : rule.status === 'degraded'
+                            ? 'amber'
+                            : 'neutral'
+                        }
+                      />
+                    </View>
+
+                    <View style={{ flex: 0.8, alignItems: 'flex-end' }}>
+                      <Pressable
+                        style={styles.smallActionBtn}
+                        onPress={() => handleToggleParserRule(rule.id)}
+                      >
+                        <Ionicons name="sync-outline" size={14} color="#0F172A" />
+                        <Text style={styles.smallActionText}>Cycle State</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* =========================================================
+              PAGE 6: ANNOUNCEMENTS, PUSH CAMPAIGNS & RELEASE NOTES
+             ========================================================= */}
+          {activePage === 'campaigns_broadcasts' && (
+            <>
+              <View style={styles.sectionHeaderRow}>
+                <View>
+                  <Text style={styles.pageTitle}>
+                    Targeted Push Campaigns, System Alerts & Release Notes
+                  </Text>
+                  <Text style={styles.pageSubtitle}>
+                    Broadcast RBZ/ZIMRA notices, scam warnings, or new app version release notes to
+                    all merchants, specific cities, or subscription tiers
                   </Text>
                 </View>
               </View>
 
               <View style={[styles.twoColRow, !isDesktop && { flexDirection: 'column' }]}>
+                {/* Left: Campaign Composer */}
                 <View style={[styles.panelCard, { flex: 1 }]}>
-                  <Text style={styles.panelTitle}>Generate Signed Activation Key</Text>
-                  <Text style={styles.panelHelper}>
-                    Click any trader in the quick-select list or enter a custom User ID / Email.
-                  </Text>
+                  <View style={styles.panelHeaderRow}>
+                    <Text style={styles.panelTitle}>Dispatch New Push Campaign</Text>
+                    <M3Badge label="INSTANT DELIVERY" variant="mint" />
+                  </View>
 
-                  <Text style={styles.inputLabel}>Quick-Select Registered Trader</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                    {accounts.map((acc) => (
+                  <Text style={styles.inputLabel}>Target Merchant Segment</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                    {(
+                      [
+                        'All Registered Traders',
+                        'Harare Hub Only',
+                        'Bulawayo Hub Only',
+                        'Starter Tier Upsell',
+                        'Pro & Enterprise',
+                      ] as const
+                    ).map((seg) => (
                       <Pressable
-                        key={acc.userId}
+                        key={seg}
                         style={[
                           styles.miniChoicePill,
-                          genUserId === acc.email && {
+                          campTarget === seg && {
                             backgroundColor: '#0C3E35',
                             borderColor: '#0C3E35',
                           },
                         ]}
-                        onPress={() => {
-                          setGenUserId(acc.email);
-                          handleGenerateKey(acc.email, genTier);
-                        }}
+                        onPress={() => setCampTarget(seg)}
                       >
                         <Text
                           style={[
                             styles.miniChoiceText,
-                            genUserId === acc.email && { color: '#FFFFFF' },
+                            campTarget === seg && { color: '#FFFFFF' },
                           ]}
                         >
-                          {acc.name} ({acc.city?.split(' ')[0] || 'ZW'})
+                          {seg}
                         </Text>
                       </Pressable>
                     ))}
                   </View>
 
-                  <Text style={styles.inputLabel}>Target Trader Email or User ID</Text>
+                  <Text style={styles.inputLabel}>Campaign Headline / Alert Title</Text>
                   <TextInput
                     style={styles.input}
-                    value={genUserId}
-                    onChangeText={setGenUserId}
-                    placeholder="e.g., chipo@bulawayotraders.co.zw"
+                    value={campTitle}
+                    onChangeText={setCampTitle}
+                    placeholder="e.g., Release v1.3: Automated Steward Bank CSV Support"
                     placeholderTextColor="#94A3B8"
-                    autoCapitalize="none"
                   />
 
-                  <Text style={[styles.inputLabel, { marginTop: 14 }]}>Select Subscription Tier</Text>
-                  <View style={{ flexDirection: 'row', gap: 10 }}>
-                    {(['pro', 'enterprise'] as const).map((t) => (
+                  <Text style={[styles.inputLabel, { marginTop: 10 }]}>
+                    Message Body / Release Notes
+                  </Text>
+                  <TextInput
+                    style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                    value={campBody}
+                    onChangeText={setCampBody}
+                    multiline
+                    placeholder="Write announcement message to display on merchant tills..."
+                    placeholderTextColor="#94A3B8"
+                  />
+
+                  <Text style={[styles.inputLabel, { marginTop: 10 }]}>Urgency Level</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {(['info', 'warning', 'critical'] as const).map((u) => (
                       <Pressable
-                        key={t}
+                        key={u}
                         style={[
-                          styles.tierOptionBtn,
-                          genTier === t && {
+                          styles.miniChoicePill,
+                          campUrgency === u && {
                             backgroundColor: '#0C3E35',
                             borderColor: '#0C3E35',
                           },
                         ]}
-                        onPress={() => {
-                          setGenTier(t);
-                          handleGenerateKey(genUserId, t);
-                        }}
+                        onPress={() => setCampUrgency(u)}
                       >
-                        <Ionicons
-                          name={t === 'enterprise' ? 'diamond' : 'star'}
-                          size={16}
-                          color={genTier === t ? '#34D399' : '#64748B'}
-                        />
                         <Text
                           style={[
-                            styles.tierOptionText,
-                            genTier === t && { color: '#FFFFFF' },
+                            styles.miniChoiceText,
+                            campUrgency === u && { color: '#FFFFFF' },
                           ]}
                         >
-                          {t === 'pro' ? 'Pro Trader ($5/mo)' : 'Enterprise Syndicate ($15/mo)'}
+                          {u.toUpperCase()}
                         </Text>
                       </Pressable>
                     ))}
@@ -1660,134 +1916,316 @@ export default function AdminCommandCenterScreen() {
                   <Pressable
                     style={[
                       styles.primaryCtaBtn,
-                      { backgroundColor: activeBrandColor, marginTop: 18, justifyContent: 'center' },
+                      { backgroundColor: activeBrandColor, marginTop: 16, justifyContent: 'center' },
                     ]}
-                    onPress={() => handleGenerateKey()}
+                    onPress={handleSendCampaign}
                   >
-                    <Ionicons name="sparkles" size={16} color="#34D399" />
-                    <Text style={styles.primaryCtaBtnText}>Generate Signed License Key</Text>
+                    <Ionicons name="paper-plane-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.primaryCtaBtnText}>
+                      Send Broadcast to {campTarget}
+                    </Text>
                   </Pressable>
                 </View>
 
-                <View style={[styles.panelCard, { flex: 1, backgroundColor: '#071714' }]}>
-                  <M3Badge label="OFFLINE CRYPTOGRAPHIC SIGNATURE" variant="mint" />
-                  <Text style={[styles.panelTitle, { color: '#FFFFFF', marginTop: 12 }]}>
-                    Issued Activation Key
-                  </Text>
-                  <Text style={[styles.panelHelper, { color: '#94A3B8' }]}>
-                    Bound to <Text style={{ color: '#34D399', fontWeight: '700' }}>{genUserId}</Text>{' '}
-                    for tier <Text style={{ color: '#34D399', fontWeight: '700' }}>{genTier.toUpperCase()}</Text>.
-                  </Text>
-
-                  <View style={styles.generatedKeyBox}>
-                    <Text selectable style={styles.generatedKeyText}>
-                      {generatedKey || 'CFM-ENT-XXXX-XXXXXXXX'}
-                    </Text>
+                {/* Right: Sent Campaigns History */}
+                <View style={[styles.panelCard, { flex: 1.15 }]}>
+                  <View style={styles.panelHeaderRow}>
+                    <Text style={styles.panelTitle}>Dispatched Campaign History</Text>
+                    <M3Badge label={`${campaigns.length} SENT`} variant="primary" />
                   </View>
 
-                  <Pressable style={styles.copyKeyBtn} onPress={handleCopyKey}>
-                    <Ionicons name="copy-outline" size={18} color="#071714" />
-                    <Text style={styles.copyKeyBtnText}>Copy Key for Trader</Text>
-                  </Pressable>
+                  {campaigns.map((cmp) => (
+                    <View key={cmp.id} style={styles.triageItem}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Text style={styles.rowTitle}>{cmp.title}</Text>
+                          <M3Badge
+                            label={cmp.urgency.toUpperCase()}
+                            variant={
+                              cmp.urgency === 'critical'
+                                ? 'outflow'
+                                : cmp.urgency === 'warning'
+                                ? 'amber'
+                                : 'inflow'
+                            }
+                          />
+                        </View>
+                        <Text style={styles.rowSub}>
+                          Audience: {cmp.targetAudience} • Delivered to {cmp.deliveredCount} tills •{' '}
+                          {cmp.sentAt}
+                        </Text>
+                        <Text style={styles.triageSnippet}>{cmp.body}</Text>
+                      </View>
+                    </View>
+                  ))}
                 </View>
               </View>
             </>
           )}
 
           {/* =========================================================
-              TAB 6: PLATFORM SECURITY, SECRET CODE & EXCHANGE RATES
+              PAGE 7: ADMIN TEAM ROLES (RBAC) & FEATURE FLAGS
              ========================================================= */}
-          {activeTab === 'security' && (
+          {activePage === 'rbac_feature_flags' && (
             <>
               <View style={styles.sectionHeaderRow}>
                 <View>
                   <Text style={styles.pageTitle}>
-                    Platform Security Vault, Secret Code & Global FX Rates
+                    Admin Team Roles (RBAC) & Global Platform Feature Flags
                   </Text>
                   <Text style={styles.pageSubtitle}>
-                    Rotate the desktop Admin Login Secret Code, set national reference exchange
-                    rates, or export a full multi-user compliance archive
+                    Manage back-office staff permissions (Super Admin, Trust & Safety, Support,
+                    Billing) and toggle live platform feature switches
                   </Text>
                 </View>
+                <Pressable
+                  style={[styles.primaryCtaBtn, { backgroundColor: activeBrandColor }]}
+                  onPress={() => setShowAddAdminModal(true)}
+                >
+                  <Ionicons name="shield-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.primaryCtaBtnText}>+ Invite Admin Staff Member</Text>
+                </Pressable>
               </View>
 
               <View style={[styles.twoColRow, !isDesktop && { flexDirection: 'column' }]}>
-                {/* Admin Secret Access Code Card */}
+                {/* Left: Global Feature Flags */}
                 <View style={[styles.panelCard, { flex: 1 }]}>
                   <View style={styles.panelHeaderRow}>
-                    <Text style={styles.panelTitle}>Admin Login Secret Access Code</Text>
-                    <M3Badge label="2-FACTOR GATE" variant="mint" />
+                    <Text style={styles.panelTitle}>Global Platform Feature Flags</Text>
+                    <M3Badge label="RUNTIME SWITCHES" variant="mint" />
+                  </View>
+
+                  {featureFlags.map((flag) => (
+                    <View key={flag.key} style={styles.tableRow}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={styles.rowTitle}>{flag.name}</Text>
+                          <M3Badge label={flag.scope} variant="neutral" />
+                        </View>
+                        <Text style={styles.rowSub}>{flag.description}</Text>
+                      </View>
+                      <Pressable
+                        style={[
+                          styles.smallActionBtn,
+                          flag.enabled
+                            ? { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' }
+                            : { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
+                        ]}
+                        onPress={() => handleToggleFeatureFlag(flag.key)}
+                      >
+                        <Text
+                          style={[
+                            styles.smallActionText,
+                            { color: flag.enabled ? '#166534' : '#475569' },
+                          ]}
+                        >
+                          {flag.enabled ? 'ENABLED' : 'DISABLED'}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Right: Admin Staff RBAC Roster */}
+                <View style={[styles.panelCard, { flex: 1 }]}>
+                  <View style={styles.panelHeaderRow}>
+                    <Text style={styles.panelTitle}>Admin Team Staff & RBAC Roles</Text>
+                    <M3Badge label={`${adminTeam.length} OPERATORS`} variant="primary" />
+                  </View>
+
+                  {adminTeam.map((member) => (
+                    <View key={member.id} style={styles.tableRow}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={styles.rowTitle}>{member.name}</Text>
+                          <M3Badge
+                            label={member.role.toUpperCase()}
+                            variant={member.role === 'Super Admin' ? 'mint' : 'primary'}
+                          />
+                        </View>
+                        <Text style={styles.rowSub}>
+                          {member.email} • Last login: {member.lastLogin}
+                        </Text>
+                        <Text style={styles.rowMicro}>{member.permissionsSummary}</Text>
+                      </View>
+
+                      {member.role !== 'Super Admin' && (
+                        <Pressable
+                          style={styles.smallActionBtn}
+                          onPress={() => handleToggleStaffStatus(member.id)}
+                        >
+                          <Text style={styles.smallActionText}>
+                            {member.status === 'active' ? 'Suspend' : 'Activate'}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </>
+          )}
+
+          {/* =========================================================
+              PAGE 8: IMMUTABLE ADMIN AUDIT LOG & SECURITY VAULT
+             ========================================================= */}
+          {activePage === 'audit_security' && (
+            <>
+              <View style={styles.sectionHeaderRow}>
+                <View>
+                  <Text style={styles.pageTitle}>
+                    Immutable Admin Audit Log & Platform Security Vault
+                  </Text>
+                  <Text style={styles.pageSubtitle}>
+                    Inspect every administrative action, secret code rotation, KYC verification,
+                    and blacklist event across the platform
+                  </Text>
+                </View>
+                <Pressable
+                  style={[styles.primaryCtaBtn, { backgroundColor: activeBrandColor }]}
+                  onPress={handleExportGovernanceSnapshot}
+                >
+                  <Ionicons name="download-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.primaryCtaBtnText}>Export Full Compliance JSON</Text>
+                </Pressable>
+              </View>
+
+              {/* Security & FX Controls Row */}
+              <View style={[styles.twoColRow, !isDesktop && { flexDirection: 'column' }]}>
+                <View style={[styles.panelCard, { flex: 1 }]}>
+                  <View style={styles.panelHeaderRow}>
+                    <Text style={styles.panelTitle}>Admin 2-Factor Login Secret Code</Text>
+                    <M3Badge label="ROOT ACCESS GATE" variant="mint" />
                   </View>
                   <Text style={styles.panelHelper}>
                     Required alongside username <Text style={{ fontWeight: '800' }}>admin</Text> and
-                    password <Text style={{ fontWeight: '800' }}>admin</Text> when signing in to the
-                    Admin HQ console.
+                    password <Text style={{ fontWeight: '800' }}>admin</Text> to enter this portal.
                   </Text>
-
-                  <Text style={styles.inputLabel}>Active Secret Code</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={newSecretInput}
-                    onChangeText={setNewSecretInput}
-                    placeholder="CFM-HQ-2026"
-                    autoCapitalize="characters"
-                  />
-
-                  <Pressable
-                    style={[
-                      styles.primaryCtaBtn,
-                      { backgroundColor: activeBrandColor, marginTop: 14, justifyContent: 'center' },
-                    ]}
-                    onPress={handleSaveSecretCode}
-                  >
-                    <Ionicons name="key-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.primaryCtaBtnText}>Save New Admin Secret Code</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      value={newSecretInput}
+                      onChangeText={setNewSecretInput}
+                      autoCapitalize="characters"
+                    />
+                    <Pressable
+                      style={[styles.primaryCtaBtn, { backgroundColor: activeBrandColor }]}
+                      onPress={handleSaveSecretCode}
+                    >
+                      <Text style={styles.primaryCtaBtnText}>Rotate Code</Text>
+                    </Pressable>
+                  </View>
                 </View>
 
-                {/* National Reference Exchange Rates */}
                 <View style={[styles.panelCard, { flex: 1 }]}>
                   <View style={styles.panelHeaderRow}>
-                    <Text style={styles.panelTitle}>National Multi-Currency Reference Rates</Text>
+                    <Text style={styles.panelTitle}>National Reference Exchange Rates</Text>
                     <M3Badge label="USD BASE" variant="primary" />
                   </View>
                   <Text style={styles.panelHelper}>
-                    Default conversion rates distributed to trader tills for USD, ZiG, and ZAR
-                    multi-drawer calculations.
+                    Default multi-currency conversion rates distributed to all merchant tills.
                   </Text>
-
-                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>1 USD to ZiG Rate</Text>
                       <TextInput
                         style={styles.input}
                         value={zigRateInput}
                         onChangeText={setZigRateInput}
+                        placeholder="ZiG"
                         keyboardType="decimal-pad"
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>1 USD to ZAR Rate</Text>
                       <TextInput
                         style={styles.input}
                         value={zarRateInput}
                         onChangeText={setZarRateInput}
+                        placeholder="ZAR"
                         keyboardType="decimal-pad"
                       />
                     </View>
+                    <Pressable
+                      style={[styles.primaryCtaBtn, { backgroundColor: activeBrandColor }]}
+                      onPress={handleSaveRates}
+                    >
+                      <Text style={styles.primaryCtaBtnText}>Save FX</Text>
+                    </Pressable>
                   </View>
-
-                  <Pressable
-                    style={[
-                      styles.primaryCtaBtn,
-                      { backgroundColor: activeBrandColor, marginTop: 14, justifyContent: 'center' },
-                    ]}
-                    onPress={handleSaveRates}
-                  >
-                    <Ionicons name="sync-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.primaryCtaBtnText}>Update Platform Exchange Rates</Text>
-                  </Pressable>
                 </View>
+              </View>
+
+              {/* Immutable Audit Log Stream */}
+              <View style={styles.panelCard}>
+                <View style={styles.panelHeaderRow}>
+                  <Text style={styles.panelTitle}>
+                    Chronological Governance & Security Event Log ({filteredAuditLogs.length})
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                    {(
+                      [
+                        'ALL',
+                        'ADMIN_AUTH',
+                        'WATCHLIST_BLACKLIST',
+                        'USER_MODERATION',
+                        'LICENSE_MINT',
+                        'FEATURE_FLAG',
+                      ] as const
+                    ).map((ev) => (
+                      <Pressable
+                        key={ev}
+                        style={[
+                          styles.miniChoicePill,
+                          auditFilter === ev && {
+                            backgroundColor: '#0C3E35',
+                            borderColor: '#0C3E35',
+                          },
+                        ]}
+                        onPress={() => setAuditFilter(ev)}
+                      >
+                        <Text
+                          style={[
+                            styles.miniChoiceText,
+                            auditFilter === ev && { color: '#FFFFFF' },
+                          ]}
+                        >
+                          {ev.replace('_', ' ')}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+
+                {filteredAuditLogs.map((log) => (
+                  <View key={log.id} style={styles.tableRow}>
+                    <View style={{ flex: 0.9 }}>
+                      <Text style={styles.cellMono}>{log.timestamp}</Text>
+                      <Text style={styles.rowMicro}>{log.ipOrDevice}</Text>
+                    </View>
+
+                    <View style={{ flex: 0.9 }}>
+                      <Text style={styles.rowTitle}>{log.actor}</Text>
+                      <Text style={styles.rowSub}>{log.actorRole}</Text>
+                    </View>
+
+                    <View style={{ flex: 0.8 }}>
+                      <M3Badge
+                        label={log.eventType.replace('_', ' ')}
+                        variant={
+                          log.severity === 'critical'
+                            ? 'outflow'
+                            : log.severity === 'warning'
+                            ? 'amber'
+                            : 'primary'
+                        }
+                      />
+                    </View>
+
+                    <View style={{ flex: 2 }}>
+                      <Text style={styles.rowTitle}>Target: {log.target}</Text>
+                      <Text style={styles.rowSub}>{log.summary}</Text>
+                    </View>
+                  </View>
+                ))}
               </View>
             </>
           )}
@@ -1795,7 +2233,7 @@ export default function AdminCommandCenterScreen() {
       </View>
 
       {/* =========================================================
-          MODAL 1: INSPECT TRADER ACCOUNT
+          MODAL 1: INSPECT MERCHANT ACCOUNT
          ========================================================= */}
       <Modal
         visible={!!inspectedUser}
@@ -1821,23 +2259,13 @@ export default function AdminCommandCenterScreen() {
 
                 <View style={styles.inspectGrid}>
                   <View style={styles.inspectStatBox}>
-                    <Text style={styles.kpiLabel}>MONTHLY VOLUME</Text>
-                    <Text style={styles.inspectStatVal}>
-                      ${(inspectedUser.monthlyVolumeUsd || 0).toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={styles.inspectStatBox}>
-                    <Text style={styles.kpiLabel}>RECORDED TX</Text>
-                    <Text style={styles.inspectStatVal}>{inspectedUser.txCount || 0}</Text>
-                  </View>
-                  <View style={styles.inspectStatBox}>
-                    <Text style={styles.kpiLabel}>ACCOUNT TIER</Text>
+                    <Text style={styles.kpiLabel}>SUBSCRIPTION TIER</Text>
                     <Text style={styles.inspectStatVal}>
                       {(inspectedUser.tier || 'starter').toUpperCase()}
                     </Text>
                   </View>
                   <View style={styles.inspectStatBox}>
-                    <Text style={styles.kpiLabel}>KYC STATUS</Text>
+                    <Text style={styles.kpiLabel}>KYC VERIFICATION</Text>
                     <Text
                       style={[
                         styles.inspectStatVal,
@@ -1845,6 +2273,12 @@ export default function AdminCommandCenterScreen() {
                       ]}
                     >
                       {inspectedUser.kycVerified ? 'VERIFIED' : 'PENDING'}
+                    </Text>
+                  </View>
+                  <View style={styles.inspectStatBox}>
+                    <Text style={styles.kpiLabel}>ACCOUNT STATUS</Text>
+                    <Text style={styles.inspectStatVal}>
+                      {(inspectedUser.status || 'active').toUpperCase()}
                     </Text>
                   </View>
                 </View>
@@ -1857,10 +2291,6 @@ export default function AdminCommandCenterScreen() {
                   <Text style={styles.metaField}>
                     <Text style={styles.metaFieldStrong}>Phone: </Text>
                     {inspectedUser.phone || '+263 77 000 0000'}
-                  </Text>
-                  <Text style={styles.metaField}>
-                    <Text style={styles.metaFieldStrong}>Primary Till Currency: </Text>
-                    {inspectedUser.currency}
                   </Text>
                   <Text style={styles.metaField}>
                     <Text style={styles.metaFieldStrong}>Joined Platform: </Text>
@@ -1882,11 +2312,11 @@ export default function AdminCommandCenterScreen() {
 
                   <Pressable
                     style={styles.smallActionBtn}
-                    onPress={() => handleCycleUserTier(inspectedUser)}
+                    onPress={() => handleResetUserPin(inspectedUser)}
                   >
-                    <Ionicons name="ribbon-outline" size={15} color="#2563EB" />
+                    <Ionicons name="keypad-outline" size={15} color="#2563EB" />
                     <Text style={[styles.smallActionText, { color: '#2563EB' }]}>
-                      Cycle Subscription Tier
+                      Send PIN Reset Override
                     </Text>
                   </Pressable>
 
@@ -1895,12 +2325,12 @@ export default function AdminCommandCenterScreen() {
                     onPress={() => {
                       setGenUserId(inspectedUser.email);
                       setInspectedUser(null);
-                      setActiveTab('licenses');
+                      setActivePage('revenue_billing');
                       handleGenerateKey(inspectedUser.email, 'enterprise');
                     }}
                   >
                     <Ionicons name="key-outline" size={15} color="#0F172A" />
-                    <Text style={styles.smallActionText}>Issue License Key</Text>
+                    <Text style={styles.smallActionText}>Mint License Key</Text>
                   </Pressable>
 
                   <Pressable
@@ -1921,7 +2351,7 @@ export default function AdminCommandCenterScreen() {
       </Modal>
 
       {/* =========================================================
-          MODAL 2: PROVISION NEW TRADER ACCOUNT
+          MODAL 2: PROVISION NEW MERCHANT ACCOUNT
          ========================================================= */}
       <Modal
         visible={showAddUserModal}
@@ -1932,13 +2362,13 @@ export default function AdminCommandCenterScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Provision New Trader Account</Text>
+              <Text style={styles.modalTitle}>Provision New Merchant Account</Text>
               <Pressable onPress={() => setShowAddUserModal(false)}>
                 <Ionicons name="close-circle" size={26} color="#64748B" />
               </Pressable>
             </View>
 
-            <Text style={styles.inputLabel}>Trader Full Name</Text>
+            <Text style={styles.inputLabel}>Merchant Full Name</Text>
             <TextInput
               style={styles.input}
               value={newUserName}
@@ -2022,7 +2452,7 @@ export default function AdminCommandCenterScreen() {
               onPress={handleCreateTrader}
             >
               <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.primaryCtaBtnText}>Create Trader Account</Text>
+              <Text style={styles.primaryCtaBtnText}>Create Merchant Account</Text>
             </Pressable>
           </View>
         </View>
@@ -2132,7 +2562,7 @@ export default function AdminCommandCenterScreen() {
               value={repEvidence}
               onChangeText={setRepEvidence}
               multiline
-              placeholder="Describe what happened, invoice/SMS references, and trader reports..."
+              placeholder="Describe what happened, invoice/SMS references, and merchant reports..."
               placeholderTextColor="#94A3B8"
             />
 
@@ -2145,6 +2575,178 @@ export default function AdminCommandCenterScreen() {
             >
               <Ionicons name="shield-outline" size={16} color="#FFFFFF" />
               <Text style={styles.primaryCtaBtnText}>Publish to Fraud Watchlist</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* =========================================================
+          MODAL 4: ADD BANK / SMS PARSER RULE
+         ========================================================= */}
+      <Modal
+        visible={showAddParserModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddParserModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Deploy New SMS / Bank CSV Parser Rule</Text>
+              <Pressable onPress={() => setShowAddParserModal(false)}>
+                <Ionicons name="close-circle" size={26} color="#64748B" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.inputLabel}>Financial Provider / Bank Name</Text>
+            <TextInput
+              style={styles.input}
+              value={newParserProvider}
+              onChangeText={setNewParserProvider}
+              placeholder="e.g., Stanbic Bank Zimbabwe USD CSV"
+              placeholderTextColor="#94A3B8"
+            />
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Channel Type</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {(['Mobile Money SMS', 'Bank CSV Statement', 'Remittance Receipt'] as const).map(
+                (ch) => (
+                  <Pressable
+                    key={ch}
+                    style={[
+                      styles.miniChoicePill,
+                      newParserChannel === ch && {
+                        backgroundColor: '#0C3E35',
+                        borderColor: '#0C3E35',
+                      },
+                    ]}
+                    onPress={() => setNewParserChannel(ch)}
+                  >
+                    <Text
+                      style={[
+                        styles.miniChoiceText,
+                        newParserChannel === ch && { color: '#FFFFFF' },
+                      ]}
+                    >
+                      {ch}
+                    </Text>
+                  </Pressable>
+                )
+              )}
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>
+              Regex Pattern or CSV Column Signature
+            </Text>
+            <TextInput
+              style={[styles.input, { minHeight: 64, textAlignVertical: 'top' }]}
+              value={newParserPattern}
+              onChangeText={setNewParserPattern}
+              multiline
+              placeholder="e.g., TranDate,ValueDate,Reference,DebitAmount,CreditAmount"
+              placeholderTextColor="#94A3B8"
+            />
+
+            <Pressable
+              style={[
+                styles.primaryCtaBtn,
+                { backgroundColor: activeBrandColor, marginTop: 16, justifyContent: 'center' },
+              ]}
+              onPress={handleAddParserRule}
+            >
+              <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.primaryCtaBtnText}>Deploy Parser Template</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* =========================================================
+          MODAL 5: INVITE ADMIN STAFF MEMBER (RBAC)
+         ========================================================= */}
+      <Modal
+        visible={showAddAdminModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddAdminModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Invite Admin Back-Office Staff Member</Text>
+              <Pressable onPress={() => setShowAddAdminModal(false)}>
+                <Ionicons name="close-circle" size={26} color="#64748B" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.inputLabel}>Staff Full Name</Text>
+            <TextInput
+              style={styles.input}
+              value={newStaffName}
+              onChangeText={setNewStaffName}
+              placeholder="e.g., Nyasha Moyo"
+              placeholderTextColor="#94A3B8"
+            />
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Corporate Email</Text>
+            <TextInput
+              style={styles.input}
+              value={newStaffEmail}
+              onChangeText={setNewStaffEmail}
+              placeholder="e.g., nyasha@cashflowmate.co.zw"
+              placeholderTextColor="#94A3B8"
+              autoCapitalize="none"
+            />
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Assigned RBAC Role</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {(
+                [
+                  'Support Engineer',
+                  'Trust & Safety Officer',
+                  'Billing & KYC Auditor',
+                  'Super Admin',
+                ] as const
+              ).map((r) => (
+                <Pressable
+                  key={r}
+                  style={[
+                    styles.miniChoicePill,
+                    newStaffRole === r && {
+                      backgroundColor: '#0C3E35',
+                      borderColor: '#0C3E35',
+                    },
+                  ]}
+                  onPress={() => setNewStaffRole(r)}
+                >
+                  <Text
+                    style={[
+                      styles.miniChoiceText,
+                      newStaffRole === r && { color: '#FFFFFF' },
+                    ]}
+                  >
+                    {r}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Role Scope & Permissions</Text>
+            <TextInput
+              style={styles.input}
+              value={newStaffPerms}
+              onChangeText={setNewStaffPerms}
+            />
+
+            <Pressable
+              style={[
+                styles.primaryCtaBtn,
+                { backgroundColor: activeBrandColor, marginTop: 16, justifyContent: 'center' },
+              ]}
+              onPress={handleAddAdminStaff}
+            >
+              <Ionicons name="person-add-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.primaryCtaBtnText}>Grant Admin Back-Office Role</Text>
             </Pressable>
           </View>
         </View>
@@ -2267,7 +2869,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   sideRail: {
-    width: 270,
+    width: 280,
     backgroundColor: '#0B1F1B',
     padding: 16,
     justifyContent: 'space-between',
@@ -2291,7 +2893,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 11,
-    paddingVertical: 11,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
@@ -2460,6 +3062,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
     gap: 8,
+    flexWrap: 'wrap',
   },
   panelTitle: {
     fontSize: 15,
@@ -2471,11 +3074,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginBottom: 12,
     lineHeight: 18,
-  },
-  linkText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0C3E35',
   },
   tableHeader: {
     flexDirection: 'row',
@@ -2535,12 +3133,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     marginTop: 4,
     lineHeight: 17,
-  },
-  exposureAmount: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#DC2626',
-    fontFamily: 'SpaceMono',
   },
   ticketCode: {
     fontSize: 11,

@@ -111,6 +111,12 @@ function RootLayoutNav() {
       if (!loggedIn && !isAuthScreen) {
         // Always open the Sign In (/login) page first for unauthenticated users
         router.replace('/login' as any);
+      } else if (loggedIn && session?.role === 'admin' && firstSegment !== 'admin' && !isAuthScreen) {
+        // Admin accounts must only see the Admin Back-Office Portal, never regular user pages
+        router.replace('/admin' as any);
+      } else if (loggedIn && session?.role !== 'admin' && firstSegment === 'admin') {
+        // Regular trader accounts cannot access the Admin Portal
+        router.replace('/(tabs)' as any);
       }
     })();
 
