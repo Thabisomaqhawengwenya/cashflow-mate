@@ -92,11 +92,25 @@ describe('MobileAuthService', () => {
     expect(loaded?.email).toBe('farai@chidzero.co.zw');
   });
 
-  it('logs out and clears session', async () => {
-    await MobileAuthService.demoLogin();
+  it('logs out and clears session while preserving registered account flag and profile on re-login', async () => {
+    expect(await MobileAuthService.hasRegisteredAccount()).toBe(false);
+
+    await MobileAuthService.register({
+      name: 'Mr Q',
+      email: 'mrq@cashflowmate.co.zw',
+      password: 'password123',
+      businessName: 'Mr Q Market Hub',
+      currency: 'USD',
+    });
+    expect(await MobileAuthService.hasRegisteredAccount()).toBe(true);
     expect(await MobileAuthService.getSession()).not.toBeNull();
 
     await MobileAuthService.logout();
     expect(await MobileAuthService.getSession()).toBeNull();
+    expect(await MobileAuthService.hasRegisteredAccount()).toBe(true);
+
+    const relogged = await MobileAuthService.login('mrq@cashflowmate.co.zw', 'password123');
+    expect(relogged.username).toBe('Mr Q');
+    expect(relogged.businessName).toBe('Mr Q Market Hub');
   });
 });

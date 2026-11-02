@@ -252,6 +252,11 @@ export default function ModalScreen() {
     );
   };
 
+  const handleSignOut = async () => {
+    await MobileAuthService.logout();
+    router.replace('/login' as any);
+  };
+
   const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
 
   return (
@@ -373,7 +378,7 @@ export default function ModalScreen() {
                     label="SWITCH ACCOUNT"
                     variant="outlined"
                     size="md"
-                    onPress={() => router.push('/login' as any)}
+                    onPress={handleSignOut}
                   />
                 </View>
               </View>
@@ -759,6 +764,14 @@ export default function ModalScreen() {
             size="lg"
             onPress={() => router.back()}
           />
+          <View style={{ marginTop: 12 }}>
+            <M3Button
+              label="SIGN OUT OF TILL"
+              variant="outlined"
+              size="md"
+              onPress={handleSignOut}
+            />
+          </View>
         </View>
       </ScrollView>
     </View>

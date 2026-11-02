@@ -70,12 +70,12 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <View style={styles.topBar}>
             <Pressable
-              onPress={() => router.replace('/(tabs)')}
+              onPress={handleDemoLogin}
               style={styles.skipButton}
               accessibilityRole="button"
-              accessibilityLabel="Skip to Till Dashboard"
+              accessibilityLabel="Continue with Mbare Demo Till"
             >
-              <Text style={styles.skipText}>Skip to Till</Text>
+              <Text style={styles.skipText}>Use Demo Till</Text>
               <Ionicons name="arrow-forward" size={15} color={BlueTokens.accent} />
             </Pressable>
           </View>

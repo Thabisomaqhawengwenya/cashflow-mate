@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MobileStorageService, CurrencyCode, BusinessProfile } from './storage';
 
 export const STORAGE_KEY_AUTH_SESSION = '@cashflow_user_session_v2';
+export const STORAGE_KEY_HAS_ACCOUNT = '@cashflow_has_registered_account_v1';
+export const STORAGE_KEY_REGISTERED_USERS = '@cashflow_registered_users_v1';
 
 export interface UserSession {
   userId: string;
@@ -14,6 +16,16 @@ export interface UserSession {
   isLoggedIn: boolean;
   isDemo?: boolean;
   loggedInAt: string;
+}
+
+interface StoredTraderAccount {
+  userId: string;
+  name: string;
+  username: string;
+  email: string;
+  password?: string;
+  businessName: string;
+  currency: CurrencyCode;
 }
 
 const DEFAULT_DEMO_SESSION: UserSession = {
@@ -53,6 +65,24 @@ export class MobileAuthService {
   }
 
   /**
+   * Check whether a trader has previously registered or signed in on this device
+   */
+  static async hasRegisteredAccount(): Promise<boolean> {
+    const flag = await AsyncStorage.getItem(STORAGE_KEY_HAS_ACCOUNT);
+    return flag === 'true';
+  }
+
+  private static async getRegisteredAccounts(): Promise<StoredTraderAccount[]> {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_REGISTERED_USERS);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as StoredTraderAccount[];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Log in user with email & password (offline-tolerant)
    */
   static async login(email: string, password: string): Promise<UserSession> {
@@ -68,17 +98,28 @@ export class MobileAuthService {
       return this.demoLogin();
     }
 
-    // Derive or create session
+    // Check if this email matches a registered local account
+    const accounts = await this.getRegisteredAccounts();
+    const existing = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+
+    if (existing && existing.password && existing.password !== cleanPass) {
+      throw new Error('Incorrect password for this trader account.');
+    }
+
     const namePart = cleanEmail.split('@')[0];
-    const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    const fallbackName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    const resolvedName = existing?.name || fallbackName;
+    const resolvedUsername = existing?.username || resolvedName;
+    const resolvedBusiness = existing?.businessName || `${resolvedName}'s Enterprise`;
+    const resolvedCurrency = existing?.currency || 'USD';
 
     const session: UserSession = {
-      userId: `usr_${Date.now()}`,
-      name: formattedName,
-      username: formattedName,
+      userId: existing?.userId || `usr_${Date.now()}`,
+      name: resolvedName,
+      username: resolvedUsername,
       email: cleanEmail,
-      businessName: `${formattedName}'s Enterprise`,
-      currency: 'USD',
+      businessName: resolvedBusiness,
+      currency: resolvedCurrency,
       token: `cfm_token_${Date.now()}`,
       isLoggedIn: true,
       isDemo: false,
@@ -86,10 +127,12 @@ export class MobileAuthService {
     };
 
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
 
     // Sync business profile
     await MobileStorageService.updateBusiness({
       name: session.businessName,
+      ownerName: session.username,
       businessType: 'retail',
       currency: session.currency,
       country: 'ZW',
@@ -118,8 +161,9 @@ export class MobileAuthService {
     if (!cleanEmail || !cleanEmail.includes('@')) throw new Error('Please enter a valid email address.');
     if (!cleanPass || cleanPass.length < 6) throw new Error('Password must be at least 6 characters.');
 
+    const userId = `usr_${Date.now()}`;
     const session: UserSession = {
-      userId: `usr_${Date.now()}`,
+      userId,
       name: cleanName,
       username: cleanName,
       email: cleanEmail,
@@ -131,11 +175,26 @@ export class MobileAuthService {
       loggedInAt: new Date().toISOString(),
     };
 
+    const accounts = await this.getRegisteredAccounts();
+    const filtered = accounts.filter((a) => a.email.toLowerCase() !== cleanEmail);
+    filtered.push({
+      userId,
+      name: cleanName,
+      username: cleanName,
+      email: cleanEmail,
+      password: cleanPass,
+      businessName: cleanBiz,
+      currency: data.currency || 'USD',
+    });
+
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(filtered));
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
 
     // Update local business profile
     await MobileStorageService.updateBusiness({
       name: cleanBiz,
+      ownerName: cleanName,
       businessType: 'retail',
       currency: data.currency || 'USD',
       country: 'ZW',
@@ -154,6 +213,7 @@ export class MobileAuthService {
       loggedInAt: new Date().toISOString(),
     };
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
     return session;
   }
 

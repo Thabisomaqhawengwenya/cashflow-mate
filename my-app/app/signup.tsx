@@ -59,6 +59,19 @@ export default function SignupScreen() {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      await MobileAuthService.demoLogin();
+      setIsLoading(false);
+      router.replace('/(tabs)');
+    } catch {
+      setIsLoading(false);
+      setError('Could not initialize demo session.');
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.keyboardContainer}
@@ -74,19 +87,21 @@ export default function SignupScreen() {
         <View style={styles.header}>
           <View style={styles.topBar}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => router.replace('/login' as any)}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel="Back to Login"
+              accessibilityLabel="Go to Sign In"
             >
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <Ionicons name="log-in-outline" size={18} color="#FFFFFF" />
             </Pressable>
 
             <Pressable
-              onPress={() => router.replace('/(tabs)')}
+              onPress={handleDemoLogin}
               style={styles.skipButton}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Mbare Demo Till"
             >
-              <Text style={styles.skipText}>Skip</Text>
+              <Text style={styles.skipText}>Use Demo Till</Text>
             </Pressable>
           </View>
 
@@ -119,8 +134,8 @@ export default function SignupScreen() {
           ) : null}
 
           <M3Input
-            label="Trader Full Name"
-            placeholder="e.g. Simba Moyo"
+            label="Your Name / Username (shown in greeting)"
+            placeholder="e.g. Mr Q"
             value={name}
             onChangeText={(txt) => {
               setName(txt);
@@ -217,11 +232,19 @@ export default function SignupScreen() {
             />
           </View>
 
+          <M3Button
+            label="Explore with Mbare Demo Till"
+            onPress={handleDemoLogin}
+            variant="tonal"
+            size="md"
+            icon={<Ionicons name="storefront-outline" size={17} color={EmeraldTokens.deepPine} />}
+          />
+
           {/* Switch to Login */}
           <View style={styles.footerRow}>
             <Text style={styles.footerPrompt}>Already have an account?</Text>
             <Pressable
-              onPress={() => router.push('/login' as any)}
+              onPress={() => router.replace('/login' as any)}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
               <Text style={styles.loginLink}>Sign In</Text>
