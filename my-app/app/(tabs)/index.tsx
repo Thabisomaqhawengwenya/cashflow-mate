@@ -36,6 +36,7 @@ import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAppearance } from '@/context/AppearanceContext';
 import {
   EcoCashLogo,
   InnBucksLogo,
@@ -70,6 +71,7 @@ export default function OverviewScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { t, getCategoryLabel } = useLanguage();
+  const { palette, cardRadius, chipRadius } = useAppearance();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [session, setSession] = useState<UserSession | null>(null);
@@ -605,7 +607,7 @@ export default function OverviewScreen() {
             onPress={() => router.push('/(tabs)/debts')}
             style={({ pressed }) => [
               styles.actionCard,
-              { transform: [{ scale: pressed ? 0.97 : 1 }] },
+              { borderRadius: cardRadius, transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
             <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
@@ -614,6 +616,88 @@ export default function OverviewScreen() {
             <Text style={styles.actionTitle}>{t('action_customer_credit')}</Text>
             <Text style={styles.actionSubtitle}>{t('action_credit_sub')}</Text>
           </Pressable>
+        </View>
+
+        {/* Business Suite & UI Studio Quick Strip */}
+        <View style={styles.suiteSection}>
+          <View style={styles.suiteHeaderRow}>
+            <Text style={styles.suiteSectionTitle}>Business Suite & UI Studio</Text>
+            <Pressable
+              onPress={() => router.push('/appearance' as any)}
+              style={[styles.customizeBadge, { backgroundColor: palette.surfaceTint, borderRadius: chipRadius }]}
+            >
+              <Ionicons name="color-palette-outline" size={13} color={palette.primary} />
+              <Text style={[styles.customizeBadgeText, { color: palette.primary }]}>
+                Customize UI & Nav
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.suiteGrid}>
+            <Pressable
+              onPress={() => router.push('/inventory' as any)}
+              style={[styles.suiteCard, { borderRadius: cardRadius }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Stock and Shelf Inventory"
+            >
+              <View style={[styles.miniIcon, { backgroundColor: '#DCFCE7' }]}>
+                <Ionicons name="cube-outline" size={18} color="#059669" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.suiteCardTitle}>Stock & Inventory</Text>
+                <Text style={styles.suiteCardSub}>Shelf stock, low alerts & 1-tap sale</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.textSubtle} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/invoices' as any)}
+              style={[styles.suiteCard, { borderRadius: cardRadius }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Quotations and Pro-Forma Invoices"
+            >
+              <View style={[styles.miniIcon, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="document-text-outline" size={18} color="#1D4ED8" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.suiteCardTitle}>Quotes & Invoices</Text>
+                <Text style={styles.suiteCardSub}>Send quotes & convert to cash/credit</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.textSubtle} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/contacts' as any)}
+              style={[styles.suiteCard, { borderRadius: cardRadius }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Customers and Suppliers Directory"
+            >
+              <View style={[styles.miniIcon, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="briefcase-outline" size={18} color="#B45309" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.suiteCardTitle}>Customers & Suppliers</Text>
+                <Text style={styles.suiteCardSub}>Repeat buyers & wholesale directory</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.textSubtle} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/appearance' as any)}
+              style={[styles.suiteCard, { borderRadius: cardRadius }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Appearance and Navigation Bar Customizer"
+            >
+              <View style={[styles.miniIcon, { backgroundColor: '#F3E8FF' }]}>
+                <Ionicons name="options-outline" size={18} color="#7E22CE" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.suiteCardTitle}>Appearance & Nav Bar</Text>
+                <Text style={styles.suiteCardSub}>Floating pill dock, themes & shapes</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={EmeraldTokens.textSubtle} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Operating Profit Quick Banner */}
@@ -1136,6 +1220,66 @@ export default function OverviewScreen() {
 }
 
 const styles = StyleSheet.create({
+  suiteSection: {
+    marginBottom: 18,
+    alignSelf: 'stretch',
+    maxWidth: 960,
+  },
+  suiteHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  suiteSectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: EmeraldTokens.textSlate,
+    letterSpacing: -0.2,
+  },
+  customizeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 5,
+  },
+  customizeBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  suiteGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  suiteCard: {
+    width: '48%',
+    flexGrow: 1,
+    minWidth: 240,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 13,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: BlueTokens.borders,
+    shadowColor: BlueTokens.darkNavy,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  suiteCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: EmeraldTokens.textSlate,
+  },
+  suiteCardSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+    marginTop: 1,
+  },
   screenWrapper: {
     flex: 1,
     backgroundColor: EmeraldTokens.deepPine,

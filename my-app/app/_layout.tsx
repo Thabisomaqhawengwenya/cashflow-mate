@@ -14,6 +14,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { AppearanceProvider } from '@/context/AppearanceContext';
 import { MobileAuthService } from '@/services/auth';
 import { BlueTokens } from '@/constants/Colors';
 
@@ -88,24 +89,30 @@ function RootLayoutNav() {
   const shouldMaskProtectedContent = !isAuthChecked || (!isAuthenticated && !isAuthScreen);
 
   return (
-    <LanguageProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <View style={styles.rootContainer}>
-          <Stack>
-            <Stack.Screen name="signup" options={{ headerShown: false }} />
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
-          </Stack>
+    <AppearanceProvider>
+      <LanguageProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <View style={styles.rootContainer}>
+            <Stack>
+              <Stack.Screen name="signup" options={{ headerShown: false }} />
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="inventory" options={{ headerShown: false }} />
+              <Stack.Screen name="invoices" options={{ headerShown: false }} />
+              <Stack.Screen name="contacts" options={{ headerShown: false }} />
+              <Stack.Screen name="appearance" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
+            </Stack>
 
-          {shouldMaskProtectedContent && (
-            <View style={styles.authGateMask}>
-              <ActivityIndicator size="large" color={BlueTokens.accent} />
-            </View>
-          )}
-        </View>
-      </ThemeProvider>
-    </LanguageProvider>
+            {shouldMaskProtectedContent && (
+              <View style={styles.authGateMask}>
+                <ActivityIndicator size="large" color={BlueTokens.accent} />
+              </View>
+            )}
+          </View>
+        </ThemeProvider>
+      </LanguageProvider>
+    </AppearanceProvider>
   );
 }
 

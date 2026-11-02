@@ -31,11 +31,13 @@ import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { language, setLanguage, t, supportedLanguages, activeLanguageInfo } = useLanguage();
+  const { navBarStyle, palette } = useAppearance();
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [license, setLicense] = useState<LicenseInfo | null>(null);
@@ -316,6 +318,27 @@ export default function ModalScreen() {
         <Text style={styles.sectionHeading}>General & Security</Text>
 
         <View style={styles.settingsGroup}>
+          {/* Item 00: Appearance & Nav Bar Studio */}
+          <Pressable
+            onPress={() => router.push('/appearance' as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Customize App Appearance and Navigation Bar"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#F3E8FF' }]}>
+                <Ionicons name="color-palette-outline" size={18} color="#7E22CE" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Appearance & Nav Bar Studio</Text>
+                <Text style={styles.settingSub} numberOfLines={1}>
+                  {navBarStyle.replace('_', ' ')} • {palette.name}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+
           {/* Item 0: Trader Profile & Username */}
           <Pressable
             onPress={() => setShowProfileSection(!showProfileSection)}

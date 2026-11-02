@@ -6,21 +6,115 @@ import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { DesktopSidebar } from '@/components/DesktopSidebar';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { width } = useWindowDimensions();
   const { t } = useLanguage();
+  const { navBarStyle, palette } = useAppearance();
 
   // Desktop view when width >= 768px (standard tablet / desktop boundary)
   const isDesktop = width >= 768;
+  const isDarkCapsule = navBarStyle === 'compact_pill';
+  const activeTint = isDarkCapsule ? palette.accent : palette.primary;
+  const inactiveTint = isDarkCapsule ? 'rgba(255, 255, 255, 0.58)' : '#94A3B8';
 
   const getColor = (c: any, focused: boolean) =>
-    focused ? BlueTokens.primary : typeof c === 'string' ? c : '#94A3B8';
+    focused ? activeTint : typeof c === 'string' ? c : inactiveTint;
+
+  const getDynamicTabBarStyle = () => {
+    if (isDesktop) return { display: 'none' as const };
+
+    if (navBarStyle === 'floating_pill') {
+      return {
+        position: 'absolute' as const,
+        left: 14,
+        right: 14,
+        bottom: 14,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 9999,
+        borderTopWidth: 0,
+        borderWidth: 1,
+        borderColor: 'rgba(15, 23, 42, 0.08)',
+        height: 68,
+        paddingBottom: 6,
+        paddingTop: 6,
+        paddingHorizontal: 8,
+        shadowColor: '#06152E',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.14,
+        shadowRadius: 18,
+        elevation: 8,
+      };
+    }
+
+    if (navBarStyle === 'compact_pill') {
+      return {
+        position: 'absolute' as const,
+        left: 28,
+        right: 28,
+        bottom: 14,
+        backgroundColor: palette.headerBg,
+        borderRadius: 9999,
+        borderTopWidth: 0,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.16)',
+        height: 66,
+        paddingBottom: 6,
+        paddingTop: 6,
+        paddingHorizontal: 10,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.28,
+        shadowRadius: 20,
+        elevation: 10,
+      };
+    }
+
+    if (navBarStyle === 'curved_sheet') {
+      return {
+        backgroundColor: '#FFFFFF',
+        borderTopColor: BlueTokens.borders,
+        borderTopWidth: 1,
+        borderTopLeftRadius: 26,
+        borderTopRightRadius: 26,
+        height: 70,
+        paddingBottom: 7,
+        paddingTop: 7,
+        shadowColor: BlueTokens.darkNavy,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.07,
+        shadowRadius: 12,
+        elevation: 6,
+      };
+    }
+
+    // classic_dock
+    return {
+      backgroundColor: '#FFFFFF',
+      borderTopColor: BlueTokens.borders,
+      borderTopWidth: 1,
+      height: 68,
+      paddingBottom: 6,
+      paddingTop: 6,
+      shadowColor: BlueTokens.darkNavy,
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      elevation: 4,
+    };
+  };
 
   return (
-    <View style={[styles.rootContainer, isDesktop && styles.rootContainerDesktop]}>
+    <View
+      style={[
+        styles.rootContainer,
+        { backgroundColor: palette.headerBg },
+        isDesktop && styles.rootContainerDesktop,
+      ]}
+    >
       {/* 1. Left Sidebar only rendered on Desktop */}
       {isDesktop && <DesktopSidebar />}
 
@@ -29,24 +123,19 @@ export default function TabLayout() {
         <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarActiveTintColor: BlueTokens.primary,
-            tabBarInactiveTintColor: '#94A3B8',
-            // Completely hide the bottom tab bar on desktop; preserve in mobile
-            tabBarStyle: isDesktop
-              ? { display: 'none' }
-              : {
-                  backgroundColor: '#FFFFFF',
-                  borderTopColor: BlueTokens.borders,
-                  borderTopWidth: 1,
-                  height: 68,
-                  paddingBottom: 6,
-                  paddingTop: 6,
-                  shadowColor: BlueTokens.darkNavy,
-                  shadowOffset: { width: 0, height: -2 },
-                  shadowOpacity: 0.04,
-                  shadowRadius: 8,
-                  elevation: 4,
-                },
+            tabBarActiveTintColor: activeTint,
+            tabBarInactiveTintColor: inactiveTint,
+            tabBarActiveBackgroundColor:
+              navBarStyle === 'floating_pill'
+                ? palette.surfaceTint
+                : navBarStyle === 'compact_pill'
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'transparent',
+            tabBarItemStyle:
+              navBarStyle === 'floating_pill' || navBarStyle === 'compact_pill'
+                ? { borderRadius: 9999, marginHorizontal: 2 }
+                : undefined,
+            tabBarStyle: getDynamicTabBarStyle(),
             tabBarIconStyle: {
               height: 24,
             },

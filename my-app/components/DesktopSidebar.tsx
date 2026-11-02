@@ -5,6 +5,7 @@ import { router, usePathname } from 'expo-router';
 import { BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAppearance } from '@/context/AppearanceContext';
 
 interface NavItem {
   id: string;
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
 export const DesktopSidebar: React.FC = () => {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { palette } = useAppearance();
 
   const isItemActive = (item: NavItem) => {
     if (item.id === 'index') {
@@ -80,7 +82,7 @@ export const DesktopSidebar: React.FC = () => {
   };
 
   return (
-    <View style={styles.sidebar}>
+    <View style={[styles.sidebar, { backgroundColor: palette.headerBg }]}>
       {/* 1. Brand Logo Header */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
@@ -162,15 +164,26 @@ export const DesktopSidebar: React.FC = () => {
         })}
       </View>
 
-      {/* 3. Multi-Currency Quick Indicator Box */}
-      <View style={styles.currencyBox}>
-        <View style={styles.currencyBoxHeader}>
-          <Ionicons name="cash-outline" size={14} color={BlueTokens.accent} />
-          <Text style={styles.currencyBoxTitle}>{t('till_float_summary')}</Text>
+      {/* 3. Business Suite & UI Studio Links */}
+      <View style={styles.suiteBox}>
+        <Text style={styles.sectionLabel}>BUSINESS SUITE & STUDIO</Text>
+        <View style={styles.suiteQuickGrid}>
+          {[
+            { label: 'Inventory', icon: 'cube-outline', route: '/inventory' },
+            { label: 'Quotes', icon: 'document-text-outline', route: '/invoices' },
+            { label: 'Contacts', icon: 'briefcase-outline', route: '/contacts' },
+            { label: 'UI Studio', icon: 'color-palette-outline', route: '/appearance' },
+          ].map((tool) => (
+            <Pressable
+              key={tool.route}
+              onPress={() => router.push(tool.route as any)}
+              style={styles.suiteQuickPill}
+            >
+              <Ionicons name={tool.icon as any} size={14} color={palette.accent} />
+              <Text style={styles.suiteQuickText}>{tool.label}</Text>
+            </Pressable>
+          ))}
         </View>
-        <Text style={styles.currencyBoxDesc}>
-          {t('till_float_summary_sub')}
-        </Text>
       </View>
 
       {/* 4. Footer: Till Security & PIN Modal Action */}
@@ -357,6 +370,31 @@ const styles = StyleSheet.create({
   },
   activeChevron: {
     marginLeft: 6,
+  },
+  suiteBox: {
+    marginBottom: 14,
+  },
+  suiteQuickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  suiteQuickPill: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  suiteQuickText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#E2E8F0',
   },
   currencyBox: {
     backgroundColor: 'rgba(21, 101, 216, 0.16)',
