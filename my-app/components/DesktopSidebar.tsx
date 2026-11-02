@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { BlueTokens } from '@/constants/Colors';
@@ -91,20 +91,13 @@ export const DesktopSidebar: React.FC = () => {
           </View>
           <View style={styles.logoTextWrapper}>
             <Text style={styles.brandTitle}>CashFlow Mate</Text>
-            <Text style={[styles.brandSubtitle, { color: palette.accent }]}>ZIM MARKET TILL OS</Text>
+            <Text style={[styles.brandSubtitle, { color: palette.accent }]}>
+              ZIM MARKET TILL OS
+            </Text>
           </View>
           <Pressable
             onPress={toggleDarkMode}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.14)',
-            }}
+            style={styles.themeToggleBtn}
             accessibilityRole="button"
             accessibilityLabel={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Theme'}
           >
@@ -122,93 +115,94 @@ export const DesktopSidebar: React.FC = () => {
         </View>
       </View>
 
-      {/* 2. Navigation Items List */}
-      <View style={styles.navSection}>
-        <Text style={styles.sectionLabel}>NAVIGATION</Text>
-        {NAV_ITEMS.map((item) => {
-          const active = isItemActive(item);
-          return (
-            <Pressable
-              key={item.id}
-              onPress={() => handleNav(item)}
-              accessibilityRole="button"
-              accessibilityLabel={t(item.labelKey)}
-              style={({ pressed }) => [
-                styles.navItem,
-                active && styles.navItemActive,
-                pressed && { opacity: 0.88, transform: [{ scale: 0.985 }] },
-              ]}
-            >
-              {active && <View style={styles.activeBar} />}
-              <View
-                style={[
-                  styles.iconSquircle,
-                  active ? styles.iconSquircleActive : styles.iconSquircleInactive,
+      {/* 2. Scrollable Middle Area (Navigation + Business Suite & Studio) */}
+      <ScrollView
+        style={styles.middleScroll}
+        contentContainerStyle={styles.middleScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.navSection}>
+          <Text style={styles.sectionLabel}>NAVIGATION</Text>
+          {NAV_ITEMS.map((item) => {
+            const active = isItemActive(item);
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => handleNav(item)}
+                accessibilityRole="button"
+                accessibilityLabel={t(item.labelKey)}
+                style={({ pressed }) => [
+                  styles.navItem,
+                  active && styles.navItemActive,
+                  pressed && { opacity: 0.88, transform: [{ scale: 0.985 }] },
                 ]}
               >
-                <Ionicons
-                  name={active ? item.iconActive : item.iconInactive}
-                  size={19}
-                  color={active ? BlueTokens.accent : '#94A3B8'}
-                />
-              </View>
-
-              <View style={styles.navTextCol}>
-                <Text
+                {active && <View style={[styles.activeBar, { backgroundColor: palette.accent }]} />}
+                <View
                   style={[
-                    styles.navLabel,
-                    active && styles.navLabelActive,
+                    styles.iconSquircle,
+                    active ? styles.iconSquircleActive : styles.iconSquircleInactive,
                   ]}
                 >
-                  {t(item.labelKey)}
-                </Text>
-                <Text
-                  style={[
-                    styles.navSublabel,
-                    active && styles.navSublabelActive,
-                  ]}
-                >
-                  {t(item.sublabelKey)}
-                </Text>
-              </View>
+                  <Ionicons
+                    name={active ? item.iconActive : item.iconInactive}
+                    size={18}
+                    color={active ? palette.accent : '#94A3B8'}
+                  />
+                </View>
 
-              {active && (
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={BlueTokens.accent}
-                  style={styles.activeChevron}
-                />
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
+                <View style={styles.navTextCol}>
+                  <Text style={[styles.navLabel, active && styles.navLabelActive]}>
+                    {t(item.labelKey)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.navSublabel,
+                      active && [styles.navSublabelActive, { color: palette.accent }],
+                    ]}
+                  >
+                    {t(item.sublabelKey)}
+                  </Text>
+                </View>
 
-      {/* 3. Business Suite & UI Studio Links */}
-      <View style={styles.suiteBox}>
-        <Text style={styles.sectionLabel}>BUSINESS SUITE & STUDIO</Text>
-        <View style={styles.suiteQuickGrid}>
-          {[
-            { label: 'Inventory', icon: 'cube-outline', route: '/inventory' },
-            { label: 'Quotes', icon: 'document-text-outline', route: '/invoices' },
-            { label: 'Contacts', icon: 'briefcase-outline', route: '/contacts' },
-            { label: 'UI Studio', icon: 'color-palette-outline', route: '/appearance' },
-            { label: 'Admin HQ', icon: 'shield-half-outline', route: '/admin' },
-          ].map((tool) => (
-            <Pressable
-              key={tool.route}
-              onPress={() => router.push(tool.route as any)}
-              style={styles.suiteQuickPill}
-            >
-              <Ionicons name={tool.icon as any} size={14} color={palette.accent} />
-              <Text style={styles.suiteQuickText}>{tool.label}</Text>
-            </Pressable>
-          ))}
+                {active && (
+                  <Ionicons
+                    name="chevron-forward"
+                    size={15}
+                    color={palette.accent}
+                    style={styles.activeChevron}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
         </View>
-      </View>
 
-      {/* 4. Footer: Till Security & PIN Modal Action */}
+        {/* 3. Business Suite & UI Studio Links */}
+        <View style={styles.suiteBox}>
+          <Text style={styles.sectionLabel}>BUSINESS SUITE & STUDIO</Text>
+          <View style={styles.suiteQuickGrid}>
+            {[
+              { label: 'Inventory', icon: 'cube-outline', route: '/inventory' },
+              { label: 'Quotes', icon: 'document-text-outline', route: '/invoices' },
+              { label: 'Contacts', icon: 'briefcase-outline', route: '/contacts' },
+              { label: 'UI Studio', icon: 'color-palette-outline', route: '/appearance' },
+              { label: 'Admin HQ', icon: 'shield-half-outline', route: '/admin' },
+            ].map((tool) => (
+              <Pressable
+                key={tool.route}
+                onPress={() => router.push(tool.route as any)}
+                style={styles.suiteQuickPill}
+              >
+                <Ionicons name={tool.icon as any} size={14} color={palette.accent} />
+                <Text style={styles.suiteQuickText}>{tool.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* 4. Footer: Till Security & Settings Action */}
       <View style={styles.footer}>
         <Pressable
           onPress={() => router.push('/modal')}
@@ -220,7 +214,7 @@ export const DesktopSidebar: React.FC = () => {
           ]}
         >
           <View style={styles.profileAvatar}>
-            <Ionicons name="lock-closed" size={17} color={BlueTokens.accent} />
+            <Ionicons name="lock-closed" size={17} color={palette.accent} />
           </View>
           <View style={styles.profileTextWrapper}>
             <Text style={styles.profileTitle} numberOfLines={1}>
@@ -244,10 +238,11 @@ export const DesktopSidebar: React.FC = () => {
 const styles = StyleSheet.create({
   sidebar: {
     width: 270,
-    backgroundColor: BlueTokens.darkNavy, // #06152E Deep Navy luxury canvas
+    backgroundColor: BlueTokens.darkNavy,
     borderRightWidth: 1,
     borderRightColor: 'rgba(255, 255, 255, 0.08)',
-    paddingVertical: 24,
+    paddingTop: 20,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -259,32 +254,28 @@ const styles = StyleSheet.create({
     }),
   },
   header: {
-    marginBottom: 26,
-    paddingHorizontal: 6,
+    marginBottom: 14,
+    paddingHorizontal: 4,
   },
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   logoBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     backgroundColor: BlueTokens.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    shadowColor: BlueTokens.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
+    marginRight: 10,
   },
   logoTextWrapper: {
     flex: 1,
   },
   brandTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.3,
@@ -294,7 +285,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: BlueTokens.accent,
     letterSpacing: 1.1,
-    marginTop: 2,
+    marginTop: 1,
+  },
+  themeToggleBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   statusPill: {
     flexDirection: 'row',
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(21, 101, 216, 0.18)',
     borderRadius: DesignTokens.shapes.pill,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderWidth: 1,
     borderColor: 'rgba(85, 215, 255, 0.28)',
     alignSelf: 'flex-start',
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: BlueTokens.success, // Semantic Green for system active/healthy
+    backgroundColor: BlueTokens.success,
     marginRight: 7,
   },
   statusPillText: {
@@ -320,24 +321,30 @@ const styles = StyleSheet.create({
     color: BlueTokens.accent,
     letterSpacing: 0.6,
   },
-  navSection: {
+  middleScroll: {
     flex: 1,
+  },
+  middleScrollContent: {
+    paddingBottom: 10,
+  },
+  navSection: {
+    marginBottom: 14,
   },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
     color: 'rgba(255, 255, 255, 0.36)',
     letterSpacing: 1.2,
-    marginBottom: 10,
-    paddingHorizontal: 8,
+    marginBottom: 8,
+    paddingHorizontal: 6,
   },
   navItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    marginBottom: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginBottom: 4,
     position: 'relative',
     backgroundColor: 'transparent',
   },
@@ -349,19 +356,19 @@ const styles = StyleSheet.create({
   activeBar: {
     position: 'absolute',
     left: 0,
-    top: 8,
-    bottom: 8,
+    top: 7,
+    bottom: 7,
     width: 3.5,
     borderRadius: 2,
     backgroundColor: BlueTokens.accent,
   },
   iconSquircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   iconSquircleActive: {
     backgroundColor: 'rgba(21, 101, 216, 0.35)',
@@ -394,7 +401,10 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   suiteBox: {
-    marginBottom: 14,
+    marginTop: 4,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   suiteQuickGrid: {
     flexDirection: 'row',
@@ -403,11 +413,12 @@ const styles = StyleSheet.create({
   },
   suiteQuickPill: {
     width: '48%',
+    flexGrow: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 10,
-    paddingVertical: 8,
+    paddingVertical: 7,
     paddingHorizontal: 10,
     gap: 6,
     borderWidth: 1,
@@ -418,32 +429,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#E2E8F0',
   },
-  currencyBox: {
-    backgroundColor: 'rgba(21, 101, 216, 0.16)',
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(85, 215, 255, 0.15)',
-    marginBottom: 16,
-  },
-  currencyBoxHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  currencyBoxTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: BlueTokens.accent,
-    marginLeft: 6,
-  },
-  currencyBoxDesc: {
-    fontSize: 10,
-    lineHeight: 14,
-    color: 'rgba(255, 255, 255, 0.65)',
-  },
   footer: {
-    paddingTop: 14,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
@@ -451,15 +438,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 14,
-    padding: 10,
+    borderRadius: 12,
+    padding: 9,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   profileAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     backgroundColor: 'rgba(21, 101, 216, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -480,7 +467,7 @@ const styles = StyleSheet.create({
   },
   versionRow: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   versionText: {
     fontSize: 9,
