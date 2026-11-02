@@ -23,7 +23,9 @@ export default function SignupScreen() {
   const [currency, setCurrency] = useState<CurrencyCode>('USD');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +41,10 @@ export default function SignupScreen() {
     }
     if (!password.trim() || password.length < 6) {
       setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match. Please confirm your password.');
       return;
     }
 
@@ -216,6 +222,38 @@ export default function SignupScreen() {
             >
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color={EmeraldTokens.textMuted}
+              />
+            </Pressable>
+          </View>
+
+          <View style={styles.passwordContainer}>
+            <M3Input
+              label="Confirm Password"
+              placeholder="Re-enter your account password"
+              value={confirmPassword}
+              onChangeText={(txt) => {
+                setConfirmPassword(txt);
+                setError(null);
+              }}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+              error={
+                confirmPassword.length > 0 && password !== confirmPassword
+                  ? 'Passwords do not match yet'
+                  : undefined
+              }
+            />
+            <Pressable
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeToggle}
+              accessibilityLabel={
+                showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+              }
+            >
+              <Ionicons
+                name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
                 color={EmeraldTokens.textMuted}
               />

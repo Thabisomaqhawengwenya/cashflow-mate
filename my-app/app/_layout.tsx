@@ -74,10 +74,8 @@ function RootLayoutNav() {
       setIsAuthChecked(true);
 
       if (!loggedIn && !isAuthScreen) {
-        const hasAccount = await MobileAuthService.hasRegisteredAccount();
-        if (!active) return;
-        // Stage 1: First-time users go to Sign Up; returning signed-out users go to Login
-        router.replace((hasAccount ? '/login' : '/signup') as any);
+        // Always open the Sign In (/login) page first for unauthenticated users
+        router.replace('/login' as any);
       }
     })();
 
@@ -94,8 +92,8 @@ function RootLayoutNav() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <View style={styles.rootContainer}>
             <Stack>
-              <Stack.Screen name="signup" options={{ headerShown: false }} />
               <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="signup" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="inventory" options={{ headerShown: false }} />
               <Stack.Screen name="invoices" options={{ headerShown: false }} />
