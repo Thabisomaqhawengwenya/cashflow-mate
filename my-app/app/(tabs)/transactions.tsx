@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 110,
   },
 
   // Transaction Cards (Matching Screen 3)

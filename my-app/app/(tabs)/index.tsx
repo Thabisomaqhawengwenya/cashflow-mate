@@ -1494,13 +1494,13 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 40,
+    paddingBottom: 110,
     minHeight: 600,
   },
   sheetContent: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
 
   // 3-Drawer Cashbox Card
@@ -1789,8 +1789,8 @@ const styles = StyleSheet.create({
 
   // Bottom CTA
   bottomCtaContainer: {
-    marginTop: 14,
-    marginBottom: 20,
+    marginTop: 18,
+    marginBottom: 24,
   },
 
   // Modal
