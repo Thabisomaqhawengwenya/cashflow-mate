@@ -324,35 +324,18 @@ export default function OverviewScreen() {
       <View style={[styles.stickyTopBar, { backgroundColor: palette.headerBg }]}>
         {/* Top App Bar Row */}
         <View style={styles.topBar}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, marginRight: 8 }}>
             <AppLogo size={36} />
-            <View>
-              <Text style={styles.greetingTitle}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.greetingTitle} numberOfLines={1}>
                 {t('greeting_prefix')}, {userDisplayName}
               </Text>
-              <Text style={styles.headerSubtitle}>
+              <Text style={styles.headerSubtitle} numberOfLines={1}>
                 {todayFormatted} &bull; {t('city_country')}
               </Text>
             </View>
           </View>
           <View style={styles.topRightActions}>
-            {/* Dark Mode / Light Mode Quick Toggle */}
-            <Pressable
-              onPress={toggleDarkMode}
-              accessibilityRole="button"
-              accessibilityLabel={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Theme'}
-              style={[
-                styles.iconButton,
-                isDarkMode && { backgroundColor: 'rgba(255, 255, 255, 0.22)' },
-              ]}
-            >
-              <Ionicons
-                name={isDarkMode ? 'sunny' : 'moon-outline'}
-                size={18}
-                color={isDarkMode ? '#FBBF24' : '#FFFFFF'}
-              />
-            </Pressable>
-
             {/* Privacy Mask Toggle Button */}
             <Pressable
               onPress={handleToggleMask}
@@ -1339,6 +1322,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   greetingTitle: {
     fontSize: 22,
