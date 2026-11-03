@@ -14,7 +14,10 @@ import {
   TrendingUp,
   PackageCheck,
   AlertCircle,
-  Globe
+  Globe,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 
 const SUGGESTED_QUESTIONS = [
@@ -33,9 +36,43 @@ export const InsightsPage: React.FC = () => {
   const [response, setResponse] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Wi-Fi Connection Notification State
+  const [isSimulatedOffline, setIsSimulatedOffline] = useState<boolean>(false);
+  const [isOnline, setIsOnline] = useState<boolean>(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [isWifi, setIsWifi] = useState<boolean>(() => {
+    if (typeof navigator === 'undefined') return true;
+    const conn = (navigator as any).connection;
+    if (!conn) return navigator.onLine;
+    return conn.type !== 'cellular' && conn.effectiveType !== '2g' && conn.effectiveType !== 'slow-2g';
+  });
+
+  const checkWifiConnection = () => {
+    if (isSimulatedOffline) return false;
+    if (typeof navigator === 'undefined') return true;
+    const online = navigator.onLine;
+    setIsOnline(online);
+    const conn = (navigator as any).connection;
+    const wifiActive = online && (!conn || (conn.type !== 'cellular' && conn.effectiveType !== '2g' && conn.effectiveType !== 'slow-2g'));
+    setIsWifi(wifiActive);
+    return wifiActive;
+  };
+
+  const isWifiActive = !isSimulatedOffline && isOnline && isWifi;
+
   const handleAsk = async (queryText?: string) => {
     const q = queryText || question;
     if (!q.trim()) return;
+
+    // Check Wi-Fi state
+    const connected = checkWifiConnection();
+    if (!connected) {
+      const proceed = window.confirm(
+        '⚠️ Not Connected to Wi-Fi\n\nAI queries require an active Wi-Fi connection to reach the Gemini AI intelligence engine.\n\nClick OK to attempt anyway with local cache, or Cancel to connect to Wi-Fi first.'
+      );
+      if (!proceed) return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -90,6 +127,57 @@ export const InsightsPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Wi-Fi Connectivity & Notification Banner */}
+      {!isWifiActive ? (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 dark:text-amber-200 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+              <WifiOff size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm">Not Connected to Wi-Fi</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  NO WI-FI
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                AI financial insights require an active Wi-Fi connection. Connect to Wi-Fi for live Gemini AI queries, or proceed with local ledger estimates.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <button
+              onClick={() => checkWifiConnection()}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-1.5"
+            >
+              <RefreshCw size={13} />
+              <span>Check Wi-Fi</span>
+            </button>
+            <button
+              onClick={() => setIsSimulatedOffline(false)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-amber-700 dark:text-amber-300 hover:underline"
+            >
+              Restore
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-emerald-800 dark:text-emerald-300 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <Wifi size={14} className="text-emerald-600 dark:text-emerald-400" />
+            <span className="font-semibold">Wi-Fi Connected • Gemini AI Intelligence Online</span>
+          </div>
+          <button
+            onClick={() => setIsSimulatedOffline(true)}
+            className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline px-2 py-0.5"
+          >
+            Test No Wi-Fi
+          </button>
+        </div>
+      )}
 
       {/* Suggested Questions Pills */}
       <div className="space-y-2">
