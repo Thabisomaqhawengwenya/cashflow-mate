@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.maqhawe.cashflowmate",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#06152E",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
