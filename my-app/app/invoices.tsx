@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   Alert,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -122,7 +123,7 @@ export default function InvoicesScreen() {
     }
   };
 
-  const handleShareQuote = (inv: InvoiceQuote) => {
+  const handleShareQuote = async (inv: InvoiceQuote) => {
     const lines = inv.items
       .map(
         (line) =>
@@ -130,10 +131,25 @@ export default function InvoicesScreen() {
       )
       .join('\n');
     const summary = `CASHFLOW MATE ${inv.docType.toUpperCase()} (${inv.referenceNumber})\nTo: ${inv.customerName}\n${lines}\nTotal: ${formatMoney(inv.totalAmount, inv.currency)}\nValid until: ${inv.dueDate}`;
-    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(summary);
+
+    try {
+      if (Platform.OS === 'web') {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          await navigator.clipboard.writeText(summary);
+          setBanner(`Copied ${inv.referenceNumber} quotation to clipboard`);
+        } else {
+          setBanner(`Quotation ${inv.referenceNumber} ready`);
+        }
+      } else {
+        await Share.share({
+          message: summary,
+          title: `Quotation ${inv.referenceNumber}`,
+        });
+        setBanner(`Shared ${inv.referenceNumber}`);
+      }
+    } catch (err: any) {
+      setBanner(`Unable to share: ${err.message || 'Error'}`);
     }
-    setBanner(`Copied ${inv.referenceNumber} WhatsApp quotation summary`);
     setTimeout(() => setBanner(null), 3500);
   };
 

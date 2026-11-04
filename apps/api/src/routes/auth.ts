@@ -6,8 +6,30 @@ import { getDb } from '../db';
 
 export const authRouter = Router();
 
+// In-memory brute force throttle for auth attempts (max 10 failed attempts per minute per IP)
+const authAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = authAttempts.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    authAttempts.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 10) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
 authRouter.post('/register', async (req: Request, res: Response): Promise<void> => {
   try {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+      res.status(429).json({ error: 'Too many registration requests. Please wait a minute and try again.' });
+      return;
+    }
     const validated = registerSchema.parse(req.body);
     const result = await AuthService.register(validated);
     res.status(201).json(result);
@@ -18,6 +40,11 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
 
 authRouter.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+      res.status(429).json({ error: 'Too many login attempts. Please wait a minute and try again.' });
+      return;
+    }
     const validated = loginSchema.parse(req.body);
     const result = await AuthService.login(validated.email, validated.password);
     res.json(result);

@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 110,
+    paddingBottom: 150,
   },
 
   gateCard: {

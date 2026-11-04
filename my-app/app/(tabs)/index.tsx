@@ -892,6 +892,9 @@ export default function OverviewScreen() {
             onPress={() => openNewTransaction('inflow')}
           />
         </View>
+
+        {/* Bottom spacer to prevent floating pill tab bar collision on mobile */}
+        <View style={styles.bottomTabSpacer} />
       </View>
     </ScrollView>
 
@@ -1525,13 +1528,13 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 110,
+    paddingBottom: 160,
     minHeight: 600,
   },
   sheetContent: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 110,
+    paddingBottom: 160,
   },
 
   // 3-Drawer Cashbox Card
@@ -1821,7 +1824,10 @@ const styles = StyleSheet.create({
   // Bottom CTA
   bottomCtaContainer: {
     marginTop: 18,
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  bottomTabSpacer: {
+    height: 48,
   },
 
   // Modal

@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import type { DatabaseSync } from 'node:sqlite';
 import { config } from './config';
 
 // Dynamically load native node:sqlite to prevent any test runner/bundler module-specifier rewriting
 // @ts-ignore
-const { DatabaseSync } = require('node:sqlite');
+const { DatabaseSync: NodeDatabaseSync } = require('node:sqlite');
 
 let dbInstance: DatabaseSync | null = null;
 
@@ -15,12 +16,13 @@ export function getDb(): DatabaseSync {
       fs.mkdirSync(dbDir, { recursive: true });
     }
 
-    dbInstance = new DatabaseSync(config.dbPath);
+    const instance = new NodeDatabaseSync(config.dbPath) as DatabaseSync;
     // Enable WAL mode & foreign keys
-    dbInstance.exec('PRAGMA journal_mode = WAL;');
-    dbInstance.exec('PRAGMA foreign_keys = ON;');
+    instance.exec('PRAGMA journal_mode = WAL;');
+    instance.exec('PRAGMA foreign_keys = ON;');
 
-    initSchema(dbInstance);
+    initSchema(instance);
+    dbInstance = instance;
   }
   return dbInstance;
 }

@@ -21,6 +21,7 @@ import {
 export const LandingPage: React.FC = () => {
   const { login, register, startDemo, isLoading } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null);
+  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -246,15 +247,68 @@ export const LandingPage: React.FC = () => {
             <span>&copy; {new Date().getFullYear()} : Built for Zimbabwean Traders</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#privacy" onClick={(e) => { e.preventDefault(); alert("CashFlow Mate Privacy: Your transaction records are stored locally or in your encrypted private database. AI analysis only transmits sanitized descriptions."); }} className="hover:underline">
+            <button
+              type="button"
+              onClick={() => setLegalModal('privacy')}
+              className="text-xs text-md-on-surface-variant hover:text-md-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
+            >
               Privacy Policy
-            </a>
-            <a href="#terms" onClick={(e) => { e.preventDefault(); alert("Terms of Use: CashFlow Mate is a recordkeeping and cash-flow assistant, not a financial lending platform or bank."); }} className="hover:underline">
+            </button>
+            <button
+              type="button"
+              onClick={() => setLegalModal('terms')}
+              className="text-xs text-md-on-surface-variant hover:text-md-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
+            >
               Terms & Limits
-            </a>
+            </button>
           </div>
         </div>
       </footer>
+
+      {/* Legal Dialog Modal */}
+      <Modal
+        isOpen={legalModal !== null}
+        onClose={() => setLegalModal(null)}
+        title={legalModal === 'privacy' ? 'CashFlow Mate Privacy Policy' : 'Terms of Use & Operational Limits'}
+        subtitle={
+          legalModal === 'privacy'
+            ? 'Commitment to Zimbabwean informal trader data autonomy & strict privacy'
+            : 'Responsible software boundaries and financial recordkeeping guidelines'
+        }
+      >
+        <div className="space-y-4 text-sm text-md-on-surface-variant py-2">
+          {legalModal === 'privacy' ? (
+            <>
+              <p>
+                <strong>1. Local-First & Tenant Isolation:</strong> Your transaction records and customer credit books remain strictly private. Data is segregated by your business ID and never shared with competitor stalls or third-party marketing firms.
+              </p>
+              <p>
+                <strong>2. Responsible AI Grounding:</strong> When requesting AI financial insights, only sanitized descriptions and aggregated monetary totals are processed. Phone numbers and sensitive customer identifiers are scrubbed.
+              </p>
+              <p>
+                <strong>3. Export and Data Freedom:</strong> You retain complete ownership of your ledger. You can export all records to standard CSV files or purge your local database at any time.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                <strong>1. Recordkeeping Purpose:</strong> CashFlow Mate is a specialized cash-flow tracking and recordkeeping assistant engineered for microbusinesses in Zimbabwe. It is not a licensed commercial bank or deposit-taking entity.
+              </p>
+              <p>
+                <strong>2. Arithmetic Determinism:</strong> All financial aggregates, drawer balances, and operating profits are generated through deterministic mathematical equations. AI models do not perform arithmetic.
+              </p>
+              <p>
+                <strong>3. Mukando & Credit Records:</strong> Mukando group contributions and informal credit entries are mutual merchant agreements and do not constitute formal legal underwriting.
+              </p>
+            </>
+          )}
+          <div className="pt-4 flex justify-end">
+            <Button variant="filled" size="sm" onClick={() => setLegalModal(null)}>
+              Understood
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Auth Modal */}
       <Modal

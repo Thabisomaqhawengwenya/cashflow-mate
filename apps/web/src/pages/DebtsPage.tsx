@@ -97,6 +97,12 @@ export const DebtsPage: React.FC = () => {
       return;
     }
 
+    const remaining = selectedDebt.totalAmount - selectedDebt.paidAmount;
+    if (payVal > remaining + 0.0001) {
+      alert(`Payment cannot exceed the remaining balance of ${formatMoney(remaining, selectedDebt.currency)}.`);
+      return;
+    }
+
     setPaying(true);
     try {
       await api.recordDebtPayment(selectedDebt.id, payVal);

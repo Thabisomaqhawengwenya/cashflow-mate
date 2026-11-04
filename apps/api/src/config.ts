@@ -19,6 +19,10 @@ const defaultDevOrigins = [
   'http://127.0.0.1:3000',
 ];
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('FATAL SECURITY WARNING: JWT_SECRET must be explicitly configured in production environments.');
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   jwtSecret: process.env.JWT_SECRET || 'cashflow_mate_dev_secret_key_super_safe_2026',

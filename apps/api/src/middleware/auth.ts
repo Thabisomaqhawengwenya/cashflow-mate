@@ -18,12 +18,17 @@ declare global {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : undefined;
+  
+  const token = authHeader && authHeader.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : queryToken;
+
+  if (!token) {
     res.status(401).json({ error: 'Authentication required. Please sign in.' });
     return;
   }
 
-  const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as AuthenticatedUser;
     req.user = decoded;

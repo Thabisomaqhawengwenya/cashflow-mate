@@ -10,6 +10,21 @@ const upload = multer({
 
 export const importRouter = Router();
 
+// Public template download route - allows direct browser downloading without auth header issues
+importRouter.get('/template', (_req: Request, res: Response): void => {
+  const sampleCsv = `Date,Description,Amount,Type,Reference,Currency
+2026-10-25,EcoCash Customer Payment - Mealie Meal,18.50,Income,MP261025.101,USD
+2026-10-25,Bakers Inn Bread Delivery 30 loaves,33.00,Expense,BP261025.044,USD
+2026-10-25,Kombi Haulage from Musika,8.00,Expense,TR-1025-09,USD
+2026-10-26,ZETDC Prepaid Electricity Token,15.00,Expense,ZT-1026-01,USD
+2026-10-26,Cash Sales Counter Grocery,65.00,Income,CSH-1026-01,USD
+2026-10-26,Transfer Cash Drawer to EcoCash,50.00,Transfer,TRF-1026-02,USD`;
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="cashflow-mate-sample-template.csv"');
+  res.send(sampleCsv);
+});
+
 importRouter.use(requireAuth);
 
 importRouter.post('/preview', upload.single('file'), (req: Request, res: Response): void => {
@@ -57,18 +72,4 @@ importRouter.post('/commit', (req: Request, res: Response): void => {
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to commit imported transactions.' });
   }
-});
-
-importRouter.get('/template', (_req: Request, res: Response): void => {
-  const sampleCsv = `Date,Description,Amount,Type,Reference,Currency
-2026-10-25,EcoCash Customer Payment - Mealie Meal,18.50,Income,MP261025.101,USD
-2026-10-25,Bakers Inn Bread Delivery 30 loaves,33.00,Expense,BP261025.044,USD
-2026-10-25,Kombi Haulage from Musika,8.00,Expense,TR-1025-09,USD
-2026-10-26,ZETDC Prepaid Electricity Token,15.00,Expense,ZT-1026-01,USD
-2026-10-26,Cash Sales Counter Grocery,65.00,Income,CSH-1026-01,USD
-2026-10-26,Transfer Cash Drawer to EcoCash,50.00,Transfer,TRF-1026-02,USD`;
-
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename="cashflow-mate-sample-template.csv"');
-  res.send(sampleCsv);
 });
