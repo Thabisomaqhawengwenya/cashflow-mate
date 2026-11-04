@@ -9,6 +9,7 @@ import {
   Platform,
   TextInput,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
@@ -19,12 +20,19 @@ import {
   BusinessProfile,
   MobileStorageService,
   MobileTransaction,
+  MobileDebt,
   formatMoney,
   CATEGORIES,
 } from '@/services/storage';
 import { MobileNetworkService, NetworkConnectionState } from '@/services/network';
+import {
+  GeminiService,
+  isBlatantlyOutOfScope,
+  getOutOfScopeRefusal,
+} from '@/services/gemini';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Button } from '@/components/M3/M3Button';
+import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
 import { SupportedLanguage } from '@/services/i18n';
 
@@ -56,11 +64,20 @@ export default function InsightsScreen() {
 
   const [question, setQuestion] = useState('');
   const [transactions, setTransactions] = useState<MobileTransaction[]>([]);
+  const [debts, setDebts] = useState<MobileDebt[]>([]);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
   const [observations, setObservations] = useState<string[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [isAnswerOffline, setIsAnswerOffline] = useState(false);
+  const [activeEngineSource, setActiveEngineSource] = useState<'gemini_flash' | 'offline_engine'>('offline_engine');
+
+  // Gemini API Key State & Modal
+  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [keyTestMessage, setKeyTestMessage] = useState<{ success: boolean; text: string } | null>(null);
 
   // Wi-Fi Connection & Notification State
   const [networkState, setNetworkState] = useState<NetworkConnectionState>({
@@ -88,12 +105,17 @@ export default function InsightsScreen() {
   }, []);
 
   const loadData = useCallback(async () => {
-    const [txs, profile] = await Promise.all([
+    const [txs, profile, allDebts, key] = await Promise.all([
       MobileStorageService.getTransactions(),
       MobileStorageService.getBusiness(),
+      MobileStorageService.getDebts(),
+      MobileStorageService.getGeminiApiKey(),
     ]);
     setTransactions(txs);
     setBusiness(profile);
+    setDebts(allDebts);
+    setGeminiApiKey(key);
+    setTempApiKey(key);
   }, []);
 
   useFocusEffect(
@@ -119,6 +141,40 @@ export default function InsightsScreen() {
     }
   };
 
+  const handleSaveApiKey = async () => {
+    const cleaned = tempApiKey.trim();
+    await MobileStorageService.setGeminiApiKey(cleaned);
+    setGeminiApiKey(cleaned);
+    setIsApiKeyModalOpen(false);
+    Alert.alert(
+      'Gemini AI Configured',
+      cleaned
+        ? 'Real Google Gemini 1.5 Flash is now active with strict tuckshop domain guardrails!'
+        : 'Gemini API key cleared. Operating in offline rule mode.'
+    );
+  };
+
+  const handleRemoveApiKey = async () => {
+    await MobileStorageService.clearGeminiApiKey();
+    setGeminiApiKey('');
+    setTempApiKey('');
+    setKeyTestMessage(null);
+    setIsApiKeyModalOpen(false);
+    Alert.alert('Gemini Key Removed', 'CashFlow Mate is now operating in offline financial rule mode.');
+  };
+
+  const handleTestApiKey = async () => {
+    if (!tempApiKey.trim()) {
+      setKeyTestMessage({ success: false, text: 'Please enter a key first.' });
+      return;
+    }
+    setIsTestingKey(true);
+    setKeyTestMessage(null);
+    const result = await GeminiService.testApiKey(tempApiKey.trim());
+    setIsTestingKey(false);
+    setKeyTestMessage({ success: result.success, text: result.message });
+  };
+
   const categoryStats = (category: string) => {
     const rows = transactions.filter(
       (t) => t.currency === currency && t.category === category && t.direction === 'outflow'
@@ -127,15 +183,60 @@ export default function InsightsScreen() {
     return { amount: Math.round(amount * 100) / 100, count: rows.length };
   };
 
-  const executeAiQuery = (query: string, isOffline: boolean) => {
+  const executeAiQuery = async (query: string, isOffline: boolean) => {
     setIsThinking(true);
     setAnswer(null);
-    setIsAnswerOffline(isOffline);
+
+    // 1. Client-Side Scope Guardrail Check (Declines out-of-scope immediately)
+    if (isBlatantlyOutOfScope(query)) {
+      setIsThinking(false);
+      setAnswer(getOutOfScopeRefusal(language));
+      setObservations([
+        'CashFlow Mate AI is strictly restricted to tuckshop records, transactions, debts, and till operations.',
+      ]);
+      setIsAnswerOffline(false);
+      setActiveEngineSource('gemini_flash');
+      return;
+    }
 
     const summary = MobileStorageService.calculateSummary(transactions, {
       period: 'this_month',
       currency,
     });
+    const cashbox = MobileStorageService.calculateMultiCurrencyCashbox(transactions);
+
+    // 2. Real Google Gemini Flash Execution (Online with API Key)
+    if (!isOffline && geminiApiKey.trim()) {
+      try {
+        const geminiRes = await GeminiService.askGemini({
+          apiKey: geminiApiKey,
+          question: query,
+          language,
+          currency,
+          summary,
+          recentTransactions: transactions,
+          debts,
+          cashbox,
+        });
+
+        setAnswer(geminiRes.answer);
+        setObservations(geminiRes.observations);
+        setIsAnswerOffline(false);
+        setActiveEngineSource('gemini_flash');
+        setIsThinking(false);
+        return;
+      } catch (err: any) {
+        console.warn('Gemini API call failed, falling back to offline engine:', err);
+        Alert.alert(
+          'Gemini Live Notice',
+          `${err.message || 'Could not reach Gemini API.'}\n\nFalling back to local offline financial engine.`
+        );
+      }
+    }
+
+    // 3. Fallback: Local Deterministic Financial Rule Engine
+    setIsAnswerOffline(true);
+    setActiveEngineSource('offline_engine');
     const topExpense = summary.categoryBreakdown[0];
     const lower = query.toLowerCase();
 
@@ -217,14 +318,12 @@ export default function InsightsScreen() {
     const net = await refreshNetworkState();
 
     if (!net.isWifi) {
-      // Set prominent warning notification banner
       setNotificationToast({
         type: 'warning',
         title: t('not_connected_wifi_title'),
         message: t('not_connected_wifi_desc'),
       });
 
-      // Prompt immediate user notification dialog
       Alert.alert(
         t('not_connected_wifi_alert_title'),
         t('not_connected_wifi_alert_msg'),
@@ -232,9 +331,6 @@ export default function InsightsScreen() {
           {
             text: t('connect_wifi_btn'),
             style: 'cancel',
-            onPress: () => {
-              // Dismiss dialog, banner remains visible
-            },
           },
           {
             text: t('use_offline_engine_btn'),
@@ -247,8 +343,15 @@ export default function InsightsScreen() {
       return;
     }
 
-    // Wi-Fi is active, clear any previous warning and execute
+    // Wi-Fi is active, clear warning and execute
     setNotificationToast(null);
+
+    // If online but no API key is saved yet, execute offline and prompt key modal
+    if (!geminiApiKey.trim()) {
+      executeAiQuery(query, true);
+      return;
+    }
+
     executeAiQuery(query, false);
   };
 
@@ -261,8 +364,17 @@ export default function InsightsScreen() {
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
           <Text style={styles.headerTitle}>{t('assistant_title')}</Text>
-          <Pressable onPress={() => router.push('/modal')} style={styles.backButton}>
-            <Ionicons name="sparkles-outline" size={20} color="#FFFFFF" />
+          <Pressable
+            onPress={() => {
+              setTempApiKey(geminiApiKey);
+              setKeyTestMessage(null);
+              setIsApiKeyModalOpen(true);
+            }}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Configure Gemini API Key"
+          >
+            <Ionicons name="sparkles" size={18} color={geminiApiKey ? '#34D399' : '#FFFFFF'} />
           </Pressable>
         </View>
 
@@ -287,7 +399,7 @@ export default function InsightsScreen() {
                   {
                     backgroundColor: isActive
                       ? EmeraldTokens.mintCta
-                      : 'rgba(255, 255, 255, 0.14)',
+                      : 'rgba(255, 255, 255, 0.12)',
                   },
                 ]}
               >
@@ -295,7 +407,9 @@ export default function InsightsScreen() {
                   style={[
                     styles.langPillText,
                     {
-                      color: isActive ? EmeraldTokens.mintDarkText : '#FFFFFF',
+                      color: isActive
+                        ? EmeraldTokens.mintDarkText
+                        : 'rgba(255, 255, 255, 0.85)',
                       fontWeight: isActive ? '700' : '500',
                     },
                   ]}
@@ -314,6 +428,56 @@ export default function InsightsScreen() {
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Engine Status & Guardrail Card */}
+        <View style={styles.engineCard}>
+          <View style={styles.engineLeft}>
+            <View
+              style={[
+                styles.engineIconCircle,
+                { backgroundColor: geminiApiKey ? '#E0F2FE' : '#FEF3C7' },
+              ]}
+            >
+              <Ionicons
+                name={geminiApiKey ? 'sparkles' : 'shield-checkmark-outline'}
+                size={18}
+                color={geminiApiKey ? '#0284C7' : '#D97706'}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <Text style={styles.engineTitle}>
+                  {geminiApiKey ? 'Google Gemini 1.5 Flash' : 'Offline Financial Engine'}
+                </Text>
+                <M3Badge
+                  label={geminiApiKey ? 'LIVE AI' : 'OFFLINE'}
+                  variant={geminiApiKey ? 'mint' : 'amber'}
+                />
+              </View>
+              <Text style={styles.engineSub}>
+                {geminiApiKey
+                  ? 'Active with strict tuckshop domain guardrails'
+                  : 'Free deterministic till calculations'}
+              </Text>
+            </View>
+          </View>
+
+          <Pressable
+            onPress={() => {
+              setTempApiKey(geminiApiKey);
+              setKeyTestMessage(null);
+              setIsApiKeyModalOpen(true);
+            }}
+            style={styles.engineConfigBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Configure Gemini API Key"
+          >
+            <Ionicons name="key-outline" size={13} color={EmeraldTokens.deepPine} />
+            <Text style={styles.engineConfigBtnText}>
+              {geminiApiKey ? 'Manage Key' : 'Connect Key'}
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Connection & Wi-Fi Notification Banner */}
         {!networkState.isWifi ? (
           <View style={styles.noWifiCard}>
@@ -426,18 +590,35 @@ export default function InsightsScreen() {
         {isThinking && (
           <View style={styles.thinkingBox}>
             <ActivityIndicator size="small" color={EmeraldTokens.deepPine} />
-            <Text style={styles.thinkingText}>{t('thinking_text')}</Text>
+            <Text style={styles.thinkingText}>
+              {geminiApiKey && networkState.isWifi
+                ? 'Consulting Google Gemini 1.5 Flash...'
+                : t('thinking_text')}
+            </Text>
           </View>
         )}
 
         {answer && (
           <View style={styles.answerCard}>
-            {isAnswerOffline && (
-              <View style={styles.offlineNoticePill}>
-                <Ionicons name="cloud-offline-outline" size={13} color="#D97706" />
-                <Text style={styles.offlineNoticePillText}>{t('offline_generated_badge')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              {isAnswerOffline ? (
+                <View style={styles.offlineNoticePill}>
+                  <Ionicons name="cloud-offline-outline" size={13} color="#D97706" />
+                  <Text style={styles.offlineNoticePillText}>{t('offline_generated_badge')}</Text>
+                </View>
+              ) : (
+                <View style={styles.geminiNoticePill}>
+                  <Ionicons name="sparkles" size={13} color="#0284C7" />
+                  <Text style={styles.geminiNoticePillText}>Real Gemini 1.5 Flash</Text>
+                </View>
+              )}
+
+              <View style={styles.guardrailPill}>
+                <Ionicons name="lock-closed" size={11} color={EmeraldTokens.deepPine} />
+                <Text style={styles.guardrailPillText}>Tuckshop Scope Locked</Text>
               </View>
-            )}
+            </View>
+
             <View style={styles.answerHeader}>
               <View style={[styles.miniIcon, { backgroundColor: EmeraldTokens.pastelMint }]}>
                 <Ionicons name="sparkles" size={16} color={EmeraldTokens.pastelMintText} />
@@ -461,6 +642,114 @@ export default function InsightsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* 3. Google Gemini API Key & Guardrail Configuration Modal */}
+      <Modal
+        visible={isApiKeyModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsApiKeyModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <View style={styles.modalIconBox}>
+                  <Ionicons name="sparkles" size={18} color="#0284C7" />
+                </View>
+                <Text style={styles.modalTitle}>Google Gemini AI Setup</Text>
+              </View>
+              <Pressable
+                onPress={() => setIsApiKeyModalOpen(false)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close Gemini API Key Modal"
+              >
+                <Ionicons name="close" size={22} color={EmeraldTokens.textSlate} />
+              </Pressable>
+            </View>
+
+            {/* Scope Guardrail Explainer Banner */}
+            <View style={styles.guardrailBanner}>
+              <View style={styles.guardrailBannerHeader}>
+                <Ionicons name="shield-checkmark" size={16} color="#047857" />
+                <Text style={styles.guardrailBannerTitle}>Strict Tuckshop Guardrails Active</Text>
+              </View>
+              <Text style={styles.guardrailBannerDesc}>
+                Gemini is constrained by built-in system rules to ONLY perform tasks and answer questions related to your CashFlow Mate records, sales, expenses, debts, and till drawers. Off-topic questions are firmly declined.
+              </Text>
+            </View>
+
+            <M3Input
+              label="Google Gemini API Key"
+              placeholder="Paste AIzaSy... key from Google AI Studio"
+              value={tempApiKey}
+              onChangeText={setTempApiKey}
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry={false}
+            />
+
+            {keyTestMessage && (
+              <View
+                style={[
+                  styles.testFeedbackBox,
+                  {
+                    backgroundColor: keyTestMessage.success ? '#ECFDF5' : '#FEF2F2',
+                    borderColor: keyTestMessage.success ? '#A7F3D0' : '#FECACA',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={keyTestMessage.success ? 'checkmark-circle' : 'alert-circle'}
+                  size={15}
+                  color={keyTestMessage.success ? '#059669' : '#DC2626'}
+                />
+                <Text
+                  style={[
+                    styles.testFeedbackText,
+                    { color: keyTestMessage.success ? '#065F46' : '#991B1B' },
+                  ]}
+                >
+                  {keyTestMessage.text}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.modalActionRow}>
+              <M3Button
+                label={isTestingKey ? 'VERIFYING...' : 'TEST KEY'}
+                variant="outlined"
+                size="md"
+                disabled={isTestingKey || !tempApiKey.trim()}
+                onPress={handleTestApiKey}
+                style={{ flex: 1 }}
+              />
+              <M3Button
+                label="SAVE KEY"
+                variant="mint"
+                size="md"
+                onPress={handleSaveApiKey}
+                style={{ flex: 1 }}
+              />
+            </View>
+
+            {geminiApiKey ? (
+              <Pressable onPress={handleRemoveApiKey} style={styles.removeKeyBtn}>
+                <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                <Text style={styles.removeKeyBtnText}>Remove Saved API Key</Text>
+              </Pressable>
+            ) : null}
+
+            <Text style={styles.getApiKeyHelpText}>
+              Need a free key? Generate one at{' '}
+              <Text style={{ fontWeight: '700', color: EmeraldTokens.deepPine }}>
+                aistudio.google.com
+              </Text>
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -527,6 +816,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 110,
+  },
+
+  // Engine Status Card
+  engineCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: BlueTokens.borders,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    shadowColor: BlueTokens.darkNavy,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  engineLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  engineIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  engineTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  engineSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+    marginTop: 2,
+  },
+  engineConfigBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F1F5F3',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  engineConfigBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.deepPine,
   },
 
   askCard: {
@@ -792,7 +1137,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
@@ -800,5 +1144,145 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#92400E',
+  },
+
+  geminiNoticePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  geminiNoticePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0369A1',
+  },
+
+  guardrailPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F1F5F3',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  guardrailPillText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: EmeraldTokens.deepPine,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#E0F2FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+
+  guardrailBanner: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 16,
+  },
+  guardrailBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  guardrailBannerTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  guardrailBannerDesc: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#047857',
+  },
+
+  testFeedbackBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  testFeedbackText: {
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
+  },
+
+  modalActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  removeKeyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    paddingVertical: 8,
+  },
+  removeKeyBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  getApiKeyHelpText: {
+    fontSize: 11,
+    textAlign: 'center',
+    color: EmeraldTokens.textMuted,
+    marginTop: 14,
   },
 });

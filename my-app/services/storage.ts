@@ -56,6 +56,29 @@ export const CATEGORIES: Record<string, { label: string; icon: string; defaultTy
 const STORAGE_KEY_TX = '@cashflow_mate_tx_v1';
 const STORAGE_KEY_DEBTS = '@cashflow_mate_debts_v1';
 const STORAGE_KEY_BIZ = '@cashflow_mate_biz_v1';
+const STORAGE_KEY_GEMINI_KEY = '@cashflow_mate_gemini_key_v1';
+
+export interface FinancialSummary {
+  period: ReportPeriod;
+  periodLabel: string;
+  periodStartDate: string;
+  periodEndDate: string;
+  currency: CurrencyCode;
+  transactionCount: number;
+  recordedInflows: number;
+  recordedOutflows: number;
+  netCashFlow: number;
+  estimatedOperatingProfit: number;
+  operatingRevenue: number;
+  operatingExpenses: number;
+  unreviewedCount: number;
+  categoryBreakdown: {
+    category: string;
+    label: string;
+    amount: number;
+    percentage: number;
+  }[];
+}
 
 export function roundMoney(amount: number): number {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
@@ -655,6 +678,23 @@ export class MobileStorageService {
     result.ZAR.netCashFlow = roundMoney(result.ZAR.inflows - result.ZAR.outflows);
 
     return result;
+  }
+
+  static async getGeminiApiKey(): Promise<string> {
+    try {
+      const key = await AsyncStorage.getItem(STORAGE_KEY_GEMINI_KEY);
+      return (key || (process.env as any).EXPO_PUBLIC_GEMINI_API_KEY || '').trim();
+    } catch {
+      return '';
+    }
+  }
+
+  static async setGeminiApiKey(key: string): Promise<void> {
+    await AsyncStorage.setItem(STORAGE_KEY_GEMINI_KEY, key.trim());
+  }
+
+  static async clearGeminiApiKey(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEY_GEMINI_KEY);
   }
 }
 
