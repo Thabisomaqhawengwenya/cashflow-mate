@@ -5,7 +5,7 @@
 > **Target Audience:** Informal market vendors, tuck-shop operators, grocery stalls, clothing vendors, and microbusinesses across Zimbabwe.  
 > **Author & Project Lead:** Mr Q (Maqhawe T Ngwenya)  
 > **Repository:** [https://github.com/Thabisomaqhawengwenya/cashflow-mate](https://github.com/Thabisomaqhawengwenya/cashflow-mate)  
-> **Official Release:** [v1.2.0 (Production Edition)](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0)
+> **Official Release:** [v1.3.0 (Production Multi-User Edition)](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.3.0)
 > **Backend Architecture:** Supabase Auth + PostgreSQL with Row Level Security (RLS)
 
 ---
@@ -36,7 +36,8 @@ Copy the SQL from `database/supabase_migrations.sql` and run it in the [Supabase
 
 | Platform | Download Link | Build Type | Status |
 | :--- | :--- | :--- | :--- |
-| **Android (APK v1.2.0 — Latest Review)** | [📦 **GitHub Release v1.2.0 Assets**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0) | Standalone Preview Release (`com.maqhawe.cashflowmate`) | ✅ Review Release |
+| **Android (APK v1.3.0 — Latest Production)** | [📦 **GitHub Release v1.3.0 Assets**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.3.0) | Standalone Production Release (`com.maqhawe.cashflow`) | ✅ Latest Production |
+| **Android (APK v1.2.0 — Review Archive)** | [📦 **GitHub Release v1.2.0 Assets**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0) | Standalone Preview Release (`com.maqhawe.cashflowmate`) | 📦 Archived |
 | **Android (APK v1.1.0 — Direct Install)** | [⬇️ **Download CashFlow Mate v1.1.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) | Standalone Installable APK (`97.5 MB`) | ✅ Live Production |
 | **Expo EAS Cloud Build** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/cba8389e-d954-4371-a8e5-5d1c61eb17ed) | EAS Cloud Artifact (`cba8389e`) | ✅ Verified |
 | **Android (APK v1.0.0 — Legacy)** | [⬇️ Download CashFlow Mate v1.0.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) | Standalone Preview APK | 📦 Archived |

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cashflow",
     "slug": "cashflow",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cashflow",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.maqhawe.cashflow",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#06152E",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
