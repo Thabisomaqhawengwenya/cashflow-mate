@@ -30,6 +30,7 @@ export interface AvatarPreset {
   icon: keyof typeof Ionicons.glyphMap;
   bgColor: string;
   iconColor: string;
+  badgeLabel: string;
 }
 
 const PRESET_AVATARS: AvatarPreset[] = [
@@ -40,6 +41,7 @@ const PRESET_AVATARS: AvatarPreset[] = [
     icon: 'storefront',
     bgColor: '#0C3E35',
     iconColor: '#34D399',
+    badgeLabel: 'GROCERY & PROVISIONS',
   },
   {
     id: 'executive_trader',
@@ -48,6 +50,7 @@ const PRESET_AVATARS: AvatarPreset[] = [
     icon: 'briefcase',
     bgColor: '#06152E',
     iconColor: '#38BDF8',
+    badgeLabel: 'WHOLESALE B2B',
   },
   {
     id: 'musika_produce',
@@ -56,6 +59,7 @@ const PRESET_AVATARS: AvatarPreset[] = [
     icon: 'nutrition',
     bgColor: '#D97706',
     iconColor: '#FEF3C7',
+    badgeLabel: 'MBARE MUSIKA',
   },
   {
     id: 'ecocash_agent',
@@ -64,6 +68,7 @@ const PRESET_AVATARS: AvatarPreset[] = [
     icon: 'phone-portrait',
     bgColor: '#0284C7',
     iconColor: '#E0F2FE',
+    badgeLabel: 'MOBILE FLOAT',
   },
   {
     id: 'cbd_boutique',
@@ -72,6 +77,7 @@ const PRESET_AVATARS: AvatarPreset[] = [
     icon: 'shirt',
     bgColor: '#7E22CE',
     iconColor: '#F3E8FF',
+    badgeLabel: 'FASHION & BALES',
   },
   {
     id: 'cross_border',
@@ -80,26 +86,39 @@ const PRESET_AVATARS: AvatarPreset[] = [
     icon: 'bus',
     bgColor: '#EA580C',
     iconColor: '#FFEDD5',
+    badgeLabel: 'BEITBRIDGE RUNNER',
   },
 ];
 
 const BUSINESS_TYPES = [
   'Tuckshop & Grocery',
-  'Clothing & Boutique',
-  'Electronics & Phones',
   'Fresh Farm Produce',
-  'Wholesale & Bales',
-  'Services & Salon',
+  'Clothing & Bales',
+  'Electronics & Phones',
+  'Wholesale & Distribution',
+  'EcoCash & Money Agency',
+  'Hardware & Spares',
+  'Salon & Cosmetics',
 ];
 
 const POPULAR_LOCATIONS = [
   'Harare (Mbare Musika)',
+  'Harare (CBD)',
   'Bulawayo (CBD)',
-  'Gweru',
+  'Bulawayo (Renkini)',
+  'Gweru (Kwekwe Road)',
   'Mutare (Sakubva)',
-  'Masvingo',
-  'Beitbridge (Border)',
-  'Chitungwiza',
+  'Masvingo (Mucheke)',
+  'Beitbridge Border',
+  'Chitungwiza (Makoni)',
+];
+
+const OPERATING_HOURS_OPTIONS = [
+  '6:00 AM - 6:00 PM (Mon - Sat)',
+  '7:00 AM - 8:00 PM (Daily)',
+  '6:00 AM - 1:00 PM (Market Morning)',
+  '8:00 AM - 5:00 PM (Weekdays)',
+  '24/7 Continuous Booth',
 ];
 
 export default function ProfileScreen() {
@@ -110,6 +129,7 @@ export default function ProfileScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [viewMode, setViewMode] = useState<'edit' | 'pass'>('edit');
   const [session, setSession] = useState<UserSession | null>(null);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
@@ -119,9 +139,12 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [stallName, setStallName] = useState('');
+  const [stallNumber, setStallNumber] = useState('');
+  const [merchantTillNumber, setMerchantTillNumber] = useState('');
   const [businessType, setBusinessType] = useState('Tuckshop & Grocery');
   const [city, setCity] = useState('Harare (Mbare Musika)');
   const [tagline, setTagline] = useState('');
+  const [operatingHours, setOperatingHours] = useState('6:00 AM - 6:00 PM (Mon - Sat)');
   const [currency, setCurrency] = useState<CurrencyCode>('USD');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
@@ -145,9 +168,12 @@ export default function ProfileScreen() {
       setPhone(biz?.phone || sess?.phone || '+263 77 123 4567');
       setEmail(sess?.email || biz?.email || 'demo@cashflowmate.co.zw');
       setStallName(stall);
+      setStallNumber(biz?.stallNumber || sess?.stallNumber || 'Stall #14, Vegetable Shed');
+      setMerchantTillNumber(biz?.merchantTillNumber || sess?.merchantTillNumber || 'EcoCash: 194827');
       setBusinessType(biz?.businessType || 'Tuckshop & Grocery');
       setCity(biz?.city || sess?.city || 'Harare (Mbare Musika)');
-      setTagline(biz?.tagline || 'Fresh quality provisions and wholesale trading.');
+      setTagline(biz?.tagline || sess?.tagline || 'Fresh quality produce and cold drinks daily.');
+      setOperatingHours(biz?.operatingHours || sess?.operatingHours || '6:00 AM - 6:00 PM (Mon - Sat)');
       setCurrency(biz?.currency || sess?.currency || 'USD');
       setAvatarUri(biz?.avatarUri || sess?.avatarUri || null);
       setSelectedPresetId(biz?.avatarPreset || sess?.avatarPreset || null);
@@ -220,6 +246,9 @@ export default function ProfileScreen() {
         phone: phone.trim(),
         email: email.trim(),
         city: city.trim(),
+        stallNumber: stallNumber.trim(),
+        merchantTillNumber: merchantTillNumber.trim(),
+        operatingHours: operatingHours.trim(),
         businessType: businessType.trim(),
         tagline: tagline.trim(),
         currency,
@@ -240,6 +269,9 @@ export default function ProfileScreen() {
           avatarPreset: selectedPresetId || undefined,
           phone: phone.trim(),
           city: city.trim(),
+          stallNumber: stallNumber.trim(),
+          merchantTillNumber: merchantTillNumber.trim(),
+          operatingHours: operatingHours.trim(),
           tagline: tagline.trim(),
         });
       }
@@ -274,38 +306,93 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screenWrapper}>
-      {/* 1. Deep Forest Emerald Header */}
+      {/* 1. Deep Forest Emerald Header with Top Nav */}
       <View style={styles.emeraldHeader}>
         <View style={styles.topNavRow}>
           <Pressable
             onPress={() => router.back()}
-            style={styles.iconButton}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </Pressable>
 
-          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <View style={styles.headerTitleCol}>
+            <Text style={styles.headerTitle}>Edit Profile</Text>
+            <View style={styles.verifiedRow}>
+              <View style={styles.verifiedDot} />
+              <Text style={styles.verifiedText}>ZIM TILL PASS</Text>
+            </View>
+          </View>
 
           <Pressable
             onPress={handleSaveProfile}
             disabled={saving}
-            style={styles.headerSaveBtn}
+            style={({ pressed }) => [
+              styles.headerSaveBtn,
+              pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Save profile changes"
           >
             {saving ? (
-              <ActivityIndicator size="small" color={EmeraldTokens.deepPine} />
+              <ActivityIndicator size="small" color={EmeraldTokens.mintDarkText} />
             ) : (
               <Text style={styles.headerSaveBtnText}>SAVE</Text>
             )}
           </Pressable>
         </View>
 
-        <Text style={styles.headerSubtitle}>
-          Update your trader avatar, identity, and tuckshop enterprise details.
-        </Text>
+        {/* View Mode Toggle: Edit Mode vs Stall Pass Preview */}
+        <View style={styles.modeToggleContainer}>
+          <Pressable
+            onPress={() => setViewMode('edit')}
+            style={[
+              styles.modeToggleBtn,
+              viewMode === 'edit' && styles.modeToggleBtnActive,
+            ]}
+          >
+            <Ionicons
+              name="create-outline"
+              size={15}
+              color={viewMode === 'edit' ? EmeraldTokens.deepPine : '#FFFFFF'}
+            />
+            <Text
+              style={[
+                styles.modeToggleBtnText,
+                viewMode === 'edit' && styles.modeToggleBtnTextActive,
+              ]}
+            >
+              Edit Information
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setViewMode('pass')}
+            style={[
+              styles.modeToggleBtn,
+              viewMode === 'pass' && styles.modeToggleBtnActive,
+            ]}
+          >
+            <Ionicons
+              name="card-outline"
+              size={15}
+              color={viewMode === 'pass' ? EmeraldTokens.deepPine : '#FFFFFF'}
+            />
+            <Text
+              style={[
+                styles.modeToggleBtnText,
+                viewMode === 'pass' && styles.modeToggleBtnTextActive,
+              ]}
+            >
+              Stall Pass Preview
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* 2. White Curved Scroll Sheet */}
@@ -314,306 +401,549 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Avatar & Photo Studio Card (Pinterest Style) */}
-        <View style={styles.avatarCard}>
-          <View style={styles.avatarFrameContainer}>
-            <View style={styles.avatarHaloRing}>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-              ) : activePreset ? (
-                <View
-                  style={[
-                    styles.avatarPresetCircle,
-                    { backgroundColor: activePreset.bgColor },
-                  ]}
-                >
-                  <Ionicons
-                    name={activePreset.icon}
-                    size={48}
-                    color={activePreset.iconColor}
+        <View style={styles.contentConstrained}>
+          {viewMode === 'edit' ? (
+            <>
+              {/* Avatar & Photo Studio Hero Card (Pinterest Board Style) */}
+              <View style={styles.avatarCard}>
+                {/* Decorative Top Banner */}
+                <View style={styles.avatarCardBanner}>
+                  <View style={styles.bannerBadge}>
+                    <Ionicons name="sparkles" size={12} color="#FBBF24" />
+                    <Text style={styles.bannerBadgeText}>
+                      {activePreset ? activePreset.badgeLabel : 'VERIFIED TRADER'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Overlapping Avatar Frame Container */}
+                <View style={styles.avatarOverlapWrapper}>
+                  <View style={styles.avatarHaloRing}>
+                    {avatarUri ? (
+                      <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                    ) : activePreset ? (
+                      <View
+                        style={[
+                          styles.avatarPresetCircle,
+                          { backgroundColor: activePreset.bgColor },
+                        ]}
+                      >
+                        <Ionicons
+                          name={activePreset.icon}
+                          size={46}
+                          color={activePreset.iconColor}
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.avatarFallback}>
+                        <Text style={styles.avatarInitials}>
+                          {fullName.trim().slice(0, 2).toUpperCase() || 'MQ'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Floating Camera Badge Button */}
+                  <Pressable
+                    onPress={handlePickImage}
+                    style={({ pressed }) => [
+                      styles.cameraBadgePill,
+                      pressed && { transform: [{ scale: 0.92 }] },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Upload profile photo"
+                  >
+                    <Ionicons name="camera" size={16} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+
+                {/* Trader Name & Meta */}
+                <Text style={styles.avatarCardTitle}>{fullName || 'Trader'}</Text>
+                <Text style={styles.avatarCardHandle}>@{username || 'mrq_mbare'}</Text>
+                <Text style={styles.avatarCardStall}>
+                  {stallName || 'Mbare Fresh Produce & Tuckshop'} &bull; {city}
+                </Text>
+
+                {/* Photo Action Buttons */}
+                <View style={styles.avatarActionRow}>
+                  <Pressable
+                    onPress={handlePickImage}
+                    style={({ pressed }) => [
+                      styles.avatarActionBtn,
+                      pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Upload photo from device"
+                  >
+                    <Ionicons name="image-outline" size={16} color={EmeraldTokens.deepPine} />
+                    <Text style={styles.avatarActionBtnText}>Upload Photo</Text>
+                  </Pressable>
+
+                  {(avatarUri || selectedPresetId) && (
+                    <Pressable
+                      onPress={handleRemovePhoto}
+                      style={({ pressed }) => [
+                        styles.avatarRemoveBtn,
+                        pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove photo"
+                    >
+                      <Ionicons name="trash-outline" size={15} color="#DC2626" />
+                      <Text style={styles.avatarRemoveBtnText}>Remove</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+
+              {/* Instant Zimbabwean Trader Presets */}
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionBadge}>
+                  <Text style={styles.sectionBadgeText}>PRESETS</Text>
+                </View>
+                <Text style={styles.sectionHeading}>Instant Trader Avatars</Text>
+              </View>
+              <Text style={styles.sectionSubtitle}>
+                Select an authentic preset matching your daily market enterprise.
+              </Text>
+
+              <View style={styles.presetsGrid}>
+                {PRESET_AVATARS.map((preset) => {
+                  const isSelected = selectedPresetId === preset.id && !avatarUri;
+                  return (
+                    <Pressable
+                      key={preset.id}
+                      onPress={() => handleSelectPreset(preset)}
+                      style={({ pressed }) => [
+                        styles.presetGridCard,
+                        isSelected && styles.presetGridCardActive,
+                        pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.presetMiniIcon,
+                          { backgroundColor: preset.bgColor },
+                        ]}
+                      >
+                        <Ionicons name={preset.icon} size={22} color={preset.iconColor} />
+                      </View>
+                      <View style={styles.presetTextCol}>
+                        <View style={styles.presetTitleRow}>
+                          <Text style={styles.presetGridTitle}>{preset.title}</Text>
+                          {isSelected && (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={16}
+                              color={EmeraldTokens.mintCta}
+                            />
+                          )}
+                        </View>
+                        <Text style={styles.presetGridSub} numberOfLines={1}>
+                          {preset.subtitle}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Card 1: Personal Identity */}
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionBadge}>
+                  <Text style={styles.sectionBadgeText}>01</Text>
+                </View>
+                <Text style={styles.sectionHeading}>Personal Identity</Text>
+              </View>
+
+              <View style={styles.formCard}>
+                <M3Input
+                  label="Full Name / Display Name"
+                  placeholder="e.g. Mr Q"
+                  value={fullName}
+                  onChangeText={setFullName}
+                />
+
+                <View style={{ marginTop: 14 }}>
+                  <M3Input
+                    label="Trader Username / Handle"
+                    placeholder="mrq_mbare"
+                    prefix="@"
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                    autoCorrect={false}
                   />
                 </View>
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarInitials}>
-                    {fullName.trim().slice(0, 2).toUpperCase() || 'MQ'}
-                  </Text>
+
+                <View style={{ marginTop: 14 }}>
+                  <M3Input
+                    label="WhatsApp Hotline & Phone"
+                    placeholder="+263 77 123 4567"
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                  />
                 </View>
-              )}
-            </View>
 
-            {/* Floating Camera Badge Button */}
-            <Pressable
-              onPress={handlePickImage}
-              style={styles.cameraBadgePill}
-              accessibilityRole="button"
-              accessibilityLabel="Upload profile photo"
-            >
-              <Ionicons name="camera" size={16} color="#FFFFFF" />
-            </Pressable>
-          </View>
-
-          <Text style={styles.avatarCardTitle}>{fullName || 'Trader'}</Text>
-          <Text style={styles.avatarCardSubtitle}>
-            @{username || 'mrq_mbare'} &bull; {city}
-          </Text>
-
-          {/* Photo Action Buttons */}
-          <View style={styles.avatarActionRow}>
-            <Pressable
-              onPress={handlePickImage}
-              style={styles.avatarActionBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Choose photo from device"
-            >
-              <Ionicons name="image-outline" size={15} color={EmeraldTokens.deepPine} />
-              <Text style={styles.avatarActionBtnText}>Upload Photo</Text>
-            </Pressable>
-
-            {(avatarUri || selectedPresetId) && (
-              <Pressable
-                onPress={handleRemovePhoto}
-                style={styles.avatarRemoveBtn}
-                accessibilityRole="button"
-                accessibilityLabel="Remove photo"
-              >
-                <Ionicons name="trash-outline" size={15} color="#DC2626" />
-                <Text style={styles.avatarRemoveBtnText}>Remove</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
-
-        {/* Preset Avatars Carousel */}
-        <Text style={styles.sectionHeading}>Instant Trader Presets</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.presetsRow}
-        >
-          {PRESET_AVATARS.map((preset) => {
-            const isSelected = selectedPresetId === preset.id && !avatarUri;
-            return (
-              <Pressable
-                key={preset.id}
-                onPress={() => handleSelectPreset(preset)}
-                style={[
-                  styles.presetChipCard,
-                  isSelected && styles.presetChipCardActive,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.presetMiniIcon,
-                    { backgroundColor: preset.bgColor },
-                  ]}
-                >
-                  <Ionicons name={preset.icon} size={22} color={preset.iconColor} />
+                <View style={{ marginTop: 14 }}>
+                  <M3Input
+                    label="Email Address"
+                    placeholder="trader@cashflowmate.co.zw"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
                 </View>
-                <Text style={styles.presetChipTitle}>{preset.title}</Text>
-                <Text style={styles.presetChipSub} numberOfLines={1}>
-                  {preset.subtitle}
+              </View>
+
+              {/* Card 2: Business & Stall Enterprise */}
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionBadge}>
+                  <Text style={styles.sectionBadgeText}>02</Text>
+                </View>
+                <Text style={styles.sectionHeading}>Tuckshop & Stall Enterprise</Text>
+              </View>
+
+              <View style={styles.formCard}>
+                <M3Input
+                  label="Business / Stall Name"
+                  placeholder="e.g. Mbare Fresh Produce & Tuckshop"
+                  value={stallName}
+                  onChangeText={setStallName}
+                />
+
+                <View style={{ marginTop: 14 }}>
+                  <M3Input
+                    label="Market Stall / Booth / Shop #"
+                    placeholder="e.g. Stall #14, Vegetable Shed A"
+                    value={stallNumber}
+                    onChangeText={setStallNumber}
+                  />
+                </View>
+
+                <View style={{ marginTop: 14 }}>
+                  <M3Input
+                    label="EcoCash / InnBucks Till Code"
+                    placeholder="e.g. EcoCash Till: 194827"
+                    value={merchantTillNumber}
+                    onChangeText={setMerchantTillNumber}
+                  />
+                </View>
+
+                {/* Business Sector Selection Chips */}
+                <Text style={styles.chipFieldLabel}>Trading Sector</Text>
+                <View style={styles.chipsContainer}>
+                  {BUSINESS_TYPES.map((type) => {
+                    const active = businessType === type;
+                    return (
+                      <Pressable
+                        key={type}
+                        onPress={() => setBusinessType(type)}
+                        style={({ pressed }) => [
+                          styles.selectionPill,
+                          active && styles.selectionPillActive,
+                          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectionPillText,
+                            active && styles.selectionPillTextActive,
+                          ]}
+                        >
+                          {type}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {/* Location Selection Chips */}
+                <Text style={styles.chipFieldLabel}>Market Location / Town</Text>
+                <View style={styles.chipsContainer}>
+                  {POPULAR_LOCATIONS.map((loc) => {
+                    const active = city === loc;
+                    return (
+                      <Pressable
+                        key={loc}
+                        onPress={() => setCity(loc)}
+                        style={({ pressed }) => [
+                          styles.selectionPill,
+                          active && styles.selectionPillActive,
+                          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectionPillText,
+                            active && styles.selectionPillTextActive,
+                          ]}
+                        >
+                          {loc}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <View style={{ marginTop: 14 }}>
+                  <M3Input
+                    label="Store Motto / Tagline"
+                    placeholder="e.g. Fresh farm produce delivered daily from Domboshava"
+                    value={tagline}
+                    onChangeText={setTagline}
+                  />
+                </View>
+              </View>
+
+              {/* Card 3: Operating Hours & Till Defaults */}
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionBadge}>
+                  <Text style={styles.sectionBadgeText}>03</Text>
+                </View>
+                <Text style={styles.sectionHeading}>Operating Hours & Defaults</Text>
+              </View>
+
+              <View style={styles.formCard}>
+                <Text style={styles.chipFieldLabel}>Operating Hours</Text>
+                <View style={styles.chipsContainer}>
+                  {OPERATING_HOURS_OPTIONS.map((opt) => {
+                    const active = operatingHours === opt;
+                    return (
+                      <Pressable
+                        key={opt}
+                        onPress={() => setOperatingHours(opt)}
+                        style={({ pressed }) => [
+                          styles.selectionPill,
+                          active && styles.selectionPillActive,
+                          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectionPillText,
+                            active && styles.selectionPillTextActive,
+                          ]}
+                        >
+                          {opt}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Text style={[styles.chipFieldLabel, { marginTop: 14 }]}>
+                  Primary Till Currency
                 </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+                <View style={styles.chipsContainer}>
+                  {[
+                    { id: 'USD', label: 'USD ($ Cash Drawer)', flag: '$' },
+                    { id: 'ZWG', label: 'ZiG (EcoCash / ZWG)', flag: 'ZiG' },
+                    { id: 'ZAR', label: 'ZAR (Rand Float)', flag: 'R' },
+                  ].map((cur) => {
+                    const active = currency === cur.id;
+                    return (
+                      <Pressable
+                        key={cur.id}
+                        onPress={() => setCurrency(cur.id as CurrencyCode)}
+                        style={({ pressed }) => [
+                          styles.selectionPill,
+                          active && styles.selectionPillActive,
+                          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectionPillText,
+                            active && styles.selectionPillTextActive,
+                          ]}
+                        >
+                          {cur.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
 
-        {/* Card 1: Personal Identity */}
-        <Text style={styles.sectionHeading}>Personal Identity</Text>
-        <View style={styles.formCard}>
-          <M3Input
-            label="Full Name / Display Name"
-            placeholder="e.g. Mr Q"
-            value={fullName}
-            onChangeText={setFullName}
-          />
+                <Text style={[styles.chipFieldLabel, { marginTop: 14 }]}>
+                  Preferred Language
+                </Text>
+                <View style={styles.chipsContainer}>
+                  {[
+                    { id: 'en', label: 'English' },
+                    { id: 'sn', label: 'ChiShona' },
+                    { id: 'nd', label: 'SiNdebele' },
+                  ].map((lang) => {
+                    const active = language === lang.id;
+                    return (
+                      <Pressable
+                        key={lang.id}
+                        onPress={() => setLanguage(lang.id as any)}
+                        style={({ pressed }) => [
+                          styles.selectionPill,
+                          active && styles.selectionPillActive,
+                          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectionPillText,
+                            active && styles.selectionPillTextActive,
+                          ]}
+                        >
+                          {lang.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
 
-          <View style={{ marginTop: 12 }}>
-            <M3Input
-              label="Trader Handle / Username"
-              placeholder="e.g. mrq_mbare"
-              prefix="@"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+              {/* Bottom Sticky Save CTA Container */}
+              <View style={styles.saveCtaContainer}>
+                <M3Button
+                  label={saving ? 'SAVING CHANGES...' : 'SAVE PROFILE CHANGES'}
+                  variant="mint"
+                  size="lg"
+                  icon={
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={EmeraldTokens.mintDarkText}
+                    />
+                  }
+                  disabled={saving}
+                  onPress={handleSaveProfile}
+                />
+              </View>
+            </>
+          ) : (
+            /* Interactive Live Stall Pass Preview (Pinterest Style) */
+            <View style={styles.passCardWrapper}>
+              <View style={styles.passCard}>
+                {/* Stall Pass Top Ribbon */}
+                <View style={styles.passHeader}>
+                  <View style={styles.passGovSeal}>
+                    <Ionicons name="shield-checkmark" size={16} color="#FBBF24" />
+                    <Text style={styles.passGovText}>
+                      REPUBLIC OF ZIMBABWE &bull; VERIFIED MARKET TILL
+                    </Text>
+                  </View>
+                  <View style={styles.passStatusPill}>
+                    <View style={styles.passStatusDot} />
+                    <Text style={styles.passStatusText}>ACTIVE 2026</Text>
+                  </View>
+                </View>
 
-          <View style={{ marginTop: 12 }}>
-            <M3Input
-              label="WhatsApp & Phone Number"
-              placeholder="+263 77 123 4567"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-            />
-          </View>
+                {/* Stall Pass Body */}
+                <View style={styles.passBody}>
+                  <View style={styles.passAvatarRing}>
+                    {avatarUri ? (
+                      <Image source={{ uri: avatarUri }} style={styles.passAvatarImage} />
+                    ) : activePreset ? (
+                      <View
+                        style={[
+                          styles.passAvatarPreset,
+                          { backgroundColor: activePreset.bgColor },
+                        ]}
+                      >
+                        <Ionicons
+                          name={activePreset.icon}
+                          size={40}
+                          color={activePreset.iconColor}
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.passAvatarFallback}>
+                        <Text style={styles.passAvatarInitials}>
+                          {fullName.trim().slice(0, 2).toUpperCase() || 'MQ'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
 
-          <View style={{ marginTop: 12 }}>
-            <M3Input
-              label="Email Address"
-              placeholder="trader@cashflowmate.co.zw"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-        </View>
-
-        {/* Card 2: Business & Stall Enterprise */}
-        <Text style={styles.sectionHeading}>Tuckshop & Stall Details</Text>
-        <View style={styles.formCard}>
-          <M3Input
-            label="Business / Stall Name"
-            placeholder="e.g. Mbare Fresh Produce & Tuckshop"
-            value={stallName}
-            onChangeText={setStallName}
-          />
-
-          {/* Business Sector Selection Chips */}
-          <Text style={styles.chipFieldLabel}>Business Type / Sector</Text>
-          <View style={styles.chipsContainer}>
-            {BUSINESS_TYPES.map((type) => {
-              const active = businessType === type;
-              return (
-                <Pressable
-                  key={type}
-                  onPress={() => setBusinessType(type)}
-                  style={[
-                    styles.selectionPill,
-                    active && styles.selectionPillActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.selectionPillText,
-                      active && styles.selectionPillTextActive,
-                    ]}
-                  >
-                    {type}
+                  <Text style={styles.passBusinessName}>
+                    {stallName || 'Mbare Fresh Produce & Tuckshop'}
                   </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Location Selection Chips */}
-          <Text style={styles.chipFieldLabel}>City / Market Location</Text>
-          <View style={styles.chipsContainer}>
-            {POPULAR_LOCATIONS.map((loc) => {
-              const active = city === loc;
-              return (
-                <Pressable
-                  key={loc}
-                  onPress={() => setCity(loc)}
-                  style={[
-                    styles.selectionPill,
-                    active && styles.selectionPillActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.selectionPillText,
-                      active && styles.selectionPillTextActive,
-                    ]}
-                  >
-                    {loc}
+                  <Text style={styles.passOwnerName}>
+                    Operated by {fullName || 'Mr Q'} &bull; @{username || 'mrq_mbare'}
                   </Text>
-                </Pressable>
-              );
-            })}
-          </View>
 
-          <View style={{ marginTop: 14 }}>
-            <M3Input
-              label="Tagline / Business Motto"
-              placeholder="e.g. Fresh produce daily from Domboshava farmers"
-              value={tagline}
-              onChangeText={setTagline}
-            />
-          </View>
-        </View>
+                  {tagline ? (
+                    <Text style={styles.passTagline}>&ldquo;{tagline}&rdquo;</Text>
+                  ) : null}
 
-        {/* Card 3: Regional & Currency Defaults */}
-        <Text style={styles.sectionHeading}>Regional & Till Defaults</Text>
-        <View style={styles.formCard}>
-          <Text style={styles.chipFieldLabel}>Default Till Currency</Text>
-          <View style={styles.chipsContainer}>
-            {[
-              { id: 'USD', label: 'USD ($ Cash Drawer)' },
-              { id: 'ZWG', label: 'ZiG (EcoCash / ZWG)' },
-              { id: 'ZAR', label: 'ZAR (Rand Float)' },
-            ].map((cur) => {
-              const active = currency === cur.id;
-              return (
-                <Pressable
-                  key={cur.id}
-                  onPress={() => setCurrency(cur.id as CurrencyCode)}
-                  style={[
-                    styles.selectionPill,
-                    active && styles.selectionPillActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.selectionPillText,
-                      active && styles.selectionPillTextActive,
-                    ]}
-                  >
-                    {cur.label}
+                  {/* Pass Details Grid */}
+                  <View style={styles.passDetailsGrid}>
+                    <View style={styles.passDetailItem}>
+                      <Text style={styles.passDetailLabel}>LOCATION / CITY</Text>
+                      <Text style={styles.passDetailValue}>{city}</Text>
+                    </View>
+
+                    <View style={styles.passDetailItem}>
+                      <Text style={styles.passDetailLabel}>STALL IDENTIFIER</Text>
+                      <Text style={styles.passDetailValue}>{stallNumber}</Text>
+                    </View>
+
+                    <View style={styles.passDetailItem}>
+                      <Text style={styles.passDetailLabel}>TILL / ECOCASH</Text>
+                      <Text style={[styles.passDetailValue, { color: '#38BDF8' }]}>
+                        {merchantTillNumber}
+                      </Text>
+                    </View>
+
+                    <View style={styles.passDetailItem}>
+                      <Text style={styles.passDetailLabel}>WHATSAPP HOTLINE</Text>
+                      <Text style={styles.passDetailValue}>{phone}</Text>
+                    </View>
+
+                    <View style={styles.passDetailItem}>
+                      <Text style={styles.passDetailLabel}>TRADING HOURS</Text>
+                      <Text style={styles.passDetailValue}>{operatingHours}</Text>
+                    </View>
+
+                    <View style={styles.passDetailItem}>
+                      <Text style={styles.passDetailLabel}>BASE CURRENCY</Text>
+                      <Text style={[styles.passDetailValue, { color: '#34D399' }]}>
+                        {currency} Primary Drawer
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Verified Till QR Code Placeholder */}
+                  <View style={styles.qrCard}>
+                    <Ionicons name="qr-code" size={54} color={EmeraldTokens.deepPine} />
+                    <View style={styles.qrTextCol}>
+                      <Text style={styles.qrTitle}>Instant Merchant QR Code</Text>
+                      <Text style={styles.qrSub}>
+                        Scan to transfer directly into this merchant's till.
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Stall Pass Footer */}
+                <View style={styles.passFooter}>
+                  <Text style={styles.passFooterText}>
+                    CashFlow Mate Market OS &bull; Offline HMAC-SHA256 Cryptographic Pass
                   </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                </View>
+              </View>
 
-          <Text style={[styles.chipFieldLabel, { marginTop: 14 }]}>
-            Preferred Language
-          </Text>
-          <View style={styles.chipsContainer}>
-            {[
-              { id: 'en', label: 'English' },
-              { id: 'sn', label: 'ChiShona' },
-              { id: 'nd', label: 'SiNdebele' },
-            ].map((lang) => {
-              const active = language === lang.id;
-              return (
+              <View style={styles.passActionRow}>
                 <Pressable
-                  key={lang.id}
-                  onPress={() => setLanguage(lang.id as any)}
-                  style={[
-                    styles.selectionPill,
-                    active && styles.selectionPillActive,
-                  ]}
+                  onPress={() => setViewMode('edit')}
+                  style={styles.passActionReturnBtn}
                 >
-                  <Text
-                    style={[
-                      styles.selectionPillText,
-                      active && styles.selectionPillTextActive,
-                    ]}
-                  >
-                    {lang.label}
-                  </Text>
+                  <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
+                  <Text style={styles.passActionReturnText}>Back to Edit Information</Text>
                 </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* 5. Bottom Save CTA Button */}
-        <View style={styles.saveCtaContainer}>
-          <M3Button
-            label={saving ? 'SAVING CHANGES...' : 'SAVE PROFILE CHANGES'}
-            variant="mint"
-            size="lg"
-            icon={<Ionicons name="checkmark-circle" size={20} color={EmeraldTokens.mintDarkText} />}
-            disabled={saving}
-            onPress={handleSaveProfile}
-          />
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -633,27 +963,48 @@ const styles = StyleSheet.create({
     backgroundColor: EmeraldTokens.deepPine,
     paddingTop: Platform.OS === 'ios' ? 52 : 44,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   topNavRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerTitleCol: {
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: -0.2,
+  },
+  verifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  verifiedDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: EmeraldTokens.mintCta,
+  },
+  verifiedText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: EmeraldTokens.mintCta,
+    letterSpacing: 0.8,
   },
   headerSaveBtn: {
     backgroundColor: EmeraldTokens.mintCta,
@@ -667,10 +1018,43 @@ const styles = StyleSheet.create({
     color: EmeraldTokens.mintDarkText,
     letterSpacing: 0.5,
   },
-  headerSubtitle: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.72)',
-    lineHeight: 18,
+
+  // Segmented Pill Switcher
+  modeToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.22)',
+    borderRadius: 999,
+    padding: 3,
+    marginTop: 4,
+    maxWidth: 420,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  modeToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  modeToggleBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modeToggleBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  modeToggleBtnTextActive: {
+    color: EmeraldTokens.deepPine,
+    fontWeight: '700',
   },
 
   sheetContainer: {
@@ -684,14 +1068,19 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 120,
   },
+  contentConstrained: {
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
+  },
 
   // Avatar Hero Card
   avatarCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 22,
+    overflow: 'hidden',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: BlueTokens.borders,
     shadowColor: BlueTokens.darkNavy,
@@ -700,14 +1089,38 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  avatarFrameContainer: {
+  avatarCardBanner: {
+    width: '100%',
+    height: 84,
+    backgroundColor: EmeraldTokens.deepPine,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    padding: 12,
+  },
+  bannerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  bannerBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.6,
+  },
+  avatarOverlapWrapper: {
     position: 'relative',
-    marginBottom: 12,
+    marginTop: -48,
+    marginBottom: 10,
   },
   avatarHaloRing: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
+    width: 106,
+    height: 106,
+    borderRadius: 53,
     borderWidth: 3.5,
     borderColor: EmeraldTokens.mintCta,
     padding: 3,
@@ -746,11 +1159,11 @@ const styles = StyleSheet.create({
   },
   cameraBadgePill: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    bottom: 0,
+    right: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: EmeraldTokens.deepPine,
     borderWidth: 2.5,
     borderColor: '#FFFFFF',
@@ -758,35 +1171,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 4,
   },
   avatarCardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
     color: EmeraldTokens.textSlate,
-    marginTop: 4,
+    textAlign: 'center',
   },
-  avatarCardSubtitle: {
+  avatarCardHandle: {
+    fontSize: 13,
+    color: EmeraldTokens.deepPine,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  avatarCardStall: {
     fontSize: 12,
     color: EmeraldTokens.textMuted,
     marginTop: 2,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   avatarActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     marginTop: 14,
+    marginBottom: 18,
   },
   avatarActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F1F5F3',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    backgroundColor: '#E8F5EF',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#CDE9DE',
   },
   avatarActionBtnText: {
     fontSize: 12,
@@ -797,60 +1221,103 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: '#FEE2E2',
   },
   avatarRemoveBtnText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#DC2626',
   },
 
-  // Presets Row
+  // Section Headers
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 4,
+    paddingLeft: 4,
+  },
+  sectionBadge: {
+    backgroundColor: '#E8F5EF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  sectionBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: EmeraldTokens.deepPine,
+    letterSpacing: 0.5,
+  },
   sectionHeading: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: EmeraldTokens.textSlate,
-    marginBottom: 10,
-    marginLeft: 4,
   },
-  presetsRow: {
+  sectionSubtitle: {
+    fontSize: 12,
+    color: EmeraldTokens.textMuted,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+
+  // Presets Grid (2-column tactile squircles)
+  presetsGrid: {
     flexDirection: 'row',
-    gap: 12,
-    paddingBottom: 4,
-    marginBottom: 20,
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 24,
   },
-  presetChipCard: {
+  presetGridCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 14,
-    width: 140,
+    padding: 12,
     borderWidth: 1.5,
     borderColor: BlueTokens.borders,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
-  presetChipCardActive: {
+  presetGridCardActive: {
     borderColor: EmeraldTokens.mintCta,
     backgroundColor: '#F0FDF4',
+    shadowColor: EmeraldTokens.mintCta,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
   presetMiniIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
-  presetChipTitle: {
+  presetTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  presetTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  presetGridTitle: {
     fontSize: 12,
     fontWeight: '700',
     color: EmeraldTokens.textSlate,
-    textAlign: 'center',
   },
-  presetChipSub: {
+  presetGridSub: {
     fontSize: 10,
     color: EmeraldTokens.textMuted,
-    textAlign: 'center',
     marginTop: 2,
   },
 
@@ -859,7 +1326,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
-    marginBottom: 20,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: BlueTokens.borders,
     shadowColor: BlueTokens.darkNavy,
@@ -870,9 +1337,9 @@ const styles = StyleSheet.create({
   },
   chipFieldLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: EmeraldTokens.textSlate,
-    marginTop: 12,
+    marginTop: 14,
     marginBottom: 8,
   },
   chipsContainer: {
@@ -886,7 +1353,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: 'rgba(0, 0, 0, 0.07)',
   },
   selectionPillActive: {
     backgroundColor: EmeraldTokens.deepPine,
@@ -904,7 +1371,205 @@ const styles = StyleSheet.create({
 
   // Save CTA
   saveCtaContainer: {
+    marginTop: 8,
+    marginBottom: 36,
+  },
+
+  // Live Stall Pass Preview Card (Award-Winning Pass)
+  passCardWrapper: {
+    paddingVertical: 8,
+  },
+  passCard: {
+    backgroundColor: '#0F1E19',
+    borderRadius: 26,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(52, 211, 153, 0.35)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  passHeader: {
+    backgroundColor: '#07130F',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  passGovSeal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  passGovText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FBBF24',
+    letterSpacing: 0.6,
+  },
+  passStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  passStatusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: EmeraldTokens.mintCta,
+  },
+  passStatusText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: EmeraldTokens.mintCta,
+    letterSpacing: 0.5,
+  },
+  passBody: {
+    padding: 22,
+    alignItems: 'center',
+  },
+  passAvatarRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    borderColor: EmeraldTokens.mintCta,
+    padding: 3,
+    backgroundColor: '#0F1E19',
+    marginBottom: 12,
+  },
+  passAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 45,
+  },
+  passAvatarPreset: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 45,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passAvatarFallback: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 45,
+    backgroundColor: EmeraldTokens.deepPine,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passAvatarInitials: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  passBusinessName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  passOwnerName: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  passTagline: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: EmeraldTokens.mintCta,
     marginTop: 6,
-    marginBottom: 30,
+    textAlign: 'center',
+  },
+  passDetailsGrid: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 10,
+  },
+  passDetailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  passDetailLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.45)',
+    letterSpacing: 0.5,
+  },
+  passDetailValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  qrCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 18,
+    width: '100%',
+  },
+  qrTextCol: {
+    flex: 1,
+  },
+  qrTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: EmeraldTokens.textSlate,
+  },
+  qrSub: {
+    fontSize: 11,
+    color: EmeraldTokens.textMuted,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  passFooter: {
+    backgroundColor: '#07130F',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  passFooterText: {
+    fontSize: 9,
+    color: 'rgba(255, 255, 255, 0.45)',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  passActionRow: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  passActionReturnBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  passActionReturnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

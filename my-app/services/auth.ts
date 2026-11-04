@@ -17,6 +17,9 @@ export interface UserSession {
   phone?: string;
   city?: string;
   tagline?: string;
+  stallNumber?: string;
+  merchantTillNumber?: string;
+  operatingHours?: string;
   email: string;
   businessName: string;
   currency: CurrencyCode;

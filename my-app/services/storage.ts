@@ -39,6 +39,9 @@ export interface BusinessProfile {
   email?: string;
   city?: string;
   tagline?: string;
+  stallNumber?: string;
+  merchantTillNumber?: string;
+  operatingHours?: string;
   businessType: string;
   currency: CurrencyCode;
   country: string;
