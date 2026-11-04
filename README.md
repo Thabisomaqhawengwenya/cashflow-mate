@@ -1,11 +1,34 @@
-# CashFlow Mate 🇿🇼
-### AI-Powered Mobile Money & Cash-Flow Assistant for Small Traders in Zimbabwe
+# Cashflow 🇿🇼
+### Production-Ready Multi-User Financial Assistant for Zimbabwean Traders
 
 > **Product Positioning:** *“Understand your money. Make better business decisions.”*  
 > **Target Audience:** Informal market vendors, tuck-shop operators, grocery stalls, clothing vendors, and microbusinesses across Zimbabwe.  
 > **Author & Project Lead:** Mr Q (Maqhawe T Ngwenya)  
 > **Repository:** [https://github.com/Thabisomaqhawengwenya/cashflow-mate](https://github.com/Thabisomaqhawengwenya/cashflow-mate)  
-> **Official Release:** [v1.2.0 (Review Edition)](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0)
+> **Official Release:** [v1.2.0 (Production Edition)](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0)
+> **Backend Architecture:** Supabase Auth + PostgreSQL with Row Level Security (RLS)
+
+---
+
+## 🔐 Supabase Production Setup (Multi-User Backend)
+
+Cashflow connects to Supabase for multi-user authentication and database isolation:
+
+### 1. Environment Configuration (`my-app/.env`)
+Create or edit `my-app/.env` (reference `my-app/.env.example`):
+```bash
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-actual-supabase-anon-key
+```
+
+### 2. Run Database Migrations
+Copy the SQL from `database/supabase_migrations.sql` and run it in the [Supabase SQL Editor](https://supabase.com/dashboard/project/_/sql):
+- **`profiles`**: Linked to `auth.users(id)` with auto-provisioning trigger `on_auth_user_created`, currency preferences, and `onboarding_completed` flag.
+- **`transactions`**: High-performance multi-currency financial records with RLS (`auth.uid() = user_id`) and composite indexes.
+- **`debts`**: Credit book tracking customer & supplier debts with payment tracking and automatic status transitions (`outstanding` -> `partially_paid` -> `settled`).
+- **`inventory`**: Stock catalog with unit costs, selling prices, minimum stock alerts, and 1-tap quick sale recording.
+- **`invoices`**: Quotations and invoices convertible to verified cash sales or customer credit.
+- **`contacts`**: Customer & supplier phonebook directory with transaction volume metrics.
 
 ---
 

@@ -29,6 +29,14 @@ export default function LoginScreen() {
   const [showSecretCode, setShowSecretCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Password Reset Modal State
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const isTypingAdmin =
     email.trim().toLowerCase() === 'admin' ||
@@ -84,16 +92,22 @@ export default function LoginScreen() {
     setError(null);
   };
 
-  const handleDemoLogin = async () => {
-    setError(null);
-    setIsLoading(true);
+  const handleResetPassword = async () => {
+    setResetError(null);
+    setResetSuccess(null);
+    if (!resetEmail.trim() || !resetEmail.includes('@')) {
+      setResetError('Please enter a valid email address.');
+      return;
+    }
+
+    setIsResetting(true);
     try {
-      await MobileAuthService.demoLogin();
-      setIsLoading(false);
-      router.replace('/(tabs)');
-    } catch {
-      setIsLoading(false);
-      setError('Could not initialize demo session.');
+      const res = await MobileAuthService.resetPassword(resetEmail);
+      setIsResetting(false);
+      setResetSuccess(res.message);
+    } catch (err: any) {
+      setIsResetting(false);
+      setResetError(err.message || 'Could not send reset link.');
     }
   };
 
@@ -142,22 +156,22 @@ export default function LoginScreen() {
             </Pressable>
 
             <Pressable
-              onPress={handleDemoLogin}
+              onPress={() => router.push('/signup' as any)}
               style={styles.skipButton}
               accessibilityRole="button"
-              accessibilityLabel="Continue with Mbare Demo Till"
+              accessibilityLabel="Create Account"
             >
-              <Text style={styles.skipText}>Use Demo Till</Text>
-              <Ionicons name="arrow-forward" size={15} color={BlueTokens.accent} />
+              <Text style={styles.skipText}>Sign Up</Text>
+              <Ionicons name="arrow-forward" size={15} color={palette.accent} />
             </Pressable>
           </View>
 
           <View style={styles.brandRow}>
             <AppLogo size={54} />
             <View>
-              <Text style={styles.brandTitle}>CashFlow Mate</Text>
+              <Text style={styles.brandTitle}>Cashflow</Text>
               <Text style={[styles.brandSubtitle, { color: palette.accent }]}>
-                {showAdminFields ? 'DESKTOP ADMIN COMMAND CENTER' : 'ZIM MARKET TILL OS'}
+                {showAdminFields ? 'DESKTOP ADMIN COMMAND CENTER' : 'PROFESSIONAL TRADER OS'}
               </Text>
             </View>
           </View>
@@ -358,26 +372,98 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={[styles.dividerLine, { backgroundColor: surfaces.border }]} />
-            <Text style={[styles.dividerText, { color: surfaces.textMuted }]}>OR EXPLORE</Text>
-            <View style={[styles.dividerLine, { backgroundColor: surfaces.border }]} />
+          {/* Forgot Password Action */}
+          <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 8 }}>
+            <Pressable
+              onPress={() => {
+                setIsResetOpen(!isResetOpen);
+                setResetError(null);
+                setResetSuccess(null);
+                if (!resetEmail && email) setResetEmail(email);
+              }}
+              hitSlop={8}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '600', color: palette.primary }}>
+                {isResetOpen ? 'Close Password Reset' : 'Forgot Password?'}
+              </Text>
+            </Pressable>
           </View>
 
-          {/* Demo Login Quick Action */}
-          <M3Button
-            label="Continue with Mbare Demo Till"
-            onPress={handleDemoLogin}
-            variant="tonal"
-            size="lg"
-            icon={<Ionicons name="storefront-outline" size={18} color={surfaces.textPrimary} />}
-          />
+          {/* Inline Password Reset Section */}
+          {isResetOpen && (
+            <View
+              style={{
+                backgroundColor: surfaces.cardElevatedBg,
+                padding: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: surfaces.border,
+                marginTop: 8,
+                marginBottom: 16,
+              }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '700', color: surfaces.textPrimary, marginBottom: 6 }}>
+                Reset Your Password
+              </Text>
+              <Text style={{ fontSize: 12, color: surfaces.textMuted, marginBottom: 12, lineHeight: 16 }}>
+                Enter the email associated with your account and we will send a password reset link.
+              </Text>
+
+              {resetError ? (
+                <View style={[styles.errorBanner, { marginBottom: 10 }]}>
+                  <Ionicons name="alert-circle" size={16} color="#E11D48" />
+                  <Text style={styles.errorText}>{resetError}</Text>
+                </View>
+              ) : null}
+
+              {resetSuccess ? (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#ECFDF5',
+                    borderWidth: 1,
+                    borderColor: '#6EE7B7',
+                    padding: 10,
+                    borderRadius: 10,
+                    marginBottom: 10,
+                  }}
+                >
+                  <Ionicons name="checkmark-circle" size={16} color="#059669" style={{ marginRight: 6 }} />
+                  <Text style={{ fontSize: 12, color: '#065F46', fontWeight: '600', flex: 1 }}>
+                    {resetSuccess}
+                  </Text>
+                </View>
+              ) : null}
+
+              <M3Input
+                label="Registered Email"
+                placeholder="name@example.com"
+                value={resetEmail}
+                onChangeText={(t) => {
+                  setResetEmail(t);
+                  setResetError(null);
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <View style={{ marginTop: 12 }}>
+                <M3Button
+                  label={isResetting ? 'Sending Link...' : 'Send Password Reset Link'}
+                  onPress={handleResetPassword}
+                  isLoading={isResetting}
+                  variant="filled"
+                  size="md"
+                />
+              </View>
+            </View>
+          )}
 
           {/* Sign Up Link */}
           <View style={styles.footerRow}>
             <Text style={[styles.footerPrompt, { color: surfaces.textMuted }]}>
-              New to CashFlow Mate?
+              New to Cashflow?
             </Text>
             <Pressable
               onPress={() => router.push('/signup' as any)}

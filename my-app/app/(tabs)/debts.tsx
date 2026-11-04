@@ -122,6 +122,8 @@ export default function DebtsScreen() {
       personName: personName.trim(),
       direction,
       totalAmount: t,
+      paidAmount: 0,
+      status: 'outstanding',
       currency,
       recordedDate: getLocalDateString(),
       notes: notes.trim() || undefined,

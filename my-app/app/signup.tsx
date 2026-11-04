@@ -51,7 +51,7 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     try {
-      await MobileAuthService.register({
+      const sess = await MobileAuthService.register({
         name,
         businessName: businessName || `${name}'s Stall`,
         currency,
@@ -59,23 +59,14 @@ export default function SignupScreen() {
         password,
       });
       setIsLoading(false);
-      router.replace('/(tabs)');
+      if (sess.onboardingCompleted === false) {
+        router.replace('/onboarding' as any);
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (err: any) {
       setIsLoading(false);
       setError(err.message || 'Registration failed. Please check your details.');
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      await MobileAuthService.demoLogin();
-      setIsLoading(false);
-      router.replace('/(tabs)');
-    } catch {
-      setIsLoading(false);
-      setError('Could not initialize demo session.');
     }
   };
 
@@ -103,12 +94,12 @@ export default function SignupScreen() {
             </Pressable>
 
             <Pressable
-              onPress={handleDemoLogin}
+              onPress={() => router.replace('/login' as any)}
               style={styles.skipButton}
               accessibilityRole="button"
-              accessibilityLabel="Continue with Mbare Demo Till"
+              accessibilityLabel="Sign in"
             >
-              <Text style={styles.skipText}>Use Demo Till</Text>
+              <Text style={styles.skipText}>Sign In</Text>
             </Pressable>
           </View>
 
@@ -116,10 +107,10 @@ export default function SignupScreen() {
             <AppLogo size={48} />
             <View>
               <Text style={{ fontSize: 19, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.3 }}>
-                CashFlow Mate
+                Cashflow
               </Text>
               <Text style={{ fontSize: 11, fontWeight: '800', color: BlueTokens.accent, letterSpacing: 0.6 }}>
-                ZIM MARKET TILL OS
+                PROFESSIONAL TRADER OS
               </Text>
             </View>
           </View>
@@ -282,14 +273,6 @@ export default function SignupScreen() {
               size="lg"
             />
           </View>
-
-          <M3Button
-            label="Explore with Mbare Demo Till"
-            onPress={handleDemoLogin}
-            variant="tonal"
-            size="md"
-            icon={<Ionicons name="storefront-outline" size={17} color={EmeraldTokens.deepPine} />}
-          />
 
           {/* Switch to Login */}
           <View style={styles.footerRow}>

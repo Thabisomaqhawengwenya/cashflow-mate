@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isSupabaseConfigured } from './supabase';
 import {
   CurrencyCode,
   MobileStorageService,
@@ -60,194 +61,12 @@ export interface TraderContact {
   updatedAt: string;
 }
 
-const INITIAL_INVENTORY: InventoryItem[] = [
-  {
-    id: 'inv_001',
-    name: 'ZimGold Cooking Oil (2L)',
-    sku: 'ZG-OIL-2L',
-    category: 'Groceries',
-    quantity: 18,
-    minStockLevel: 6,
-    unitCost: 3.1,
-    sellingPrice: 3.8,
-    currency: 'USD',
-    supplierName: 'National Foods Depot',
-    updatedAt: '2026-10-28T09:00:00.000Z',
-  },
-  {
-    id: 'inv_002',
-    name: 'Bakers Inn Superior White Loaf',
-    sku: 'BI-LOAF-01',
-    category: 'Bakery',
-    quantity: 4,
-    minStockLevel: 10,
-    unitCost: 0.85,
-    sellingPrice: 1.0,
-    currency: 'USD',
-    supplierName: 'Bakers Inn Logistics',
-    updatedAt: '2026-10-29T07:30:00.000Z',
-  },
-  {
-    id: 'inv_003',
-    name: 'Huletts Brown Sugar (2kg)',
-    sku: 'HL-SUG-2KG',
-    category: 'Groceries',
-    quantity: 14,
-    minStockLevel: 5,
-    unitCost: 2.2,
-    sellingPrice: 2.75,
-    currency: 'USD',
-    supplierName: 'Gain Cash & Carry',
-    updatedAt: '2026-10-28T14:20:00.000Z',
-  },
-  {
-    id: 'inv_004',
-    name: 'Econet Buddie $1 Airtime Card',
-    sku: 'ECO-AIR-1',
-    category: 'Airtime & Vouchers',
-    quantity: 3,
-    minStockLevel: 15,
-    unitCost: 0.92,
-    sellingPrice: 1.0,
-    currency: 'USD',
-    supplierName: 'Econet Wireless',
-    updatedAt: '2026-10-29T11:10:00.000Z',
-  },
-  {
-    id: 'inv_005',
-    name: 'Mazoe Orange Crush (2L)',
-    sku: 'MZ-ORG-2L',
-    category: 'Beverages',
-    quantity: 11,
-    minStockLevel: 5,
-    unitCost: 3.0,
-    sellingPrice: 3.75,
-    currency: 'USD',
-    supplierName: 'Schweppes Zimbabwe',
-    updatedAt: '2026-10-27T16:00:00.000Z',
-  },
-];
-
-const INITIAL_INVOICES: InvoiceQuote[] = [
-  {
-    id: 'qte_001',
-    referenceNumber: 'QT-2026-101',
-    docType: 'quote',
-    customerName: 'Chipo Mupfumi (Catering)',
-    customerPhone: '+263 77 412 8890',
-    currency: 'USD',
-    items: [
-      { description: 'ZimGold Cooking Oil (2L)', quantity: 10, unitPrice: 3.8 },
-      { description: 'Huletts Brown Sugar (2kg)', quantity: 15, unitPrice: 2.7 },
-    ],
-    totalAmount: 78.5,
-    status: 'open',
-    dueDate: '2026-11-10',
-    notes: 'Bulk catering quotation for wedding order in Hatfield',
-    createdAt: '2026-10-28T10:15:00.000Z',
-    updatedAt: '2026-10-28T10:15:00.000Z',
-  },
-  {
-    id: 'qte_002',
-    referenceNumber: 'INV-2026-102',
-    docType: 'invoice',
-    customerName: 'Glen View Tuckshop #9',
-    customerPhone: '+263 78 901 3344',
-    currency: 'USD',
-    items: [
-      { description: 'Mazoe Orange Crush Crate (6x2L)', quantity: 4, unitPrice: 21.5 },
-      { description: 'Bakers Inn Superior Loaf (Dozen)', quantity: 2, unitPrice: 11.5 },
-    ],
-    totalAmount: 109.0,
-    status: 'paid',
-    dueDate: '2026-10-30',
-    notes: 'Settled via EcoCash USD transfer',
-    createdAt: '2026-10-25T08:40:00.000Z',
-    updatedAt: '2026-10-26T14:20:00.000Z',
-  },
-  {
-    id: 'qte_003',
-    referenceNumber: 'QT-2026-103',
-    docType: 'quote',
-    customerName: 'Tendai Ncube',
-    customerPhone: '+263 71 552 0192',
-    currency: 'ZWG',
-    items: [
-      { description: 'Monthly Family Grocery Hamper', quantity: 1, unitPrice: 1450.0 },
-    ],
-    totalAmount: 1450.0,
-    status: 'open',
-    dueDate: '2026-11-12',
-    notes: 'Payable via EcoCash ZiG biller code',
-    createdAt: '2026-10-29T12:00:00.000Z',
-    updatedAt: '2026-10-29T12:00:00.000Z',
-  },
-];
-
-const INITIAL_CONTACTS: TraderContact[] = [
-  {
-    id: 'cnt_001',
-    name: 'Bakers Inn Logistics',
-    role: 'supplier',
-    phone: '+263 77 210 0400',
-    location: 'Graniteside, Harare',
-    preferredCurrency: 'USD',
-    notes: 'Daily morning bread van delivery at 6:30 AM',
-    totalVolumeUsd: 420.0,
-    updatedAt: '2026-10-29T07:30:00.000Z',
-  },
-  {
-    id: 'cnt_002',
-    name: 'National Foods Depot',
-    role: 'supplier',
-    phone: '+263 77 214 8900',
-    location: 'Workington, Harare',
-    preferredCurrency: 'USD',
-    notes: 'Wholesale cooking oil, mealie-meal, and flour supplier',
-    totalVolumeUsd: 890.0,
-    updatedAt: '2026-10-28T11:00:00.000Z',
-  },
-  {
-    id: 'cnt_003',
-    name: 'Mai Ruvimbo',
-    role: 'customer',
-    phone: '+263 78 341 9012',
-    location: 'Mbare Musika Stall #12',
-    preferredCurrency: 'USD',
-    notes: 'Regular bulk buyer — settles credit every Friday',
-    totalVolumeUsd: 165.0,
-    updatedAt: '2026-10-28T16:15:00.000Z',
-  },
-  {
-    id: 'cnt_004',
-    name: 'Simba Moyo',
-    role: 'customer',
-    phone: '+263 71 299 4411',
-    location: 'Highfield, Harare',
-    preferredCurrency: 'USD',
-    notes: 'Catering & grocery repeat customer (InnBucks / EcoCash)',
-    totalVolumeUsd: 240.0,
-    updatedAt: '2026-10-29T09:45:00.000Z',
-  },
-  {
-    id: 'cnt_005',
-    name: 'Gain Cash & Carry',
-    role: 'supplier',
-    phone: '+263 77 400 1122',
-    location: 'Msasa, Harare',
-    preferredCurrency: 'USD',
-    notes: 'Sugar, salt, soap, and dry groceries wholesaler',
-    totalVolumeUsd: 610.0,
-    updatedAt: '2026-10-27T15:00:00.000Z',
-  },
-];
-
 function safeParse<T>(raw: string | null, fallback: T): T {
-  if (!raw) return JSON.parse(JSON.stringify(fallback));
+  if (!raw) return fallback;
   try {
     return JSON.parse(raw) as T;
   } catch {
-    return JSON.parse(JSON.stringify(fallback));
+    return fallback;
   }
 }
 
@@ -256,17 +75,34 @@ export class MobileOperationsService {
   // 1. INVENTORY & SHELF STOCK ENGINE
   // ============================================================================
   static async getInventory(): Promise<InventoryItem[]> {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY_INVENTORY);
-    if (!raw) {
-      await AsyncStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(INITIAL_INVENTORY));
-      return JSON.parse(JSON.stringify(INITIAL_INVENTORY));
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const onlineInv = await SupabaseDataService.getInventory();
+        if (onlineInv) {
+          return onlineInv;
+        }
+      } catch {}
     }
-    return safeParse<InventoryItem[]>(raw, INITIAL_INVENTORY);
+
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_INVENTORY);
+    return safeParse<InventoryItem[]>(raw, []);
   }
 
   static async addInventoryItem(
     input: Omit<InventoryItem, 'id' | 'updatedAt'>
   ): Promise<InventoryItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const created = await SupabaseDataService.createInventoryItem(input);
+        const all = await this.getInventory();
+        all.unshift(created);
+        await AsyncStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(all));
+        return created;
+      } catch {}
+    }
+
     const all = await this.getInventory();
     const newItem: InventoryItem = {
       ...input,
@@ -293,12 +129,23 @@ export class MobileOperationsService {
     const updated: InventoryItem = {
       ...all[idx],
       ...updates,
-      id: all[idx].id, // Preserve original ID
+      id: all[idx].id,
       updatedAt: new Date().toISOString(),
     };
     all[idx] = updated;
     await AsyncStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(all));
     return updated;
+  }
+
+  static async deleteInventoryItem(id: string): Promise<void> {
+    try {
+      const { SupabaseDataService } = await import('./supabaseData');
+      await SupabaseDataService.deleteInventoryItem(id);
+    } catch {}
+
+    const all = await this.getInventory();
+    const filtered = all.filter((i) => i.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(filtered));
   }
 
   /**
@@ -308,6 +155,11 @@ export class MobileOperationsService {
     id: string,
     qtySold: number = 1
   ): Promise<{ item: InventoryItem; transaction: MobileTransaction } | null> {
+    try {
+      const { SupabaseDataService } = await import('./supabaseData');
+      await SupabaseDataService.quickSaleInventory(id);
+    } catch {}
+
     const all = await this.getInventory();
     const idx = all.findIndex((i) => i.id === id);
     if (idx === -1) return null;
@@ -324,19 +176,160 @@ export class MobileOperationsService {
     all[idx] = updatedItem;
     await AsyncStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(all));
 
-    const saleTotal = roundMoney(current.sellingPrice * actualQty);
-    const transaction = await MobileStorageService.saveTransaction({
+    const totalSaleAmount = roundMoney(current.sellingPrice * actualQty);
+    const saleTx = await MobileStorageService.saveTransaction({
       transactionDate: getLocalDateString(),
-      description: `Stock Sale: ${actualQty}x ${current.name}`,
-      amount: saleTotal,
+      description: `Sale: ${actualQty}x ${current.name}`,
+      amount: totalSaleAmount,
       currency: current.currency,
       direction: 'inflow',
       type: 'business_income',
       category: 'sales_goods',
+      notes: `Quick stock sale (Remaining shelf count: ${nextQty})`,
       reviewStatus: 'confirmed',
     });
 
-    return { item: updatedItem, transaction };
+    return { item: updatedItem, transaction: saleTx };
+  }
+
+  // ============================================================================
+  // 2. QUOTATIONS & PRO-FORMA INVOICES ENGINE
+  // ============================================================================
+  static async getInvoices(): Promise<InvoiceQuote[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const onlineInvs = await SupabaseDataService.getInvoices();
+        if (onlineInvs) {
+          return onlineInvs;
+        }
+      } catch {}
+    }
+
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_INVOICES);
+    return safeParse<InvoiceQuote[]>(raw, []);
+  }
+
+  static async addInvoice(
+    input: Omit<InvoiceQuote, 'id' | 'createdAt' | 'updatedAt' | 'referenceNumber' | 'totalAmount' | 'status' | 'dueDate'> &
+      Partial<Pick<InvoiceQuote, 'referenceNumber' | 'totalAmount' | 'status' | 'dueDate'>>
+  ): Promise<InvoiceQuote> {
+    const total =
+      input.totalAmount !== undefined
+        ? input.totalAmount
+        : (input.items || []).reduce((acc, it) => acc + (it.quantity || 1) * (it.unitPrice || 0), 0);
+
+    const ref =
+      input.referenceNumber ||
+      `${input.docType === 'invoice' ? 'INV' : 'QTE'}-${Date.now().toString().slice(-6)}`;
+
+    return this.createInvoiceQuote({
+      docType: input.docType || 'invoice',
+      referenceNumber: ref,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      currency: input.currency || 'USD',
+      items: input.items || [],
+      totalAmount: roundMoney(total),
+      status: input.status || 'open',
+      dueDate: input.dueDate || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      notes: input.notes,
+    });
+  }
+
+  static async createInvoiceQuote(
+    input: Omit<InvoiceQuote, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<InvoiceQuote> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const created = await SupabaseDataService.createInvoice(input);
+        const all = await this.getInvoices();
+        all.unshift(created);
+        await AsyncStorage.setItem(STORAGE_KEY_INVOICES, JSON.stringify(all));
+        return created;
+      } catch {}
+    }
+
+    const all = await this.getInvoices();
+    const newQuote: InvoiceQuote = {
+      ...input,
+      id: `qte_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      totalAmount: roundMoney(Number(input.totalAmount) || 0),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    all.unshift(newQuote);
+    await AsyncStorage.setItem(STORAGE_KEY_INVOICES, JSON.stringify(all));
+    return newQuote;
+  }
+
+  static async deleteInvoice(id: string): Promise<void> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        await SupabaseDataService.deleteInvoice(id);
+      } catch {}
+    }
+
+    const all = await this.getInvoices();
+    const filtered = all.filter((i) => i.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEY_INVOICES, JSON.stringify(filtered));
+  }
+
+  // ============================================================================
+  // 3. CONTACTS DIRECTORY
+  // ============================================================================
+  static async getContacts(): Promise<TraderContact[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const onlineContacts = await SupabaseDataService.getContacts();
+        if (onlineContacts) {
+          return onlineContacts;
+        }
+      } catch {}
+    }
+
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_CONTACTS);
+    return safeParse<TraderContact[]>(raw, []);
+  }
+
+  static async addContact(
+    input: Omit<TraderContact, 'id' | 'updatedAt'>
+  ): Promise<TraderContact> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const created = await SupabaseDataService.createContact(input);
+        const all = await this.getContacts();
+        all.unshift(created);
+        await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(all));
+        return created;
+      } catch {}
+    }
+
+    const all = await this.getContacts();
+    const newContact: TraderContact = {
+      ...input,
+      id: `cnt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      totalVolumeUsd: roundMoney(Number(input.totalVolumeUsd) || 0),
+      updatedAt: new Date().toISOString(),
+    };
+    all.unshift(newContact);
+    await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(all));
+    return newContact;
+  }
+
+  static async deleteContact(id: string): Promise<void> {
+    try {
+      const { SupabaseDataService } = await import('./supabaseData');
+      await SupabaseDataService.deleteContact(id);
+    } catch {}
+
+    const all = await this.getContacts();
+    const filtered = all.filter((c) => c.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(filtered));
   }
 
   /**
@@ -353,9 +346,11 @@ export class MobileOperationsService {
 
     const current = all[idx];
     const actualAdded = Math.max(1, Math.floor(qtyAdded));
+    const nextQty = current.quantity + actualAdded;
+
     const updatedItem: InventoryItem = {
       ...current,
-      quantity: current.quantity + actualAdded,
+      quantity: nextQty,
       updatedAt: new Date().toISOString(),
     };
     all[idx] = updatedItem;
@@ -377,62 +372,6 @@ export class MobileOperationsService {
     }
 
     return { item: updatedItem, transaction };
-  }
-
-  static async deleteInventoryItem(id: string): Promise<void> {
-    const all = await this.getInventory();
-    const filtered = all.filter((i) => i.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(filtered));
-  }
-
-  // ============================================================================
-  // 2. QUOTATIONS & PRO-FORMA INVOICES ENGINE
-  // ============================================================================
-  static async getInvoices(): Promise<InvoiceQuote[]> {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY_INVOICES);
-    if (!raw) {
-      await AsyncStorage.setItem(STORAGE_KEY_INVOICES, JSON.stringify(INITIAL_INVOICES));
-      return JSON.parse(JSON.stringify(INITIAL_INVOICES));
-    }
-    return safeParse<InvoiceQuote[]>(raw, INITIAL_INVOICES);
-  }
-
-  static async addInvoice(input: {
-    docType: 'quote' | 'invoice';
-    customerName: string;
-    customerPhone: string;
-    currency: CurrencyCode;
-    items: InvoiceLineItem[];
-    dueDate?: string;
-    notes?: string;
-  }): Promise<InvoiceQuote> {
-    const all = await this.getInvoices();
-    const totalAmount = roundMoney(
-      input.items.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
-    );
-    const prefix = input.docType === 'invoice' ? 'INV' : 'QT';
-    const seq = 101 + all.length;
-    const nowIso = new Date().toISOString();
-
-    const created: InvoiceQuote = {
-      id: `qte_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      referenceNumber: `${prefix}-2026-${seq}`,
-      docType: input.docType,
-      customerName: input.customerName.trim(),
-      customerPhone: input.customerPhone.trim(),
-      currency: input.currency,
-      items: input.items,
-      totalAmount,
-      status: 'open',
-      dueDate: input.dueDate || getLocalDateString(),
-      notes: input.notes?.trim(),
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
-
-    all.unshift(created);
-    await AsyncStorage.setItem(STORAGE_KEY_INVOICES, JSON.stringify(all));
-    return created;
   }
 
   /**
@@ -494,49 +433,15 @@ export class MobileOperationsService {
       personName: target.customerName,
       direction: 'owed_to_business',
       totalAmount: target.totalAmount,
+      paidAmount: 0,
       currency: target.currency,
       recordedDate: getLocalDateString(),
       dueDate: target.dueDate || getLocalDateString(),
+      status: 'outstanding',
       notes: `${target.referenceNumber} (${target.customerPhone}): ${summaryDesc}`,
     });
 
     return { invoice: updated, debt };
-  }
-
-  static async deleteInvoice(id: string): Promise<void> {
-    const all = await this.getInvoices();
-    const filtered = all.filter((q) => q.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY_INVOICES, JSON.stringify(filtered));
-  }
-
-  // ============================================================================
-  // 3. CUSTOMER & SUPPLIER CRM DIRECTORY
-  // ============================================================================
-  static async getContacts(): Promise<TraderContact[]> {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY_CONTACTS);
-    if (!raw) {
-      await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(INITIAL_CONTACTS));
-      return JSON.parse(JSON.stringify(INITIAL_CONTACTS));
-    }
-    return safeParse<TraderContact[]>(raw, INITIAL_CONTACTS);
-  }
-
-  static async addContact(
-    input: Omit<TraderContact, 'id' | 'updatedAt'>
-  ): Promise<TraderContact> {
-    const all = await this.getContacts();
-    const created: TraderContact = {
-      ...input,
-      id: `cnt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      name: input.name.trim(),
-      phone: input.phone.trim(),
-      location: input.location.trim() || 'Harare, Zimbabwe',
-      totalVolumeUsd: roundMoney(Number(input.totalVolumeUsd) || 0),
-      updatedAt: new Date().toISOString(),
-    };
-    all.unshift(created);
-    await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(all));
-    return created;
   }
 
   static async updateContact(
@@ -556,11 +461,5 @@ export class MobileOperationsService {
     all[idx] = updated;
     await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(all));
     return updated;
-  }
-
-  static async deleteContact(id: string): Promise<void> {
-    const all = await this.getContacts();
-    const filtered = all.filter((c) => c.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(filtered));
   }
 }

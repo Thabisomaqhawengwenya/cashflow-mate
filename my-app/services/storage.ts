@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isSupabaseConfigured } from './supabase';
 
 export type CurrencyCode = 'USD' | 'ZWG' | 'ZAR';
 
@@ -195,300 +196,57 @@ function cloneSeed<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-const INITIAL_BUSINESS: BusinessProfile = {
-  name: 'Mbare Fresh Produce & Tuckshop',
-  ownerName: 'Mr Q',
-  businessType: 'Tuckshop & Market Stall',
+const DEFAULT_EMPTY_BUSINESS: BusinessProfile = {
+  name: 'My Stall',
+  ownerName: '',
+  businessType: 'Retail & Tuckshop',
   currency: 'USD',
   country: 'Zimbabwe',
   preferredLanguage: 'en',
 };
 
-const INITIAL_TRANSACTIONS: MobileTransaction[] = [
-  {
-    id: 'tx_01',
-    transactionDate: '2026-10-02',
-    description: 'EcoCash Merchant: Customer Payment - Bread & Milk',
-    amount: 14.50,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    originalReference: 'MP261002.1022.B49120',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_02',
-    transactionDate: '2026-10-02',
-    description: 'Cash Sales: Daily Counter Groceries',
-    amount: 85.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_03',
-    transactionDate: '2026-10-03',
-    description: 'Bakers Inn Logistics - 50 Crates Sliced Bread',
-    amount: 55.00,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'stock_purchase',
-    originalReference: 'BP261003.0745.C18239',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_04',
-    transactionDate: '2026-10-04',
-    description: 'InnBucks Payment: Chicken cuts & eggs retail',
-    amount: 32.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_05',
-    transactionDate: '2026-10-05',
-    description: 'Kombi Transport - Mbare Musika to Stall',
-    amount: 12.00,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'transport_fuel',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_06',
-    transactionDate: '2026-10-06',
-    description: 'ZETDC Prepaid Token Purchase - Stall Meter #41920',
-    amount: 20.00,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'utilities_electricity',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_07',
-    transactionDate: '2026-10-07',
-    description: 'EcoCash Merchant: Customer Groceries Payment',
-    amount: 48.50,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_08',
-    transactionDate: '2026-10-08',
-    description: 'Stall Rental - Harare City Council Markets October',
-    amount: 70.00,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'rent',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_09',
-    transactionDate: '2026-10-09',
-    description: 'Internal Shift: Cash Drawer Deposit to EcoCash',
-    amount: 100.00,
-    currency: 'USD',
-    direction: 'neutral',
-    type: 'transfer',
-    category: 'transfer_internal',
-    reviewStatus: 'confirmed',
-    notes: 'Rebalancing till float into EcoCash float',
-  },
-  {
-    id: 'tx_10',
-    transactionDate: '2026-10-10',
-    description: 'EcoCash IMTT & Merchant Fee Deduction',
-    amount: 3.80,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'mobile_money_fees',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_11',
-    transactionDate: '2026-10-12',
-    description: 'Cash Sales: Saturday Peak Market Session',
-    amount: 140.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_12',
-    transactionDate: '2026-10-13',
-    description: 'Probrands Zimbabwe - 20x Cooking Oil 2L Boxes',
-    amount: 88.00,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'stock_purchase',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_13',
-    transactionDate: '2026-10-15',
-    description: 'Owner Drawings: Family Groceries & School Bus',
-    amount: 30.00,
-    currency: 'USD',
-    direction: 'outflow',
-    type: 'owner_withdrawal',
-    category: 'owner_drawings',
-    reviewStatus: 'confirmed',
-    notes: 'Excluded from business operating expenses',
-  },
-  {
-    id: 'tx_14',
-    transactionDate: '2026-10-16',
-    description: 'Mukando Savings Club Round Pool Received',
-    amount: 150.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'loan_received',
-    category: 'loan_in',
-    reviewStatus: 'confirmed',
-    notes: 'Mukando capital pool (not sales revenue)',
-  },
-  {
-    id: 'tx_15',
-    transactionDate: '2026-10-18',
-    description: 'EcoCash Payment: Sugar, Rice & Drinks',
-    amount: 64.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_16',
-    transactionDate: '2026-10-22',
-    description: 'Transfer from Farai Haulage (Unidentified)',
-    amount: 25.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'unknown',
-    category: 'uncategorized',
-    reviewStatus: 'pending_review',
-    notes: 'Needs Mr Q verification',
-  },
-  {
-    id: 'tx_17',
-    transactionDate: '2026-10-24',
-    description: 'Cash Sales: Friday Afternoon Weekend Rush',
-    amount: 112.00,
-    currency: 'USD',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_18',
-    transactionDate: '2026-10-25',
-    description: 'EcoCash ZiG: 5x Sugar & Mealie Meal Customer Sale',
-    amount: 320.00,
-    currency: 'ZWG',
-    direction: 'inflow',
-    type: 'business_income',
-    category: 'sales_goods',
-    originalReference: 'EC-ZWG-9021',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_19',
-    transactionDate: '2026-10-25',
-    description: 'Bakers Inn Bread ZiG Delivery Settlement',
-    amount: 140.00,
-    currency: 'ZWG',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'stock_purchase',
-    originalReference: 'BP-ZWG-4412',
-    reviewStatus: 'confirmed',
-  },
-  {
-    id: 'tx_20',
-    transactionDate: '2026-10-26',
-    description: 'Kombi Cross-Border Haulage (Bulawayo-Beitbridge)',
-    amount: 150.00,
-    currency: 'ZAR',
-    direction: 'outflow',
-    type: 'business_expense',
-    category: 'transport_fuel',
-    originalReference: 'ZAR-KM-8821',
-    reviewStatus: 'confirmed',
-  },
-];
-
-const INITIAL_DEBTS: MobileDebt[] = [
-  {
-    id: 'debt_01',
-    personName: 'Mai Panashe (Corner Stall)',
-    direction: 'owed_to_business',
-    totalAmount: 35.00,
-    paidAmount: 15.00,
-    currency: 'USD',
-    recordedDate: '2026-10-14',
-    dueDate: '2026-10-30',
-    status: 'partially_paid',
-    notes: 'Credit for 2x cooking oil and sugar',
-  },
-  {
-    id: 'debt_02',
-    personName: 'Baba Kevin',
-    direction: 'owed_to_business',
-    totalAmount: 22.50,
-    paidAmount: 0.00,
-    currency: 'USD',
-    recordedDate: '2026-10-18',
-    dueDate: '2026-10-28',
-    status: 'outstanding',
-    notes: 'Mealie meal 10kg bag',
-  },
-  {
-    id: 'debt_03',
-    personName: 'Farai Haulage Services',
-    direction: 'owed_by_business',
-    totalAmount: 40.00,
-    paidAmount: 40.00,
-    currency: 'USD',
-    recordedDate: '2026-10-10',
-    status: 'settled',
-    notes: 'Vegetable crate delivery from Musika',
-  },
-];
-
 export class MobileStorageService {
   static async getBusiness(): Promise<BusinessProfile> {
+    try {
+      const { SupabaseDataService } = await import('./supabaseData');
+      const profile = await SupabaseDataService.getProfile();
+      if (profile) {
+        return {
+          name: profile.stallName || 'My Stall',
+          ownerName: profile.fullName || '',
+          businessType: 'Retail & Tuckshop',
+          currency: profile.currency || 'USD',
+          country: 'Zimbabwe',
+          preferredLanguage: 'en',
+          phone: profile.phone || '',
+          city: profile.city || 'Harare (CBD)',
+          avatarUri: profile.avatarUri,
+        };
+      }
+    } catch {}
+
     const data = await AsyncStorage.getItem(STORAGE_KEY_BIZ);
     if (!data) {
-      await AsyncStorage.setItem(STORAGE_KEY_BIZ, JSON.stringify(INITIAL_BUSINESS));
-      return cloneSeed(INITIAL_BUSINESS);
+      return { ...DEFAULT_EMPTY_BUSINESS };
     }
-    const parsed = parseStored<BusinessProfile>(data, cloneSeed(INITIAL_BUSINESS));
-    if (!parsed.ownerName) {
-      parsed.ownerName = 'Mr Q';
-    }
-    return parsed;
+    return parseStored<BusinessProfile>(data, { ...DEFAULT_EMPTY_BUSINESS });
   }
 
   static async updateBusiness(profile: Partial<BusinessProfile>): Promise<BusinessProfile> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        await SupabaseDataService.updateProfile({
+          stallName: profile.name,
+          fullName: profile.ownerName,
+          phone: profile.phone,
+          city: profile.city,
+          currency: profile.currency,
+          avatarUri: profile.avatarUri,
+        });
+      } catch {}
+    }
+
     const current = await this.getBusiness();
     const updated = { ...current, ...profile };
     await AsyncStorage.setItem(STORAGE_KEY_BIZ, JSON.stringify(updated));
@@ -496,15 +254,34 @@ export class MobileStorageService {
   }
 
   static async getTransactions(): Promise<MobileTransaction[]> {
-    const data = await AsyncStorage.getItem(STORAGE_KEY_TX);
-    if (!data) {
-      await AsyncStorage.setItem(STORAGE_KEY_TX, JSON.stringify(INITIAL_TRANSACTIONS));
-      return cloneSeed(INITIAL_TRANSACTIONS);
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const onlineTxs = await SupabaseDataService.getTransactions();
+        if (onlineTxs) {
+          return onlineTxs;
+        }
+      } catch {}
     }
-    return parseStored<MobileTransaction[]>(data, cloneSeed(INITIAL_TRANSACTIONS));
+
+    const data = await AsyncStorage.getItem(STORAGE_KEY_TX);
+    return parseStored<MobileTransaction[]>(data, []);
   }
 
   static async saveTransaction(tx: Omit<MobileTransaction, 'id'>): Promise<MobileTransaction> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const created = await SupabaseDataService.createTransaction(tx);
+        // Update local storage
+        const all = await this.getTransactions();
+        const exists = all.some(t => t.id === created.id);
+        if (!exists) all.unshift(created);
+        await AsyncStorage.setItem(STORAGE_KEY_TX, JSON.stringify(all));
+        return created;
+      } catch {}
+    }
+
     const all = await this.getTransactions();
     const newTx: MobileTransaction = {
       ...tx,
@@ -516,6 +293,13 @@ export class MobileStorageService {
   }
 
   static async updateTransaction(id: string, updates: Partial<MobileTransaction>): Promise<void> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        await SupabaseDataService.updateTransaction(id, updates);
+      } catch {}
+    }
+
     const all = await this.getTransactions();
     const idx = all.findIndex((t) => t.id === id);
     if (idx !== -1) {
@@ -525,60 +309,110 @@ export class MobileStorageService {
   }
 
   static async deleteTransaction(id: string): Promise<void> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        await SupabaseDataService.deleteTransaction(id);
+      } catch {}
+    }
+
     const all = await this.getTransactions();
     const filtered = all.filter((t) => t.id !== id);
     await AsyncStorage.setItem(STORAGE_KEY_TX, JSON.stringify(filtered));
   }
 
   static async getDebts(): Promise<MobileDebt[]> {
-    const data = await AsyncStorage.getItem(STORAGE_KEY_DEBTS);
-    if (!data) {
-      await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(INITIAL_DEBTS));
-      return cloneSeed(INITIAL_DEBTS);
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const onlineDebts = await SupabaseDataService.getDebts();
+        if (onlineDebts) {
+          return onlineDebts;
+        }
+      } catch {}
     }
-    return parseStored<MobileDebt[]>(data, cloneSeed(INITIAL_DEBTS));
+
+    const data = await AsyncStorage.getItem(STORAGE_KEY_DEBTS);
+    return parseStored<MobileDebt[]>(data, []);
   }
 
-  static async saveDebt(debt: Omit<MobileDebt, 'id' | 'paidAmount' | 'status'>): Promise<MobileDebt> {
+  static async saveDebt(
+    debt: Omit<MobileDebt, 'id' | 'paidAmount' | 'status'> &
+      Partial<Pick<MobileDebt, 'paidAmount' | 'status'>>
+  ): Promise<MobileDebt> {
+    const fullDebt: Omit<MobileDebt, 'id'> = {
+      ...debt,
+      paidAmount: debt.paidAmount ?? 0,
+      status: debt.status ?? 'outstanding',
+    };
+
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        const created = await SupabaseDataService.createDebt(fullDebt);
+        const all = await this.getDebts();
+        all.unshift(created);
+        await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(all));
+        return created;
+      } catch {}
+    }
+
     const all = await this.getDebts();
     const newDebt: MobileDebt = {
-      ...debt,
+      ...fullDebt,
       id: `debt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      paidAmount: 0,
-      status: 'outstanding',
     };
     all.unshift(newDebt);
     await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(all));
     return newDebt;
   }
 
-  static async recordDebtPayment(id: string, paymentAmount: number): Promise<number> {
+  static async recordDebtPayment(debtId: string, paymentAmount: number): Promise<number> {
+    if (isSupabaseConfigured) {
+      try {
+        const { SupabaseDataService } = await import('./supabaseData');
+        return await SupabaseDataService.recordDebtPayment(debtId, paymentAmount);
+      } catch {}
+    }
+
     const all = await this.getDebts();
-    const idx = all.findIndex((d) => d.id === id);
-    if (idx === -1) return 0;
-
-    const debt = all[idx];
-    const remaining = roundMoney(Math.max(0, debt.totalAmount - debt.paidAmount));
-    const applied = Math.min(roundMoney(Math.max(0, paymentAmount)), remaining);
-    if (applied <= 0) return 0;
-
-    const newPaid = roundMoney(debt.paidAmount + applied);
-    debt.paidAmount = newPaid;
-    debt.status = newPaid >= debt.totalAmount ? 'settled' : 'partially_paid';
-    await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(all));
-    return applied;
+    const idx = all.findIndex((d) => d.id === debtId);
+    if (idx !== -1) {
+      const debt = all[idx];
+      const outstanding = Math.max(0, debt.totalAmount - debt.paidAmount);
+      const actualApplied = Math.min(paymentAmount, outstanding);
+      const newPaid = roundMoney(debt.paidAmount + actualApplied);
+      const remaining = debt.totalAmount - newPaid;
+      all[idx] = {
+        ...debt,
+        paidAmount: newPaid,
+        status: remaining <= 0.005 ? 'settled' : 'partially_paid',
+      };
+      await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(all));
+      return actualApplied;
+    }
+    return paymentAmount;
   }
 
   static async deleteDebt(id: string): Promise<void> {
+    try {
+      const { SupabaseDataService } = await import('./supabaseData');
+      await SupabaseDataService.deleteDebt(id);
+    } catch {}
+
     const all = await this.getDebts();
     const filtered = all.filter((d) => d.id !== id);
     await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(filtered));
   }
 
+  static async clearAllLocalData(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEY_BIZ);
+    await AsyncStorage.removeItem(STORAGE_KEY_TX);
+    await AsyncStorage.removeItem(STORAGE_KEY_DEBTS);
+  }
+
   static async resetDemoData(): Promise<void> {
-    await AsyncStorage.setItem(STORAGE_KEY_BIZ, JSON.stringify(INITIAL_BUSINESS));
-    await AsyncStorage.setItem(STORAGE_KEY_TX, JSON.stringify(INITIAL_TRANSACTIONS));
-    await AsyncStorage.setItem(STORAGE_KEY_DEBTS, JSON.stringify(INITIAL_DEBTS));
+    await this.clearAllLocalData();
   }
 
   /**

@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "CashFlow Mate",
-    "slug": "cashflow-mate",
+    "name": "Cashflow",
+    "slug": "cashflow",
     "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "cashflowmate",
+    "scheme": "cashflow",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "package": "com.maqhawe.cashflowmate",
+      "package": "com.maqhawe.cashflow",
       "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#06152E",
@@ -31,9 +31,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/app-logo.png",
           "resizeMode": "contain",
-          "backgroundColor": "#F9F9FC"
+          "backgroundColor": "#06152E"
         }
       ]
     ],

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const memoryStore = new Map<string, string>();
+const { memoryStore } = vi.hoisted(() => ({
+  memoryStore: new Map<string, string>(),
+}));
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     getItem: vi.fn(async (key: string) => memoryStore.get(key) || null),
@@ -23,6 +25,19 @@ describe('MobileBackupService', () => {
   beforeEach(async () => {
     memoryStore.clear();
     await MobileStorageService.resetDemoData();
+    await MobileStorageService.saveTransaction({
+      transactionDate: '2026-11-04',
+      description: 'Morning Bread Sale',
+      amount: 10,
+      currency: 'USD',
+      direction: 'inflow',
+      type: 'business_income',
+      category: 'sales',
+      reviewStatus: 'confirmed',
+    });
+    await MobileStorageService.updateBusiness({
+      name: 'Mbare Fresh Produce & Tuckshop',
+    });
   });
 
   it('exports a valid JSON backup with checksum', async () => {

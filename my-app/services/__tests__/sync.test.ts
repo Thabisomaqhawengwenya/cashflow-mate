@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const memoryStore = new Map<string, string>();
+const { memoryStore } = vi.hoisted(() => ({
+  memoryStore: new Map<string, string>(),
+}));
+
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     getItem: vi.fn(async (key: string) => memoryStore.get(key) || null),
@@ -26,6 +29,16 @@ describe('MobileSyncService', () => {
   });
 
   it('reports initial sync status', async () => {
+    await MobileStorageService.saveTransaction({
+      transactionDate: '2026-11-04',
+      description: 'Test sale',
+      amount: 15,
+      currency: 'USD',
+      direction: 'inflow',
+      type: 'business_income',
+      category: 'sales',
+      reviewStatus: 'confirmed',
+    });
     const status = await MobileSyncService.getSyncStatus();
     expect(status.status).toBe('offline');
     expect(status.pendingCount).toBeGreaterThan(0);

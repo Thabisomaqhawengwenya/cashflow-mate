@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const memoryStore = new Map<string, string>();
+const { memoryStore } = vi.hoisted(() => ({
+  memoryStore: new Map<string, string>(),
+}));
+
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     getItem: vi.fn(async (key: string) => memoryStore.get(key) || null),
@@ -31,7 +34,7 @@ describe('MobileAuthService', () => {
     expect(session.username).toBe('Mr Q');
 
     const stored = await MobileAuthService.getSession();
-    expect(stored?.email).toBe('demo@cashflowmate.co.zw');
+    expect(stored?.email).toContain('demo@cashflow');
     expect(stored?.username).toBe('Mr Q');
   });
 

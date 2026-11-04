@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MobileStorageService, CurrencyCode } from './storage';
+import { supabase, isSupabaseConfigured } from './supabase';
+import { SupabaseDataService } from './supabaseData';
 
 export const STORAGE_KEY_AUTH_SESSION = '@cashflow_user_session_v2';
 export const STORAGE_KEY_HAS_ACCOUNT = '@cashflow_has_registered_account_v1';
@@ -27,6 +29,7 @@ export interface UserSession {
   token?: string;
   isLoggedIn: boolean;
   isDemo?: boolean;
+  onboardingCompleted?: boolean;
   loggedInAt: string;
 }
 
@@ -56,162 +59,106 @@ export interface StoredTraderAccount {
   createdAt?: string;
 }
 
-const DEFAULT_DEMO_SESSION: UserSession = {
-  userId: 'user_demo_001',
-  name: 'Mr Q',
-  username: 'Mr Q',
-  email: 'demo@cashflowmate.co.zw',
-  businessName: 'Mbare Fresh Produce & Tuckshop',
-  currency: 'USD',
-  role: 'trader',
-  token: 'mock_jwt_demo_token_valid',
-  isLoggedIn: true,
-  isDemo: true,
-  loggedInAt: new Date().toISOString(),
-};
-
-const SEED_TRADER_ACCOUNTS: StoredTraderAccount[] = [
-  {
-    userId: 'usr_seed_001',
-    name: 'Mr Q',
-    username: 'Mr Q',
-    email: 'mrq@mbaretuckshop.co.zw',
-    phone: '+263 77 200 1001',
-    city: 'Harare (Mbare Musika)',
-    businessName: 'Mbare Fresh Produce & Tuckshop',
-    currency: 'USD',
-    tier: 'enterprise',
-    status: 'active',
-    kycVerified: true,
-    txCount: 142,
-    monthlyVolumeUsd: 4850,
-    flagsCount: 0,
-    lastActive: '2 mins ago',
-    createdAt: '2026-10-15',
-  },
-  {
-    userId: 'usr_seed_002',
-    name: 'Chipo Ndlovu',
-    username: 'Mai Chipo',
-    email: 'chipo@bulawayotraders.co.zw',
-    phone: '+263 71 388 4412',
-    city: 'Bulawayo (Renkini)',
-    businessName: 'Bulawayo Wholesale Grocery Stall #12',
-    currency: 'ZAR',
-    tier: 'pro',
-    status: 'active',
-    kycVerified: true,
-    txCount: 98,
-    monthlyVolumeUsd: 3120,
-    flagsCount: 0,
-    lastActive: '18 mins ago',
-    createdAt: '2026-10-19',
-  },
-  {
-    userId: 'usr_seed_003',
-    name: 'Farai Mutasa',
-    username: 'Farai Agro',
-    email: 'farai@mutarehardware.co.zw',
-    phone: '+263 77 419 9022',
-    city: 'Mutare (Sakubva)',
-    businessName: 'Mutare Timber & Hardware Depot',
-    currency: 'USD',
-    tier: 'pro',
-    status: 'active',
-    kycVerified: true,
-    txCount: 76,
-    monthlyVolumeUsd: 2690,
-    flagsCount: 0,
-    lastActive: '1 hour ago',
-    createdAt: '2026-10-24',
-  },
-  {
-    userId: 'usr_seed_004',
-    name: 'Tariro Moyo',
-    username: 'Tariro Fashion',
-    email: 'tariro@gweruboutique.co.zw',
-    phone: '+263 78 551 3090',
-    city: 'Gweru (CBD Hub)',
-    businessName: 'Gweru CBD Bales & Runner Hub',
-    currency: 'ZWG',
-    tier: 'starter',
-    status: 'active',
-    kycVerified: false,
-    txCount: 34,
-    monthlyVolumeUsd: 780,
-    flagsCount: 0,
-    lastActive: '3 hours ago',
-    createdAt: '2026-10-29',
-  },
-  {
-    userId: 'usr_seed_005',
-    name: 'Tawanda Zhou',
-    username: 'Tawanda Border',
-    email: 'tawanda@beitbridgerunners.co.zw',
-    phone: '+263 77 901 2241',
-    city: 'Beitbridge (Border Post)',
-    businessName: 'Cross-Border Clearing & ZAR Float Stall',
-    currency: 'ZAR',
-    tier: 'pro',
-    status: 'flagged',
-    kycVerified: false,
-    txCount: 61,
-    monthlyVolumeUsd: 1940,
-    flagsCount: 2,
-    lastActive: 'Yesterday',
-    createdAt: '2026-10-27',
-  },
-  {
-    userId: 'usr_seed_006',
-    name: 'Nyasha Gumbo',
-    username: 'Nyasha Agro',
-    email: 'nyasha@masvingofresh.co.zw',
-    phone: '+263 71 774 1180',
-    city: 'Masvingo (Chitima Market)',
-    businessName: 'Chitima Grain & Poultry Supply',
-    currency: 'USD',
-    tier: 'enterprise',
-    status: 'active',
-    kycVerified: true,
-    txCount: 115,
-    monthlyVolumeUsd: 3910,
-    flagsCount: 0,
-    lastActive: '42 mins ago',
-    createdAt: '2026-10-21',
-  },
-];
+function formatAuthError(err: any): string {
+  if (!err) return 'An unexpected authentication error occurred.';
+  const msg = typeof err === 'string' ? err : err.message || '';
+  const lower = msg.toLowerCase();
+  if (lower.includes('invalid login credentials') || lower.includes('invalid credentials')) {
+    return 'Incorrect email or password. Please verify your credentials.';
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'Please check your inbox and verify your email address before logging in.';
+  }
+  if (lower.includes('user already registered') || lower.includes('already exists')) {
+    return 'An account with this email already exists. Please sign in instead.';
+  }
+  if (lower.includes('password') && lower.includes('least 6')) {
+    return 'Password must be at least 6 characters.';
+  }
+  if (lower.includes('network') || lower.includes('fetch failed') || lower.includes('failed to fetch')) {
+    return 'Network error. Please check your internet connection.';
+  }
+  return msg || 'Authentication request failed.';
+}
 
 export class MobileAuthService {
   /**
-   * Get active user session
+   * Get active user session from Supabase or cached storage
    */
   static async getSession(): Promise<UserSession | null> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          // If no active Supabase session, clear local cached trader session (preserve local admin if active)
+          const localRaw = await AsyncStorage.getItem(STORAGE_KEY_AUTH_SESSION);
+          if (localRaw) {
+            try {
+              const parsed = JSON.parse(localRaw) as UserSession;
+              if (parsed.role === 'admin') return parsed;
+            } catch {}
+          }
+          await AsyncStorage.removeItem(STORAGE_KEY_AUTH_SESSION);
+          return null;
+        }
+
+        const user = session.user;
+        const profile = await SupabaseDataService.getProfile();
+
+        const userSession: UserSession = {
+          userId: user.id,
+          name: profile?.fullName || (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'Trader',
+          username: profile?.fullName || (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'Trader',
+          email: user.email || '',
+          businessName: profile?.stallName || (user.user_metadata?.business_name as string) || 'My Stall',
+          currency: profile?.currency || (user.user_metadata?.currency as CurrencyCode) || 'USD',
+          role: (user.user_metadata?.role as any) || 'trader',
+          token: session.access_token,
+          isLoggedIn: true,
+          isDemo: false,
+          onboardingCompleted: profile ? profile.onboardingCompleted : false,
+          avatarUri: profile?.avatarUri,
+          city: profile?.city,
+          phone: profile?.phone,
+          loggedInAt: new Date().toISOString(),
+        };
+
+        await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(userSession));
+        return userSession;
+      } catch {
+        // Fall back to AsyncStorage if offline
+      }
+    }
+
     const raw = await AsyncStorage.getItem(STORAGE_KEY_AUTH_SESSION);
     if (!raw) return null;
     try {
       const parsed = JSON.parse(raw) as UserSession;
-      if (parsed.isDemo && (parsed.name === 'Tinashe Moyo' || !parsed.username)) {
-        parsed.name = 'Mr Q';
-        parsed.username = 'Mr Q';
-        await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(parsed));
-      }
       if (!parsed.username && parsed.name) {
         parsed.username = parsed.name;
-      }
-      if (
-        parsed.role === 'admin' ||
-        parsed.userId?.startsWith('admin') ||
-        parsed.email?.toLowerCase() === 'admin' ||
-        parsed.email?.toLowerCase().startsWith('admin@') ||
-        parsed.username?.toLowerCase() === 'admin' ||
-        parsed.name?.toLowerCase().includes('admin')
-      ) {
-        parsed.role = 'admin';
       }
       return parsed;
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Listen to auth state transitions
+   */
+  static onAuthStateChange(callback: (session: UserSession | null) => void) {
+    if (isSupabaseConfigured) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (!session) {
+          callback(null);
+        } else {
+          const fresh = await this.getSession();
+          callback(fresh);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+    return () => {};
   }
 
   /**
@@ -224,19 +171,11 @@ export class MobileAuthService {
 
   static async getAllAccounts(): Promise<StoredTraderAccount[]> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_REGISTERED_USERS);
-    if (!raw) {
-      await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(SEED_TRADER_ACCOUNTS));
-      return SEED_TRADER_ACCOUNTS;
-    }
+    if (!raw) return [];
     try {
-      const parsed = JSON.parse(raw) as StoredTraderAccount[];
-      if (parsed.length === 0) {
-        await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(SEED_TRADER_ACCOUNTS));
-        return SEED_TRADER_ACCOUNTS;
-      }
-      return parsed;
+      return JSON.parse(raw) as StoredTraderAccount[];
     } catch {
-      return SEED_TRADER_ACCOUNTS;
+      return [];
     }
   }
 
@@ -254,7 +193,7 @@ export class MobileAuthService {
   }
 
   /**
-   * Authenticate Administrator with Username/Email, Password, and Secret Access Code
+   * Authenticate Administrator
    */
   static async adminLogin(
     usernameOrEmail: string,
@@ -302,153 +241,19 @@ export class MobileAuthService {
       name: 'Mr Q (Admin HQ)',
       username: 'Mr Q',
       email: 'admin@cashflow.co.zw',
-      businessName: 'CashFlow Mate Command Center',
+      businessName: 'Cashflow Command Center',
       currency: 'USD',
       role: 'admin',
       token: `cfm_admin_jwt_${Date.now()}`,
       isLoggedIn: true,
       isDemo: false,
+      onboardingCompleted: true,
       loggedInAt: new Date().toISOString(),
     };
 
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(adminSession));
     await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
     return adminSession;
-  }
-
-  /**
-   * Log in user with email & password (offline-tolerant)
-   */
-  static async login(email: string, password: string): Promise<UserSession> {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPass = password.trim();
-
-    if (!cleanEmail || !cleanPass) {
-      throw new Error('Please enter both email and password.');
-    }
-
-    // Check if demo account
-    if (cleanEmail === 'demo@cashflowmate.co.zw' || cleanEmail === 'demo') {
-      return this.demoLogin();
-    }
-
-    // Check if this email matches a registered local account
-    const accounts = await this.getAllAccounts();
-    const existing = accounts.find(
-      (a) =>
-        a.email.toLowerCase() === cleanEmail ||
-        a.username.toLowerCase() === cleanEmail
-    );
-
-    if (existing && existing.status === 'suspended') {
-      throw new Error('This trader account has been suspended by Admin HQ.');
-    }
-
-    if (existing && existing.password && existing.password !== cleanPass) {
-      throw new Error('Incorrect password for this trader account.');
-    }
-
-    const namePart = cleanEmail.split('@')[0];
-    const fallbackName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-    const resolvedName = existing?.name || fallbackName;
-    const resolvedUsername = existing?.username || resolvedName;
-    const resolvedBusiness = existing?.businessName || `${resolvedName}'s Enterprise`;
-    const resolvedCurrency = existing?.currency || 'USD';
-
-    const session: UserSession = {
-      userId: existing?.userId || `usr_${Date.now()}`,
-      name: resolvedName,
-      username: resolvedUsername,
-      email: cleanEmail,
-      businessName: resolvedBusiness,
-      currency: resolvedCurrency,
-      role: 'trader',
-      token: `cfm_token_${Date.now()}`,
-      isLoggedIn: true,
-      isDemo: false,
-      loggedInAt: new Date().toISOString(),
-    };
-
-    await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
-    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
-
-    // Sync business profile
-    await MobileStorageService.updateBusiness({
-      name: session.businessName,
-      ownerName: session.username,
-      businessType: 'retail',
-      currency: session.currency,
-      country: 'ZW',
-      preferredLanguage: 'en',
-    });
-
-    return session;
-  }
-
-  /**
-   * Register a new trader account
-   */
-  static async register(data: {
-    name: string;
-    email: string;
-    password: string;
-    businessName: string;
-    currency: CurrencyCode;
-  }): Promise<UserSession> {
-    const cleanName = data.name.trim();
-    const cleanEmail = data.email.trim().toLowerCase();
-    const cleanPass = data.password.trim();
-    const cleanBiz = data.businessName.trim() || `${cleanName}'s Stall`;
-
-    if (!cleanName) throw new Error('Please enter your full name.');
-    if (!cleanEmail || !cleanEmail.includes('@')) throw new Error('Please enter a valid email address.');
-    if (!cleanPass || cleanPass.length < 6) throw new Error('Password must be at least 6 characters.');
-
-    const userId = `usr_${Date.now()}`;
-    const session: UserSession = {
-      userId,
-      name: cleanName,
-      username: cleanName,
-      email: cleanEmail,
-      businessName: cleanBiz,
-      currency: data.currency || 'USD',
-      role: 'trader',
-      token: `cfm_token_${Date.now()}`,
-      isLoggedIn: true,
-      isDemo: false,
-      loggedInAt: new Date().toISOString(),
-    };
-
-    const accounts = await this.getAllAccounts();
-    const filtered = accounts.filter((a) => a.email.toLowerCase() !== cleanEmail);
-    filtered.unshift({
-      userId,
-      name: cleanName,
-      username: cleanName,
-      email: cleanEmail,
-      password: cleanPass,
-      businessName: cleanBiz,
-      currency: data.currency || 'USD',
-      tier: 'starter',
-      status: 'active',
-      createdAt: new Date().toISOString().slice(0, 10),
-    });
-
-    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(filtered));
-    await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
-    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
-
-    // Update local business profile
-    await MobileStorageService.updateBusiness({
-      name: cleanBiz,
-      ownerName: cleanName,
-      businessType: 'retail',
-      currency: data.currency || 'USD',
-      country: 'ZW',
-      preferredLanguage: 'en',
-    });
-
-    return session;
   }
 
   /**
@@ -511,7 +316,7 @@ export class MobileAuthService {
 
   static async adminToggleKyc(userId: string): Promise<StoredTraderAccount[]> {
     const accounts = await this.getAllAccounts();
-    const updated = accounts.map((acc) =>
+    const updated = accounts.map((acc: StoredTraderAccount) =>
       acc.userId === userId ? { ...acc, kycVerified: !acc.kycVerified } : acc
     );
     await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
@@ -520,7 +325,7 @@ export class MobileAuthService {
 
   static async adminToggleAccountStatus(userId: string): Promise<StoredTraderAccount[]> {
     const accounts = await this.getAllAccounts();
-    const updated = accounts.map((acc) =>
+    const updated = accounts.map((acc: StoredTraderAccount) =>
       acc.userId === userId
         ? { ...acc, status: (acc.status === 'suspended' ? 'active' : 'suspended') as 'active' | 'suspended' }
         : acc
@@ -534,7 +339,7 @@ export class MobileAuthService {
     tier: 'starter' | 'pro' | 'enterprise'
   ): Promise<StoredTraderAccount[]> {
     const accounts = await this.getAllAccounts();
-    const updated = accounts.map((acc) =>
+    const updated = accounts.map((acc: StoredTraderAccount) =>
       acc.userId === userId ? { ...acc, tier } : acc
     );
     await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
@@ -543,26 +348,353 @@ export class MobileAuthService {
 
   static async adminDeleteAccount(userId: string): Promise<StoredTraderAccount[]> {
     const accounts = await this.getAllAccounts();
-    const updated = accounts.filter((acc) => acc.userId !== userId);
+    const updated = accounts.filter((acc: StoredTraderAccount) => acc.userId !== userId);
     await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updated));
     return updated;
   }
 
-  /**
-   * Instant Demo Login
-   */
   static async demoLogin(): Promise<UserSession> {
-    const session = {
-      ...DEFAULT_DEMO_SESSION,
+    const session: UserSession = {
+      userId: 'user_demo_001',
+      name: 'Mr Q',
+      username: 'Mr Q',
+      email: 'demo@cashflow.co.zw',
+      businessName: 'Mbare Fresh Produce',
+      currency: 'USD',
+      role: 'trader',
+      token: 'cfm_demo_token',
+      isLoggedIn: true,
+      isDemo: true,
+      onboardingCompleted: true,
       loggedInAt: new Date().toISOString(),
     };
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
-    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
     return session;
   }
 
   /**
-   * Update active user session details (e.g. username, name, businessName, avatarUri)
+   * Log in user with email & password via Supabase
+   */
+  static async login(email: string, password: string): Promise<UserSession> {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    if (!cleanEmail || !cleanPass) {
+      throw new Error('Please enter both email and password.');
+    }
+
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: cleanPass,
+      });
+
+      if (error) {
+        throw new Error(formatAuthError(error));
+      }
+
+      if (!data.user || !data.session) {
+        throw new Error('Sign in succeeded but session could not be established. Please check verification.');
+      }
+
+      const profile = await SupabaseDataService.getProfile();
+      const resolvedName = profile?.fullName || (data.user.user_metadata?.full_name as string) || cleanEmail.split('@')[0];
+      const resolvedBiz = profile?.stallName || (data.user.user_metadata?.business_name as string) || `${resolvedName}'s Business`;
+      const resolvedCurrency = (profile?.currency || data.user.user_metadata?.currency || 'USD') as CurrencyCode;
+
+      const session: UserSession = {
+        userId: data.user.id,
+        name: resolvedName,
+        username: resolvedName,
+        email: cleanEmail,
+        businessName: resolvedBiz,
+        currency: resolvedCurrency,
+        role: 'trader',
+        token: data.session.access_token,
+        isLoggedIn: true,
+        isDemo: false,
+        onboardingCompleted: profile ? profile.onboardingCompleted : false,
+        loggedInAt: new Date().toISOString(),
+      };
+
+      await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+      await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+
+      await MobileStorageService.updateBusiness({
+        name: session.businessName,
+        ownerName: session.name,
+        businessType: 'retail',
+        currency: session.currency,
+        country: 'ZW',
+        preferredLanguage: 'en',
+      });
+
+      return session;
+    }
+
+    // Local fallback for offline/development without Supabase keys
+    const accounts = await this.getAllAccounts();
+    const existing = accounts.find(
+      (a) =>
+        a.email.toLowerCase() === cleanEmail ||
+        a.username.toLowerCase() === cleanEmail
+    );
+
+    if (existing && existing.status === 'suspended') {
+      throw new Error('This trader account has been suspended by Admin HQ.');
+    }
+
+    if (existing && existing.password && existing.password !== cleanPass) {
+      throw new Error('Incorrect password for this trader account.');
+    }
+
+    const namePart = cleanEmail.split('@')[0];
+    const fallbackName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    const resolvedName = existing?.name || fallbackName;
+    const resolvedUsername = existing?.username || resolvedName;
+    const resolvedBusiness = existing?.businessName || `${resolvedName}'s Business`;
+    const resolvedCurrency = existing?.currency || 'USD';
+
+    const session: UserSession = {
+      userId: existing?.userId || `usr_${Date.now()}`,
+      name: resolvedName,
+      username: resolvedUsername,
+      email: cleanEmail,
+      businessName: resolvedBusiness,
+      currency: resolvedCurrency,
+      role: 'trader',
+      token: `cfm_token_${Date.now()}`,
+      isLoggedIn: true,
+      isDemo: false,
+      onboardingCompleted: true,
+      loggedInAt: new Date().toISOString(),
+    };
+
+    await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+
+    await MobileStorageService.updateBusiness({
+      name: session.businessName,
+      ownerName: session.username,
+      businessType: 'retail',
+      currency: session.currency,
+      country: 'ZW',
+      preferredLanguage: 'en',
+    });
+
+    return session;
+  }
+
+  /**
+   * Register a new trader account with Supabase
+   */
+  static async register(data: {
+    name: string;
+    email: string;
+    password: string;
+    businessName: string;
+    currency: CurrencyCode;
+  }): Promise<UserSession> {
+    const cleanName = data.name.trim();
+    const cleanEmail = data.email.trim().toLowerCase();
+    const cleanPass = data.password.trim();
+    const cleanBiz = data.businessName.trim() || `${cleanName}'s Business`;
+
+    if (!cleanName) throw new Error('Please enter your full name.');
+    if (!cleanEmail || !cleanEmail.includes('@')) throw new Error('Please enter a valid email address.');
+    if (!cleanPass || cleanPass.length < 6) throw new Error('Password must be at least 6 characters.');
+
+    if (isSupabaseConfigured) {
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: cleanPass,
+        options: {
+          data: {
+            full_name: cleanName,
+            business_name: cleanBiz,
+            currency: data.currency || 'USD',
+          },
+        },
+      });
+
+      if (error) {
+        throw new Error(formatAuthError(error));
+      }
+
+      const user = authData.user;
+      if (!user) {
+        throw new Error('Registration could not be completed. Please try again.');
+      }
+
+      // Upsert profile row into Supabase
+      try {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          email: cleanEmail,
+          full_name: cleanName,
+          stall_name: cleanBiz,
+          currency: data.currency || 'USD',
+          onboarding_completed: false,
+          role: 'trader',
+        });
+      } catch {}
+
+      const session: UserSession = {
+        userId: user.id,
+        name: cleanName,
+        username: cleanName,
+        email: cleanEmail,
+        businessName: cleanBiz,
+        currency: data.currency || 'USD',
+        role: 'trader',
+        token: authData.session?.access_token || `token_${user.id}`,
+        isLoggedIn: true,
+        isDemo: false,
+        onboardingCompleted: false,
+        loggedInAt: new Date().toISOString(),
+      };
+
+      await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+      await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+
+      await MobileStorageService.updateBusiness({
+        name: cleanBiz,
+        ownerName: cleanName,
+        businessType: 'retail',
+        currency: data.currency || 'USD',
+        country: 'ZW',
+        preferredLanguage: 'en',
+      });
+
+      return session;
+    }
+
+    // Local fallback for offline mode
+    const userId = `usr_${Date.now()}`;
+    const session: UserSession = {
+      userId,
+      name: cleanName,
+      username: cleanName,
+      email: cleanEmail,
+      businessName: cleanBiz,
+      currency: data.currency || 'USD',
+      role: 'trader',
+      token: `cfm_token_${Date.now()}`,
+      isLoggedIn: true,
+      isDemo: false,
+      onboardingCompleted: false,
+      loggedInAt: new Date().toISOString(),
+    };
+
+    const accounts = await this.getAllAccounts();
+    const filtered = accounts.filter((a) => a.email.toLowerCase() !== cleanEmail);
+    filtered.unshift({
+      userId,
+      name: cleanName,
+      username: cleanName,
+      email: cleanEmail,
+      password: cleanPass,
+      businessName: cleanBiz,
+      currency: data.currency || 'USD',
+      tier: 'starter',
+      status: 'active',
+      createdAt: new Date().toISOString().slice(0, 10),
+    });
+
+    await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(filtered));
+    await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+    await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+
+    await MobileStorageService.updateBusiness({
+      name: cleanBiz,
+      ownerName: cleanName,
+      businessType: 'retail',
+      currency: data.currency || 'USD',
+      country: 'ZW',
+      preferredLanguage: 'en',
+    });
+
+    return session;
+  }
+
+  /**
+   * Send password reset email
+   */
+  static async resetPassword(email: string): Promise<{ success: boolean; message: string }> {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Please enter a valid email address.');
+    }
+
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail);
+      if (error) {
+        throw new Error(formatAuthError(error));
+      }
+      return {
+        success: true,
+        message: 'Password reset link sent to your email. Please check your inbox.',
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Password reset instructions sent. Please check your inbox.',
+    };
+  }
+
+  /**
+   * Complete user onboarding setup (currency, optional starting float)
+   */
+  static async completeOnboarding(params: {
+    currency: CurrencyCode;
+    startingFloat?: number;
+    businessName?: string;
+  }): Promise<void> {
+    const session = await this.getSession();
+    if (!session) throw new Error('No active session.');
+
+    const startingFloat = Number(params.startingFloat) || 0;
+    const currency = params.currency || session.currency;
+    const businessName = params.businessName?.trim() || session.businessName;
+
+    // 1. Update profile in Supabase
+    if (isSupabaseConfigured) {
+      try {
+        await SupabaseDataService.updateProfile({
+          currency,
+          stallName: businessName,
+          startingBalance: startingFloat,
+          onboardingCompleted: true,
+        });
+      } catch {}
+    }
+
+    // 2. If starting float > 0, create initial transaction
+    if (startingFloat > 0) {
+      await MobileStorageService.saveTransaction({
+        transactionDate: new Date().toISOString().slice(0, 10),
+        description: 'Opening Cash Float (Initial Setup)',
+        direction: 'inflow',
+        type: 'business_income',
+        category: 'sales',
+        amount: startingFloat,
+        currency,
+        notes: 'Initial starting cash balance set during account onboarding.',
+        reviewStatus: 'confirmed',
+      });
+    }
+
+    // 3. Update session
+    await this.updateSession({
+      currency,
+      businessName,
+      onboardingCompleted: true,
+    });
+  }
+
+  /**
+   * Update active user session details
    */
   static async updateSession(partial: Partial<UserSession>): Promise<UserSession | null> {
     const current = await this.getSession();
@@ -573,31 +705,19 @@ export class MobileAuthService {
     };
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(updated));
 
-    // Keep stored accounts in sync for admin views and relogin
-    try {
-      const accounts = await this.getAllAccounts();
-      const updatedAccounts = accounts.map((acc) => {
-        if (acc.userId === current.userId || acc.email === current.email) {
-          return {
-            ...acc,
-            name: partial.name !== undefined ? partial.name : acc.name,
-            username: partial.username !== undefined ? partial.username : acc.username,
-            businessName: partial.businessName !== undefined ? partial.businessName : acc.businessName,
-            currency: partial.currency !== undefined ? partial.currency : acc.currency,
-            phone: partial.phone !== undefined ? partial.phone : acc.phone,
-            city: partial.city !== undefined ? partial.city : acc.city,
-            tagline: partial.tagline !== undefined ? partial.tagline : acc.tagline,
-            avatarUri: partial.avatarUri !== undefined ? partial.avatarUri : acc.avatarUri,
-            avatarPreset: partial.avatarPreset !== undefined ? partial.avatarPreset : acc.avatarPreset,
-            stallNumber: partial.stallNumber !== undefined ? partial.stallNumber : acc.stallNumber,
-            merchantTillNumber: partial.merchantTillNumber !== undefined ? partial.merchantTillNumber : acc.merchantTillNumber,
-            operatingHours: partial.operatingHours !== undefined ? partial.operatingHours : acc.operatingHours,
-          };
-        }
-        return acc;
-      });
-      await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updatedAccounts));
-    } catch {}
+    if (isSupabaseConfigured && current.userId) {
+      try {
+        await SupabaseDataService.updateProfile({
+          fullName: partial.name,
+          stallName: partial.businessName,
+          currency: partial.currency,
+          phone: partial.phone,
+          city: partial.city,
+          avatarUri: partial.avatarUri,
+          onboardingCompleted: partial.onboardingCompleted,
+        });
+      } catch {}
+    }
 
     return updated;
   }
@@ -606,6 +726,11 @@ export class MobileAuthService {
    * Sign out current user
    */
   static async logout(): Promise<void> {
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.auth.signOut();
+      } catch {}
+    }
     await AsyncStorage.removeItem(STORAGE_KEY_AUTH_SESSION);
   }
 }

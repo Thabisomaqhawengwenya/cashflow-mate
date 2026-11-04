@@ -97,10 +97,12 @@ function RootLayoutNav() {
 
   const firstSegment = segments[0] as string | undefined;
   const isAuthScreen = firstSegment === 'login' || firstSegment === 'signup';
+  const isOnboardingScreen = firstSegment === 'onboarding';
 
   useEffect(() => {
     let active = true;
-    (async () => {
+
+    const checkSession = async () => {
       const session = await MobileAuthService.getSession();
       const loggedIn = Boolean(session && session.isLoggedIn);
       if (!active) return;
@@ -111,19 +113,32 @@ function RootLayoutNav() {
       if (!loggedIn && !isAuthScreen) {
         // Always open the Sign In (/login) page first for unauthenticated users
         router.replace('/login' as any);
-      } else if (loggedIn && session?.role === 'admin' && firstSegment !== 'admin' && !isAuthScreen) {
-        // Admin accounts must only see the Admin Back-Office Portal, never regular user pages
-        router.replace('/admin' as any);
-      } else if (loggedIn && session?.role !== 'admin' && firstSegment === 'admin') {
-        // Regular trader accounts cannot access the Admin Portal
-        router.replace('/(tabs)' as any);
+      } else if (loggedIn && session?.role === 'admin') {
+        if (firstSegment !== 'admin') {
+          router.replace('/admin' as any);
+        }
+      } else if (loggedIn && session?.role !== 'admin') {
+        if (firstSegment === 'admin') {
+          router.replace('/(tabs)' as any);
+        } else if (session?.onboardingCompleted === false && !isOnboardingScreen) {
+          router.replace('/onboarding' as any);
+        } else if (session?.onboardingCompleted === true && (isAuthScreen || isOnboardingScreen)) {
+          router.replace('/(tabs)' as any);
+        }
       }
-    })();
+    };
+
+    checkSession();
+
+    const unsub = MobileAuthService.onAuthStateChange(() => {
+      if (active) checkSession();
+    });
 
     return () => {
       active = false;
+      unsub();
     };
-  }, [firstSegment, isAuthScreen]);
+  }, [firstSegment, isAuthScreen, isOnboardingScreen]);
 
   const shouldMaskProtectedContent = !isAuthChecked || (!isAuthenticated && !isAuthScreen);
 
@@ -135,6 +150,7 @@ function RootLayoutNav() {
             <Stack>
               <Stack.Screen name="login" options={{ headerShown: false }} />
               <Stack.Screen name="signup" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="inventory" options={{ headerShown: false }} />
               <Stack.Screen name="invoices" options={{ headerShown: false }} />

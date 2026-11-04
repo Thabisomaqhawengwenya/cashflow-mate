@@ -1,7 +1,9 @@
 /* eslint-disable import/first */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const memoryStore = new Map<string, string>();
+const { memoryStore } = vi.hoisted(() => ({
+  memoryStore: new Map<string, string>(),
+}));
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     getItem: vi.fn(async (key: string) => memoryStore.get(key) || null),

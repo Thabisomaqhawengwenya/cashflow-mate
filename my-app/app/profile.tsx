@@ -241,6 +241,28 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out of your Cashflow account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            await MobileAuthService.logout();
+            if (Platform.OS === 'web' && typeof window !== 'undefined') {
+              window.location.assign('/login');
+              return;
+            }
+            router.replace('/login' as any);
+          },
+        },
+      ]
+    );
+  };
+
   const activePreset = getPresetById(selectedPresetId);
 
   if (loading) {
@@ -772,6 +794,30 @@ export default function ProfileScreen() {
                   disabled={saving}
                   onPress={handleSaveProfile}
                 />
+
+                <View style={{ marginTop: 14 }}>
+                  <Pressable
+                    onPress={handleLogout}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#FEF2F2',
+                      borderWidth: 1.5,
+                      borderColor: '#FECACA',
+                      paddingVertical: 14,
+                      borderRadius: 9999,
+                      gap: 8,
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Log out of Cashflow"
+                  >
+                    <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#EF4444', letterSpacing: 0.5 }}>
+                      LOG OUT OF CASHFLOW
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             </>
           ) : (
