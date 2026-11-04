@@ -12,6 +12,11 @@ export interface UserSession {
   userId: string;
   name: string;
   username?: string;
+  avatarUri?: string;
+  avatarPreset?: string;
+  phone?: string;
+  city?: string;
+  tagline?: string;
   email: string;
   businessName: string;
   currency: CurrencyCode;

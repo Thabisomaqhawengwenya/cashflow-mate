@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   Pressable,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -369,28 +370,49 @@ export default function ModalScreen() {
       >
         {/* 2. Overlapping Hero Profile Card (Directly from Screen 2) */}
         <View style={styles.heroProfileCard}>
-          {/* Centered Circular Avatar */}
-          <View style={styles.avatarWrapper}>
+          {/* Centered Circular Avatar with Camera Badge */}
+          <Pressable
+            onPress={() => router.push('/profile' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile and photo"
+            style={styles.avatarWrapper}
+          >
             <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={32} color={EmeraldTokens.deepPine} />
+              {business?.avatarUri ? (
+                <Image source={{ uri: business.avatarUri }} style={styles.avatarImage} />
+              ) : (
+                <Ionicons name="person" size={32} color={EmeraldTokens.deepPine} />
+              )}
             </View>
-          </View>
+            <View style={styles.avatarCameraBadge}>
+              <Ionicons name="camera" size={13} color="#FFFFFF" />
+            </View>
+          </Pressable>
 
           <Text style={styles.profileName} numberOfLines={2}>
             {userDisplayName}
           </Text>
           <Text style={styles.profileContact}>
-            {business?.name || 'Mbare Fresh Produce & Tuckshop'} &bull; Harare, Zimbabwe
+            {business?.name || 'Mbare Fresh Produce & Tuckshop'} &bull; {business?.city || 'Harare'}, Zimbabwe
           </Text>
 
           <View style={styles.badgeRow}>
             <View style={styles.mintChip}>
               <Text style={styles.mintChipText}>
                 {license?.isValid
-                  ? `${license.tier.toUpperCase()} TIER \u2022 HARARE`
+                  ? `${license.tier.toUpperCase()} TIER \u2022 ${(business?.city || 'Harare').toUpperCase()}`
                   : 'STARTER TIER'}
               </Text>
             </View>
+            <Pressable
+              onPress={() => router.push('/profile' as any)}
+              style={styles.editProfileBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile details and photo"
+            >
+              <Ionicons name="create-outline" size={13} color={EmeraldTokens.deepPine} />
+              <Text style={styles.editProfileBtnText}>Edit Profile</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -419,26 +441,26 @@ export default function ModalScreen() {
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
           </Pressable>
 
-          {/* Item 0: Trader Profile & Username */}
+          {/* Item 0: Trader Profile & Photo */}
           <Pressable
-            onPress={() => setShowProfileSection(!showProfileSection)}
+            onPress={() => router.push('/profile' as any)}
             style={styles.settingItem}
             accessibilityRole="button"
-            accessibilityLabel="Manage Trader Profile and Username"
+            accessibilityLabel="Manage Trader Profile, Photo and Details"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
                 <Ionicons name="person-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
               </View>
               <View style={styles.settingTextCol}>
-                <Text style={styles.settingLabel}>Trader Profile & Username</Text>
+                <Text style={styles.settingLabel}>Trader Profile & Photo</Text>
                 <Text style={styles.settingSub} numberOfLines={1}>
-                  {userDisplayName} • {business?.name || 'Mbare Fresh Produce & Tuckshop'}
+                  {userDisplayName} • Photo, bio & tuckshop presets
                 </Text>
               </View>
             </View>
             <Ionicons
-              name={showProfileSection ? 'chevron-up' : 'chevron-forward'}
+              name="chevron-forward"
               size={18}
               color={EmeraldTokens.textSubtle}
             />
@@ -1073,20 +1095,46 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     marginTop: 0,
     marginBottom: 14,
+    position: 'relative',
+    alignSelf: 'center',
   },
   avatarCircle: {
     width: 68,
     height: 68,
     borderRadius: 34,
     backgroundColor: '#DCFCE7',
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
+    borderWidth: 3,
+    borderColor: '#34D399',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
+    elevation: 2,
+  },
+  avatarImage: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+  },
+  avatarCameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: EmeraldTokens.deepPine,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 2,
     elevation: 2,
   },
   profileName: {
@@ -1104,6 +1152,8 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   mintChip: {
     backgroundColor: EmeraldTokens.pastelMint,
@@ -1116,6 +1166,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: EmeraldTokens.pastelMintText,
     letterSpacing: 0.4,
+  },
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E8F5EF',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: DesignTokens.shapes.pill,
+    borderWidth: 1,
+    borderColor: '#CDE9DE',
+  },
+  editProfileBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: EmeraldTokens.deepPine,
   },
 
   // General Settings Section

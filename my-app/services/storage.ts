@@ -32,10 +32,18 @@ export interface MobileDebt {
 export interface BusinessProfile {
   name: string;
   ownerName?: string;
+  username?: string;
+  avatarUri?: string;
+  avatarPreset?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  tagline?: string;
   businessType: string;
   currency: CurrencyCode;
   country: string;
   preferredLanguage: 'en' | 'sn' | 'nd';
+  updatedAt?: string;
 }
 
 export const CATEGORIES: Record<string, { label: string; icon: string; defaultType: string }> = {

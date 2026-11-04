@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   TextInput,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
@@ -325,15 +326,39 @@ export default function OverviewScreen() {
         {/* Top App Bar Row */}
         <View style={styles.topBar}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, marginRight: 8 }}>
-            <AppLogo size={36} />
-            <View style={{ flex: 1, minWidth: 0 }}>
+            <Pressable
+              onPress={() => router.push('/profile' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit trader profile"
+            >
+              {business?.avatarUri ? (
+                <Image
+                  source={{ uri: business.avatarUri }}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    borderWidth: 2,
+                    borderColor: '#34D399',
+                  }}
+                />
+              ) : (
+                <AppLogo size={36} />
+              )}
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/profile' as any)}
+              style={{ flex: 1, minWidth: 0 }}
+              accessibilityRole="button"
+              accessibilityLabel="View profile"
+            >
               <Text style={styles.greetingTitle} numberOfLines={1}>
                 {t('greeting_prefix')}, {userDisplayName}
               </Text>
               <Text style={styles.headerSubtitle} numberOfLines={1}>
                 {todayFormatted} &bull; {t('city_country')}
               </Text>
-            </View>
+            </Pressable>
           </View>
           <View style={styles.topRightActions}>
             {/* Privacy Mask Toggle Button */}

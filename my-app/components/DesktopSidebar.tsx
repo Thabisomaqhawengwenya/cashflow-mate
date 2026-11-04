@@ -182,6 +182,7 @@ export const DesktopSidebar: React.FC = () => {
           <Text style={styles.sectionLabel}>BUSINESS SUITE & STUDIO</Text>
           <View style={styles.suiteQuickGrid}>
             {[
+              { label: 'Profile', icon: 'person-circle-outline', route: '/profile' },
               { label: 'Inventory', icon: 'cube-outline', route: '/inventory' },
               { label: 'Quotes', icon: 'document-text-outline', route: '/invoices' },
               { label: 'Contacts', icon: 'briefcase-outline', route: '/contacts' },
