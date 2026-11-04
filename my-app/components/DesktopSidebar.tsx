@@ -258,7 +258,7 @@ export const DesktopSidebar: React.FC = () => {
         </Pressable>
 
         <View style={styles.versionRow}>
-          <Text style={styles.versionText}>CashFlow Mate v1.2.0 • ECC Division</Text>
+          <Text style={styles.versionText}>Cashflow v1.3.0 • Production Release</Text>
         </View>
       </View>
     </View>

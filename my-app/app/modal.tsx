@@ -1020,10 +1020,10 @@ export default function ModalScreen() {
         <View style={{ alignItems: 'center', marginBottom: 20, marginTop: 8 }}>
           <AppLogo size={48} />
           <Text style={{ fontSize: 14, fontWeight: '800', color: EmeraldTokens.textMain, marginTop: 8 }}>
-            CashFlow Mate
+            Cashflow
           </Text>
           <Text style={{ fontSize: 11, fontWeight: '600', color: EmeraldTokens.textSubtle, marginTop: 2 }}>
-            ZIM MARKET TILL OS • v1.2.0
+            ZIM MARKET TILL OS • v1.3.0
           </Text>
         </View>
 

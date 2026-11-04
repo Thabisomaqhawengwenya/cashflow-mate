@@ -491,7 +491,7 @@ const INITIAL_PUSH_CAMPAIGNS: PushCampaignRecord[] = [
   {
     id: 'cmp_002',
     title: 'New Feature: Multi-Currency 3-Drawer Cashbox (USD, ZiG, ZAR)',
-    body: 'CashFlow Mate v1.2 now tracks separate physical drawers for US Dollars, Zimbabwe Gold (ZiG), and South African Rand.',
+    body: 'Cashflow v1.3 now tracks separate physical drawers for US Dollars, Zimbabwe Gold (ZiG), and South African Rand with Supabase cloud multi-user isolation.',
     targetAudience: 'All Registered Traders',
     urgency: 'info',
     deliveredCount: 6,
