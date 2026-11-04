@@ -6,11 +6,12 @@
 
 ---
 
-## 📲 Download & Install Android APK (v1.1.0 Standalone)
+## 📲 Download & Install Android APK (v1.2.0 Standalone)
 
 | Platform | Download Link | Build Type | Status |
 | :--- | :--- | :--- | :--- |
-| **Android (APK v1.1.0 — Latest)** | [⬇️ **Download CashFlow Mate v1.1.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | ✅ Live Release |
+| **Android (APK v1.2.0 — Latest Review)** | [⬇️ **Download CashFlow Mate v1.2.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | ✅ Review Release |
+| **Android (APK v1.1.0 — Stable)** | [⬇️ **Download CashFlow Mate v1.1.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | ✅ Live Release |
 | **GitHub Release v1.1.0** | [📦 **GitHub Release v1.1.0**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.1.0) | Official Release Asset (`97.5 MB`) | ✅ Published |
 | **Expo EAS Cloud Build** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/cba8389e-d954-4371-a8e5-5d1c61eb17ed) | EAS Cloud Artifact (`cba8389e`) | ✅ Verified |
 | **Android (APK v1.0.0)** | [⬇️ Download CashFlow Mate v1.0.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | 📦 Archived |

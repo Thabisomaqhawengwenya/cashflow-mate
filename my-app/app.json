@@ -2,7 +2,7 @@
   "expo": {
     "name": "CashFlow Mate",
     "slug": "cashflow-mate",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cashflowmate",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.maqhawe.cashflowmate",
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#06152E",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
