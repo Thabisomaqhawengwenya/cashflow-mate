@@ -6,16 +6,17 @@
 
 ---
 
-## 📲 Download & Install Android APK (v1.0.0 Standalone)
+## 📲 Download & Install Android APK (v1.1.0 Standalone)
 
 | Platform | Download Link | Build Type | Status |
 | :--- | :--- | :--- | :--- |
-| **Android (APK v1.0.0)** | [⬇️ **Download CashFlow Mate v1.0.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | ✅ Live Release |
-| **GitHub Release v1.0.0** | [📦 **GitHub Release v1.0.0**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.0.0) | Official Release Asset (`95.2 MB`) | ✅ Published |
-| **Expo EAS Cloud** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/e4dab19a-9265-4829-b033-b084928bbca0) | EAS Cloud Artifact (`e4dab19a`) | ✅ Verified |
+| **Android (APK v1.1.0 — Latest)** | [⬇️ **Download CashFlow Mate v1.1.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | ✅ Live Release |
+| **GitHub Release v1.1.0** | [📦 **GitHub Release v1.1.0**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.1.0) | Official Release Asset (`97.5 MB`) | ✅ Published |
+| **Expo EAS Cloud Build** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/cba8389e-d954-4371-a8e5-5d1c61eb17ed) | EAS Cloud Artifact (`cba8389e`) | ✅ Verified |
+| **Android (APK v1.0.0)** | [⬇️ Download CashFlow Mate v1.0.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) | Standalone Preview APK (`com.maqhawe.cashflowmate`) | 📦 Archived |
 
 ### 🚀 Android Quick Install
-1. **Download**: Tap the [Download APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) link directly from your Android phone browser.
+1. **Download**: Tap the [Download CashFlow Mate v1.1.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) link directly from your Android phone browser.
 2. **Open**: Tap the downloaded file in your notification bar or *Downloads* folder.
 3. **Allow Installation**: If prompted, enable *"Install unknown apps"* for your browser or file manager.
 4. **Launch**: Open **CashFlow Mate** from your home screen. No Expo Go or internet connection required for day-to-day till operations.
