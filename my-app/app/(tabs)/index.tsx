@@ -33,6 +33,7 @@ import { MobileSecurityService } from '@/services/security';
 import { MobileExchangeService, PortfolioValuation } from '@/services/exchangeRates';
 import { MobileReconciliationService, ZReport } from '@/services/reconciliation';
 import { MobileAuthService, UserSession } from '@/services/auth';
+import { TraderAvatar } from '@/components/TraderAvatar';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { M3Input } from '@/components/M3/M3Input';
@@ -142,6 +143,16 @@ export default function OverviewScreen() {
       loadData();
     }, [loadData])
   );
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleSync = () => {
+        loadData();
+      };
+      window.addEventListener('cashflow_profile_sync', handleSync);
+      return () => window.removeEventListener('cashflow_profile_sync', handleSync);
+    }
+  }, [loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -331,20 +342,15 @@ export default function OverviewScreen() {
               accessibilityRole="button"
               accessibilityLabel="Edit trader profile"
             >
-              {business?.avatarUri ? (
-                <Image
-                  source={{ uri: business.avatarUri }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    borderWidth: 2,
-                    borderColor: '#34D399',
-                  }}
-                />
-              ) : (
-                <AppLogo size={36} />
-              )}
+              <TraderAvatar
+                size={38}
+                avatarUri={business?.avatarUri || session?.avatarUri}
+                avatarPreset={business?.avatarPreset || session?.avatarPreset}
+                name={userDisplayName}
+                borderWidth={2}
+                borderColor="#34D399"
+                showHalo={true}
+              />
             </Pressable>
             <Pressable
               onPress={() => router.push('/profile' as any)}

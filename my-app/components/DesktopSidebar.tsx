@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
@@ -7,6 +7,9 @@ import { DesignTokens } from '@/constants/DesignTokens';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
 import { AppLogo } from '@/components/BrandLogos';
+import { TraderAvatar } from '@/components/TraderAvatar';
+import { MobileStorageService, BusinessProfile } from '@/services/storage';
+import { MobileAuthService, UserSession } from '@/services/auth';
 
 interface NavItem {
   id: string;
@@ -64,6 +67,29 @@ export const DesktopSidebar: React.FC = () => {
   const pathname = usePathname();
   const { t } = useLanguage();
   const { palette, isDarkMode, toggleDarkMode } = useAppearance();
+
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
+
+  const loadProfile = async () => {
+    const [biz, sess] = await Promise.all([
+      MobileStorageService.getBusiness(),
+      MobileAuthService.getSession(),
+    ]);
+    setBusiness(biz);
+    setSession(sess);
+  };
+
+  useEffect(() => {
+    loadProfile();
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleSync = () => loadProfile();
+      window.addEventListener('cashflow_profile_sync', handleSync);
+      return () => window.removeEventListener('cashflow_profile_sync', handleSync);
+    }
+  }, []);
+
+  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
 
   const isItemActive = (item: NavItem) => {
     if (item.id === 'index') {
@@ -201,26 +227,31 @@ export const DesktopSidebar: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* 4. Footer: Till Security & Settings Action */}
+      {/* 4. Footer: Trader Profile & Settings Action */}
       <View style={styles.footer}>
         <Pressable
-          onPress={() => router.push('/modal')}
+          onPress={() => router.push('/profile' as any)}
           accessibilityRole="button"
-          accessibilityLabel="Till Security and PIN settings"
+          accessibilityLabel="Open Trader Profile and Market Pass"
           style={({ pressed }) => [
             styles.profileButton,
             pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
           ]}
         >
-          <View style={styles.profileAvatar}>
-            <Ionicons name="lock-closed" size={17} color={palette.accent} />
-          </View>
+          <TraderAvatar
+            size={36}
+            avatarUri={business?.avatarUri || session?.avatarUri}
+            avatarPreset={business?.avatarPreset || session?.avatarPreset}
+            name={userDisplayName}
+            borderWidth={1.5}
+            borderColor={palette.accent}
+          />
           <View style={styles.profileTextWrapper}>
             <Text style={styles.profileTitle} numberOfLines={1}>
-              {t('till_security_pin')}
+              {userDisplayName}
             </Text>
             <Text style={styles.profileSubtitle} numberOfLines={1}>
-              {t('privacy_shield_license')}
+              {business?.name || 'Mbare Tuckshop'}
             </Text>
           </View>
           <Ionicons name="settings-outline" size={16} color="rgba(255, 255, 255, 0.45)" />

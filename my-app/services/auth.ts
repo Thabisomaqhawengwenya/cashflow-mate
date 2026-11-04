@@ -37,6 +37,12 @@ export interface StoredTraderAccount {
   email: string;
   phone?: string;
   city?: string;
+  tagline?: string;
+  avatarUri?: string;
+  avatarPreset?: string;
+  stallNumber?: string;
+  merchantTillNumber?: string;
+  operatingHours?: string;
   password?: string;
   businessName: string;
   currency: CurrencyCode;
@@ -556,7 +562,7 @@ export class MobileAuthService {
   }
 
   /**
-   * Update active user session details (e.g. username, name, businessName)
+   * Update active user session details (e.g. username, name, businessName, avatarUri)
    */
   static async updateSession(partial: Partial<UserSession>): Promise<UserSession | null> {
     const current = await this.getSession();
@@ -566,6 +572,33 @@ export class MobileAuthService {
       ...partial,
     };
     await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(updated));
+
+    // Keep stored accounts in sync for admin views and relogin
+    try {
+      const accounts = await this.getAllAccounts();
+      const updatedAccounts = accounts.map((acc) => {
+        if (acc.userId === current.userId || acc.email === current.email) {
+          return {
+            ...acc,
+            name: partial.name !== undefined ? partial.name : acc.name,
+            username: partial.username !== undefined ? partial.username : acc.username,
+            businessName: partial.businessName !== undefined ? partial.businessName : acc.businessName,
+            currency: partial.currency !== undefined ? partial.currency : acc.currency,
+            phone: partial.phone !== undefined ? partial.phone : acc.phone,
+            city: partial.city !== undefined ? partial.city : acc.city,
+            tagline: partial.tagline !== undefined ? partial.tagline : acc.tagline,
+            avatarUri: partial.avatarUri !== undefined ? partial.avatarUri : acc.avatarUri,
+            avatarPreset: partial.avatarPreset !== undefined ? partial.avatarPreset : acc.avatarPreset,
+            stallNumber: partial.stallNumber !== undefined ? partial.stallNumber : acc.stallNumber,
+            merchantTillNumber: partial.merchantTillNumber !== undefined ? partial.merchantTillNumber : acc.merchantTillNumber,
+            operatingHours: partial.operatingHours !== undefined ? partial.operatingHours : acc.operatingHours,
+          };
+        }
+        return acc;
+      });
+      await AsyncStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(updatedAccounts));
+    } catch {}
+
     return updated;
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -35,6 +35,7 @@ import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
 import { AppLogo } from '@/components/BrandLogos';
+import { TraderAvatar } from '@/components/TraderAvatar';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
@@ -143,29 +144,46 @@ export default function ModalScreen() {
     );
   };
 
-  useEffect(() => {
-    MobileStorageService.getBusiness().then((biz) => {
-      setBusiness(biz);
-      if (biz?.name) setEditStallName(biz.name);
-    });
-    MobileLicenseService.getActiveLicense().then((lic) => {
-      setLicense(lic);
-      setKeyInput(lic.key);
-    });
-    MobileSecurityService.getSecuritySettings().then(setSecurity);
-    MobileAuthService.getSession().then((sess) => {
-      setSession(sess);
-      if (sess?.username || sess?.name) {
-        setEditUsername(sess.username || sess.name);
-      }
-    });
-    MobileExchangeService.getRates().then((r) => {
-      setRates(r);
-      setEditZwgRate(String(r.usdToZwg));
-      setEditZarRate(String(r.usdToZar));
-    });
-    MobileSyncService.getSyncStatus().then(setSyncStatus);
+  const loadAllData = useCallback(async () => {
+    const [biz, lic, sec, sess, r, sync] = await Promise.all([
+      MobileStorageService.getBusiness(),
+      MobileLicenseService.getActiveLicense(),
+      MobileSecurityService.getSecuritySettings(),
+      MobileAuthService.getSession(),
+      MobileExchangeService.getRates(),
+      MobileSyncService.getSyncStatus(),
+    ]);
+
+    setBusiness(biz);
+    if (biz?.name) setEditStallName(biz.name);
+    setLicense(lic);
+    setKeyInput(lic.key);
+    setSecurity(sec);
+    setSession(sess);
+    if (sess?.username || sess?.name) {
+      setEditUsername(sess.username || sess.name);
+    }
+    setRates(r);
+    setEditZwgRate(String(r.usdToZwg));
+    setEditZarRate(String(r.usdToZar));
+    setSyncStatus(sync);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAllData();
+    }, [loadAllData])
+  );
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleSync = () => {
+        loadAllData();
+      };
+      window.addEventListener('cashflow_profile_sync', handleSync);
+      return () => window.removeEventListener('cashflow_profile_sync', handleSync);
+    }
+  }, [loadAllData]);
 
   const handleSaveProfile = async () => {
     const cleanUser = editUsername.trim();
@@ -377,13 +395,15 @@ export default function ModalScreen() {
             accessibilityLabel="Edit profile and photo"
             style={styles.avatarWrapper}
           >
-            <View style={styles.avatarCircle}>
-              {business?.avatarUri ? (
-                <Image source={{ uri: business.avatarUri }} style={styles.avatarImage} />
-              ) : (
-                <Ionicons name="person" size={32} color={EmeraldTokens.deepPine} />
-              )}
-            </View>
+            <TraderAvatar
+              size={68}
+              avatarUri={business?.avatarUri || session?.avatarUri}
+              avatarPreset={business?.avatarPreset || session?.avatarPreset}
+              name={userDisplayName}
+              borderWidth={3}
+              borderColor="#34D399"
+              showHalo={true}
+            />
             <View style={styles.avatarCameraBadge}>
               <Ionicons name="camera" size={13} color="#FFFFFF" />
             </View>

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Image,
   Platform,
   Alert,
   ActivityIndicator,
@@ -14,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
-import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { MobileStorageService, BusinessProfile, CurrencyCode } from '@/services/storage';
 import { MobileAuthService, UserSession } from '@/services/auth';
@@ -22,73 +20,9 @@ import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
-
-export interface AvatarPreset {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  bgColor: string;
-  iconColor: string;
-  badgeLabel: string;
-}
-
-const PRESET_AVATARS: AvatarPreset[] = [
-  {
-    id: 'tuckshop_boss',
-    title: 'Tuckshop Boss',
-    subtitle: 'Daily Grocery & Provisions',
-    icon: 'storefront',
-    bgColor: '#0C3E35',
-    iconColor: '#34D399',
-    badgeLabel: 'GROCERY & PROVISIONS',
-  },
-  {
-    id: 'executive_trader',
-    title: 'Executive Trader',
-    subtitle: 'Wholesale & Enterprise',
-    icon: 'briefcase',
-    bgColor: '#06152E',
-    iconColor: '#38BDF8',
-    badgeLabel: 'WHOLESALE B2B',
-  },
-  {
-    id: 'musika_produce',
-    title: 'Produce Merchant',
-    subtitle: 'Mbare Musika Fresh Farm',
-    icon: 'nutrition',
-    bgColor: '#D97706',
-    iconColor: '#FEF3C7',
-    badgeLabel: 'MBARE MUSIKA',
-  },
-  {
-    id: 'ecocash_agent',
-    title: 'EcoCash Agent',
-    subtitle: 'Cash-In & Float Booth',
-    icon: 'phone-portrait',
-    bgColor: '#0284C7',
-    iconColor: '#E0F2FE',
-    badgeLabel: 'MOBILE FLOAT',
-  },
-  {
-    id: 'cbd_boutique',
-    title: 'Boutique Stylist',
-    subtitle: 'Apparel, Bales & Shoes',
-    icon: 'shirt',
-    bgColor: '#7E22CE',
-    iconColor: '#F3E8FF',
-    badgeLabel: 'FASHION & BALES',
-  },
-  {
-    id: 'cross_border',
-    title: 'Border Runner',
-    subtitle: 'ZAR Float & Beitbridge',
-    icon: 'bus',
-    bgColor: '#EA580C',
-    iconColor: '#FFEDD5',
-    badgeLabel: 'BEITBRIDGE RUNNER',
-  },
-];
+import { PRESET_AVATARS, AvatarPreset, getPresetById } from '@/constants/Presets';
+import { TraderAvatar } from '@/components/TraderAvatar';
+import { compressAvatarForStorage } from '@/utils/imageCompressor';
 
 const BUSINESS_TYPES = [
   'Tuckshop & Grocery',
@@ -129,6 +63,7 @@ export default function ProfileScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'pass'>('edit');
   const [session, setSession] = useState<UserSession | null>(null);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
@@ -195,19 +130,10 @@ export default function ProfileScreen() {
 
       const asset = result.assets[0];
 
-      // On Web, read as Base64 data URL so image permanently persists in storage
-      if (Platform.OS === 'web' && (asset as any).file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64Uri = reader.result as string;
-          setAvatarUri(base64Uri);
-          setSelectedPresetId(null);
-        };
-        reader.readAsDataURL((asset as any).file);
-      } else {
-        setAvatarUri(asset.uri);
-        setSelectedPresetId(null);
-      }
+      // Compress and resize avatar photo (guarantees safe storage under localStorage 5MB limit)
+      const compressedUri = await compressAvatarForStorage(asset);
+      setAvatarUri(compressedUri);
+      setSelectedPresetId(null);
     } catch (err: any) {
       Alert.alert('Photo Selection Error', err.message || 'Could not select image.');
     }
@@ -234,15 +160,19 @@ export default function ProfileScreen() {
     }
 
     setSaving(true);
+    setSaveSuccess(false);
 
     try {
       const cleanUsername = username.trim().replace(/^@/, '');
+      const finalAvatarUri = avatarUri ? avatarUri : '';
+      const finalAvatarPreset = selectedPresetId ? selectedPresetId : '';
+
       const updatedProfile: Partial<BusinessProfile> = {
         name: stallName.trim(),
         ownerName: fullName.trim(),
         username: cleanUsername,
-        avatarUri: avatarUri || undefined,
-        avatarPreset: selectedPresetId || undefined,
+        avatarUri: finalAvatarUri,
+        avatarPreset: finalAvatarPreset,
         phone: phone.trim(),
         email: email.trim(),
         city: city.trim(),
@@ -258,15 +188,15 @@ export default function ProfileScreen() {
 
       await MobileStorageService.updateBusiness(updatedProfile);
 
-      // Sync active session
+      // Sync active session and registered user store
       if (session) {
         await MobileAuthService.updateSession({
           name: fullName.trim(),
           username: cleanUsername,
           businessName: stallName.trim(),
           currency,
-          avatarUri: avatarUri || undefined,
-          avatarPreset: selectedPresetId || undefined,
+          avatarUri: finalAvatarUri,
+          avatarPreset: finalAvatarPreset,
           phone: phone.trim(),
           city: city.trim(),
           stallNumber: stallNumber.trim(),
@@ -276,25 +206,42 @@ export default function ProfileScreen() {
         });
       }
 
-      setSaving(false);
+      // Notify web runtime to update open tabs immediately
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('cashflow_profile_sync'));
+      }
 
-      Alert.alert(
-        'Profile Saved',
-        'Your profile picture and business information have been updated.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      setSaving(false);
+      setSaveSuccess(true);
+
+      // Smooth feedback and navigation
+      if (Platform.OS === 'web') {
+        setTimeout(() => {
+          router.replace('/modal' as any);
+        }, 850);
+      } else {
+        Alert.alert(
+          'Profile Saved',
+          'Your profile picture, stall details, and till settings have been updated across all screens.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.back(),
+            },
+          ]
+        );
+      }
     } catch (err: any) {
       setSaving(false);
-      Alert.alert('Save Failed', err.message || 'Could not save profile.');
+      setSaveSuccess(false);
+      Alert.alert(
+        'Save Failed',
+        err.message || 'Could not save profile. Please check device storage.'
+      );
     }
   };
 
-  const activePreset = PRESET_AVATARS.find((p) => p.id === selectedPresetId);
+  const activePreset = getPresetById(selectedPresetId);
 
   if (loading) {
     return (
@@ -334,6 +281,7 @@ export default function ProfileScreen() {
             disabled={saving}
             style={({ pressed }) => [
               styles.headerSaveBtn,
+              saveSuccess && styles.headerSaveBtnSuccess,
               pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
             ]}
             accessibilityRole="button"
@@ -341,11 +289,26 @@ export default function ProfileScreen() {
           >
             {saving ? (
               <ActivityIndicator size="small" color={EmeraldTokens.mintDarkText} />
+            ) : saveSuccess ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                <Text style={[styles.headerSaveBtnText, { color: '#FFFFFF' }]}>SAVED</Text>
+              </View>
             ) : (
               <Text style={styles.headerSaveBtnText}>SAVE</Text>
             )}
           </Pressable>
         </View>
+
+        {/* Success Toast Banner */}
+        {saveSuccess && (
+          <View style={styles.saveToastBanner}>
+            <Ionicons name="checkmark-circle" size={16} color={EmeraldTokens.mintCta} />
+            <Text style={styles.saveToastText}>
+              Profile & Stall Pass saved! Syncing across all screens...
+            </Text>
+          </View>
+        )}
 
         {/* View Mode Toggle: Edit Mode vs Stall Pass Preview */}
         <View style={styles.modeToggleContainer}>
@@ -418,30 +381,15 @@ export default function ProfileScreen() {
 
                 {/* Overlapping Avatar Frame Container */}
                 <View style={styles.avatarOverlapWrapper}>
-                  <View style={styles.avatarHaloRing}>
-                    {avatarUri ? (
-                      <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                    ) : activePreset ? (
-                      <View
-                        style={[
-                          styles.avatarPresetCircle,
-                          { backgroundColor: activePreset.bgColor },
-                        ]}
-                      >
-                        <Ionicons
-                          name={activePreset.icon}
-                          size={46}
-                          color={activePreset.iconColor}
-                        />
-                      </View>
-                    ) : (
-                      <View style={styles.avatarFallback}>
-                        <Text style={styles.avatarInitials}>
-                          {fullName.trim().slice(0, 2).toUpperCase() || 'MQ'}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
+                  <TraderAvatar
+                    size={106}
+                    avatarUri={avatarUri}
+                    avatarPreset={selectedPresetId}
+                    name={fullName}
+                    borderWidth={3.5}
+                    borderColor={EmeraldTokens.mintCta}
+                    showHalo={true}
+                  />
 
                   {/* Floating Camera Badge Button */}
                   <Pressable
@@ -805,12 +753,18 @@ export default function ProfileScreen() {
               {/* Bottom Sticky Save CTA Container */}
               <View style={styles.saveCtaContainer}>
                 <M3Button
-                  label={saving ? 'SAVING CHANGES...' : 'SAVE PROFILE CHANGES'}
-                  variant="mint"
+                  label={
+                    saving
+                      ? 'SAVING CHANGES...'
+                      : saveSuccess
+                      ? 'SAVED SUCCESSFULLY ✓'
+                      : 'SAVE PROFILE CHANGES'
+                  }
+                  variant={saveSuccess ? 'tonal' : 'mint'}
                   size="lg"
                   icon={
                     <Ionicons
-                      name="checkmark-circle"
+                      name={saveSuccess ? 'checkmark-circle' : 'save-outline'}
                       size={20}
                       color={EmeraldTokens.mintDarkText}
                     />
@@ -841,28 +795,14 @@ export default function ProfileScreen() {
                 {/* Stall Pass Body */}
                 <View style={styles.passBody}>
                   <View style={styles.passAvatarRing}>
-                    {avatarUri ? (
-                      <Image source={{ uri: avatarUri }} style={styles.passAvatarImage} />
-                    ) : activePreset ? (
-                      <View
-                        style={[
-                          styles.passAvatarPreset,
-                          { backgroundColor: activePreset.bgColor },
-                        ]}
-                      >
-                        <Ionicons
-                          name={activePreset.icon}
-                          size={40}
-                          color={activePreset.iconColor}
-                        />
-                      </View>
-                    ) : (
-                      <View style={styles.passAvatarFallback}>
-                        <Text style={styles.passAvatarInitials}>
-                          {fullName.trim().slice(0, 2).toUpperCase() || 'MQ'}
-                        </Text>
-                      </View>
-                    )}
+                    <TraderAvatar
+                      size={86}
+                      avatarUri={avatarUri}
+                      avatarPreset={selectedPresetId}
+                      name={fullName}
+                      borderWidth={2.5}
+                      borderColor={EmeraldTokens.mintCta}
+                    />
                   </View>
 
                   <Text style={styles.passBusinessName}>
@@ -969,7 +909,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   iconButton: {
     width: 40,
@@ -1012,11 +952,32 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
   },
+  headerSaveBtnSuccess: {
+    backgroundColor: '#059669',
+  },
   headerSaveBtnText: {
     fontSize: 12,
     fontWeight: '800',
     color: EmeraldTokens.mintDarkText,
     letterSpacing: 0.5,
+  },
+  saveToastBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(52, 211, 153, 0.2)',
+    borderWidth: 1,
+    borderColor: EmeraldTokens.mintCta,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginBottom: 8,
+    alignSelf: 'center',
+  },
+  saveToastText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 
   // Segmented Pill Switcher
@@ -1116,46 +1077,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginTop: -48,
     marginBottom: 10,
-  },
-  avatarHaloRing: {
-    width: 106,
-    height: 106,
-    borderRadius: 53,
-    borderWidth: 3.5,
-    borderColor: EmeraldTokens.mintCta,
-    padding: 3,
-    backgroundColor: '#FFFFFF',
-    shadowColor: EmeraldTokens.mintCta,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
-  },
-  avatarPresetCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarFallback: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
-    backgroundColor: EmeraldTokens.deepPine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitials: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 1,
   },
   cameraBadgePill: {
     position: 'absolute',
@@ -1445,32 +1366,9 @@ const styles = StyleSheet.create({
     borderColor: EmeraldTokens.mintCta,
     padding: 3,
     backgroundColor: '#0F1E19',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
-  },
-  passAvatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 45,
-  },
-  passAvatarPreset: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 45,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  passAvatarFallback: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 45,
-    backgroundColor: EmeraldTokens.deepPine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  passAvatarInitials: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
   },
   passBusinessName: {
     fontSize: 20,
