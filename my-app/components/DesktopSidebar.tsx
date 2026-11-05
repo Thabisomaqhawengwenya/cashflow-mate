@@ -10,6 +10,8 @@ import { AppLogo } from '@/components/BrandLogos';
 import { TraderAvatar } from '@/components/TraderAvatar';
 import { MobileStorageService, BusinessProfile } from '@/services/storage';
 import { MobileAuthService, UserSession } from '@/services/auth';
+import { MobileUpdateService, AppUpdateInfo } from '@/services/updates';
+import { UpdateNotificationModal } from '@/components/UpdateNotificationModal';
 
 interface NavItem {
   id: string;
@@ -70,6 +72,8 @@ export const DesktopSidebar: React.FC = () => {
 
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [session, setSession] = useState<UserSession | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
 
   const loadProfile = async () => {
     const [biz, sess] = await Promise.all([
@@ -82,6 +86,14 @@ export const DesktopSidebar: React.FC = () => {
 
   useEffect(() => {
     loadProfile();
+    MobileUpdateService.checkForUpdate(false, false)
+      .then((info) => {
+        if (info && info.hasUpdate) {
+          setUpdateInfo(info);
+        }
+      })
+      .catch(() => {});
+
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const handleSync = () => loadProfile();
       window.addEventListener('cashflow_profile_sync', handleSync);
@@ -257,10 +269,44 @@ export const DesktopSidebar: React.FC = () => {
           <Ionicons name="settings-outline" size={16} color="rgba(255, 255, 255, 0.45)" />
         </Pressable>
 
-        <View style={styles.versionRow}>
+        {updateInfo?.hasUpdate && (
+          <Pressable
+            onPress={() => setIsUpdateModalVisible(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#0284C7',
+              paddingVertical: 5,
+              paddingHorizontal: 10,
+              borderRadius: 9999,
+              marginBottom: 8,
+              alignSelf: 'center',
+            }}
+          >
+            <Ionicons name="sparkles" size={12} color="#FFFFFF" style={{ marginRight: 5 }} />
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF' }}>
+              Update Available (v{updateInfo.latestVersion})
+            </Text>
+          </Pressable>
+        )}
+
+        <Pressable
+          onPress={async () => {
+            const info = await MobileUpdateService.checkForUpdate(true, true);
+            setUpdateInfo(info);
+            setIsUpdateModalVisible(true);
+          }}
+          style={styles.versionRow}
+        >
           <Text style={styles.versionText}>Cashflow v1.3.0 • Production Release</Text>
-        </View>
+        </Pressable>
       </View>
+
+      <UpdateNotificationModal
+        visible={isUpdateModalVisible}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpdateModalVisible(false)}
+      />
     </View>
   );
 };

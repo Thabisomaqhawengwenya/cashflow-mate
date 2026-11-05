@@ -36,6 +36,8 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAppearance } from '@/context/AppearanceContext';
 import { AppLogo } from '@/components/BrandLogos';
 import { TraderAvatar } from '@/components/TraderAvatar';
+import { MobileUpdateService, AppUpdateInfo } from '@/services/updates';
+import { UpdateNotificationModal } from '@/components/UpdateNotificationModal';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
@@ -88,6 +90,25 @@ export default function ModalScreen() {
   const [scammerAmount, setScammerAmount] = useState('');
   const [scammerEvidence, setScammerEvidence] = useState('');
   const [scammerCategory, setScammerCategory] = useState<FraudCategory>('fake_ecocash_sms');
+
+  // In-App Update State
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdate(true);
+    try {
+      // Passes true for simulateIfNone so Mr Q can preview the update modal anytime
+      const info = await MobileUpdateService.checkForUpdate(true, true);
+      setUpdateInfo(info);
+      setIsUpdateModalVisible(true);
+    } catch {
+      Alert.alert('Update Check', 'Could not fetch latest release information.');
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   const handleReportProblemToAdmin = async () => {
     if (!problemSubject.trim() || !problemDesc.trim()) {
@@ -1014,6 +1035,27 @@ export default function ModalScreen() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
           </Pressable>
+
+          {/* Item 8: Software Update & Changelog */}
+          <Pressable onPress={handleCheckForUpdates} style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="sparkles" size={18} color="#0284C7" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Software Update & Changelog</Text>
+                <Text style={styles.settingSub}>
+                  {isCheckingUpdate ? 'Checking GitHub Releases...' : 'Cashflow v1.3.0 • Tap to check for updates'}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ backgroundColor: '#E0F2FE', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 9999, marginRight: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: '#0284C7' }}>v1.3.0</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+            </View>
+          </Pressable>
         </View>
 
         {/* App Branding & Version Card */}
@@ -1025,6 +1067,27 @@ export default function ModalScreen() {
           <Text style={{ fontSize: 11, fontWeight: '600', color: EmeraldTokens.textSubtle, marginTop: 2 }}>
             ZIM MARKET TILL OS • v1.3.0
           </Text>
+
+          <Pressable
+            onPress={handleCheckForUpdates}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#E0F2FE',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 9999,
+                marginTop: 8,
+              },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            <Ionicons name="sparkles" size={12} color="#0284C7" style={{ marginRight: 5 }} />
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#0284C7' }}>
+              {isCheckingUpdate ? 'Checking Updates...' : 'Check for Updates'}
+            </Text>
+          </Pressable>
         </View>
 
         {/* 4. Bottom Full Pill Mint Action Button (Directly from Screen 2) */}
@@ -1045,6 +1108,13 @@ export default function ModalScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Standalone In-App Update Notification Bottom Sheet */}
+      <UpdateNotificationModal
+        visible={isUpdateModalVisible}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpdateModalVisible(false)}
+      />
     </View>
   );
 }

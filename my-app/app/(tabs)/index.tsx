@@ -46,6 +46,11 @@ import {
   BakersInnLogo,
   CompanyBrandLogo,
 } from '@/components/BrandLogos';
+import { MobileUpdateService, AppUpdateInfo } from '@/services/updates';
+import {
+  UpdateNotificationModal,
+  UpdateNoticeBanner,
+} from '@/components/UpdateNotificationModal';
 
 const SAMPLE_SMS_CHIPS = [
   {
@@ -115,6 +120,10 @@ export default function OverviewScreen() {
   const [zReportNotes, setZReportNotes] = useState('');
   const [isSavingZReport, setIsSavingZReport] = useState(false);
 
+  // In-App Update Notification State
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+
   const loadData = useCallback(async () => {
     const biz = await MobileStorageService.getBusiness();
     const txs = await MobileStorageService.getTransactions();
@@ -153,6 +162,26 @@ export default function OverviewScreen() {
       return () => window.removeEventListener('cashflow_profile_sync', handleSync);
     }
   }, [loadData]);
+
+  // Check for app updates on mount
+  useEffect(() => {
+    let active = true;
+    const checkAppUpdate = async () => {
+      try {
+        const info = await MobileUpdateService.checkForUpdate(false, false);
+        if (active && info && info.hasUpdate) {
+          setUpdateInfo(info);
+          setIsUpdateModalVisible(true);
+        }
+      } catch {
+        // Safe silent error boundary
+      }
+    };
+    checkAppUpdate();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -392,7 +421,14 @@ export default function OverviewScreen() {
               style={styles.iconButton}
             >
               <Ionicons name="settings-outline" size={19} color="#FFFFFF" />
-              {pendingCount > 0 && <View style={styles.bellBadge} />}
+              {(pendingCount > 0 || updateInfo?.hasUpdate) && (
+                <View
+                  style={[
+                    styles.bellBadge,
+                    updateInfo?.hasUpdate && { backgroundColor: '#38BDF8' },
+                  ]}
+                />
+              )}
             </Pressable>
           </View>
         </View>
@@ -493,6 +529,12 @@ export default function OverviewScreen() {
 
         {/* 3. White Curved Body Sheet */}
         <View style={styles.sheetContainer}>
+          {/* Top In-App Update Notice Banner */}
+          <UpdateNoticeBanner
+            updateInfo={updateInfo}
+            onPress={() => setIsUpdateModalVisible(true)}
+          />
+
           {/* 3-Drawer Cashbox Breakdown Card */}
           <View style={styles.multiDrawerCard}>
           <View style={styles.multiDrawerHeader}>
@@ -1253,6 +1295,12 @@ export default function OverviewScreen() {
           </View>
         </View>
       </Modal>
+      {/* In-App Standalone Update Notification Bottom Sheet */}
+      <UpdateNotificationModal
+        visible={isUpdateModalVisible}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpdateModalVisible(false)}
+      />
     </View>
   );
 }
