@@ -379,52 +379,6 @@ export default function ModalScreen() {
     router.replace('/login' as any);
   };
 
-  const handleDeleteAccountAndData = () => {
-    const executeErasure = async () => {
-      try {
-        await MobileStorageService.eraseAllUserData();
-        await MobileSecurityService.clearPin();
-        await MobileAuthService.logout();
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          window.alert(
-            'Your account and all device records have been permanently erased in compliance with privacy regulations.'
-          );
-          window.location.assign('/login');
-          return;
-        }
-        Alert.alert(
-          'Account & Records Erased',
-          'Your account and all local records have been permanently erased (Right to Be Forgotten).'
-        );
-        router.replace('/login' as any);
-      } catch (err: any) {
-        Alert.alert('Error', err.message || 'Failed to erase data.');
-      }
-    };
-
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const confirmed = window.confirm(
-        'PERMANENT DATA ERASURE (Right to Be Forgotten):\n\nAre you sure you want to permanently delete your account and erase all records?\n\nAll local transactions, till drawers, customer credits, and credentials will be permanently erased. This action cannot be undone.'
-      );
-      if (confirmed) {
-        executeErasure();
-      }
-    } else {
-      Alert.alert(
-        'Delete Account & Erase All Data?',
-        'This will permanently destroy all local ledger transactions, customer credit balances, till drawers, and credentials from this device.\n\nThis action cannot be undone.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Permanently Erase Everything',
-            style: 'destructive',
-            onPress: executeErasure,
-          },
-        ]
-      );
-    }
-  };
-
   const userDisplayName = session?.username || session?.name || business?.ownerName || 'Trader';
 
   return (
@@ -944,20 +898,101 @@ export default function ModalScreen() {
             <M3Badge label="3 CURRENCIES" variant="mint" />
           </View>
 
-          {/* Item 6: Privacy & Legal Trust Center (20-Point Compliance) */}
+          {/* Legal & Compliance Policies Section */}
+          <Text style={[styles.sectionHeading, { marginTop: 14, marginBottom: 8 }]}>
+            Legal &amp; Transparency Policies
+          </Text>
+
+          {/* Terms of Service */}
           <Pressable
-            onPress={() => router.push('/legal' as any)}
+            onPress={() => router.push({ pathname: '/legal', params: { tab: 'terms' } } as any)}
             style={styles.settingItem}
             accessibilityRole="button"
-            accessibilityLabel="Open Legal and Trust Center"
+            accessibilityLabel="Open Terms and Conditions"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#F1F5F9' }]}>
+                <Ionicons name="document-text" size={20} color="#0F172A" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Terms and Conditions</Text>
+                <Text style={styles.settingSub}>User agreement &bull; Operating rules &bull; Zimbabwe Law</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+
+          {/* Privacy Policy */}
+          <Pressable
+            onPress={() => router.push({ pathname: '/legal', params: { tab: 'privacy' } } as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Open Privacy Policy"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: '#DCFCE7' }]}>
                 <Ionicons name="shield-checkmark" size={20} color="#16A34A" />
               </View>
               <View style={styles.settingTextCol}>
-                <Text style={styles.settingLabel}>Privacy &amp; Legal Trust Center</Text>
-                <Text style={styles.settingSub}>20-Point Compliance &bull; MIT License &bull; Mr Q</Text>
+                <Text style={styles.settingLabel}>Privacy Policy</Text>
+                <Text style={styles.settingSub}>Cyber &amp; Data Protection Act [12:07] &bull; Local-First</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+
+          {/* Refund & Fees Policy */}
+          <Pressable
+            onPress={() => router.push('/refund' as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Open Refund and Fees Policy"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#ECFDF5' }]}>
+                <Ionicons name="card" size={20} color="#059669" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Refund &amp; Fees Policy</Text>
+                <Text style={styles.settingSub}>100% Free Core &bull; 14-Day Refund Guarantee</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+
+          {/* Cookies & Storage Policy */}
+          <Pressable
+            onPress={() => router.push('/cookies' as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Open Cookies and Storage Policy"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="server" size={20} color="#0284C7" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>Cookies &amp; Storage Policy</Text>
+                <Text style={styles.settingSub}>Strict Local Storage &bull; Zero Tracking Cookies</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
+          </Pressable>
+
+          {/* AI Financial Disclaimer */}
+          <Pressable
+            onPress={() => router.push('/disclaimer' as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Open AI and Financial Disclaimer"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="alert-circle" size={20} color="#D97706" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={styles.settingLabel}>AI &amp; Financial Disclaimer</Text>
+                <Text style={styles.settingSub}>Deterministic Math &bull; Not Professional Advice</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
@@ -1161,17 +1196,6 @@ export default function ModalScreen() {
               size="md"
               onPress={handleSignOut}
             />
-          </View>
-          <View style={{ marginTop: 14 }}>
-            <Pressable
-              onPress={handleDeleteAccountAndData}
-              style={styles.deleteAccountBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Delete Account and Permanently Erase All Data"
-            >
-              <Ionicons name="trash-outline" size={15} color="#DC2626" />
-              <Text style={styles.deleteAccountBtnText}>DELETE ACCOUNT &amp; ERASE ALL DATA</Text>
-            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -1531,23 +1555,5 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 960,
     alignSelf: 'center',
-  },
-  deleteAccountBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
-  },
-  deleteAccountBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#DC2626',
-    letterSpacing: 0.4,
   },
 });

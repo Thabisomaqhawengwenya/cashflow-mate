@@ -17,6 +17,7 @@ import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { MobileStorageService, BusinessProfile, CurrencyCode } from '@/services/storage';
 import { MobileAuthService, UserSession } from '@/services/auth';
+import { MobileSecurityService } from '@/services/security';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
@@ -275,6 +276,52 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const handleDeleteAccountAndData = () => {
+    const executeErasure = async () => {
+      try {
+        await MobileStorageService.eraseAllUserData();
+        await MobileSecurityService.clearPin();
+        await MobileAuthService.logout();
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(
+            'Your account and all device records have been permanently erased in compliance with privacy regulations.'
+          );
+          window.location.assign('/login');
+          return;
+        }
+        Alert.alert(
+          'Account & Records Erased',
+          'Your account and all local records have been permanently erased (Right to Be Forgotten).'
+        );
+        router.replace('/login' as any);
+      } catch (err: any) {
+        Alert.alert('Error', err.message || 'Failed to erase data.');
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm(
+        'PERMANENT DATA ERASURE (Right to Be Forgotten):\n\nAre you sure you want to permanently delete your account and erase all records?\n\nAll local transactions, till drawers, customer credits, and credentials will be permanently erased. This action cannot be undone.'
+      );
+      if (confirmed) {
+        executeErasure();
+      }
+    } else {
+      Alert.alert(
+        'Delete Account & Erase All Data?',
+        'This will permanently destroy all local ledger transactions, customer credit balances, till drawers, and credentials from this device.\n\nThis action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Permanently Erase Everything',
+            style: 'destructive',
+            onPress: executeErasure,
+          },
+        ]
+      );
+    }
   };
 
   const activePreset = getPresetById(selectedPresetId);
@@ -820,7 +867,7 @@ export default function ProfileScreen() {
                       borderWidth: 1.5,
                       borderColor: '#FECACA',
                       paddingVertical: 14,
-                      borderRadius: 9999,
+                      borderRadius: 12,
                       gap: 8,
                     }}
                     accessibilityRole="button"
@@ -830,6 +877,26 @@ export default function ProfileScreen() {
                     <Text style={{ fontSize: 13, fontWeight: '800', color: '#EF4444', letterSpacing: 0.5 }}>
                       LOG OUT OF CASHFLOW
                     </Text>
+                  </Pressable>
+                </View>
+
+                {/* Danger Zone: Account & Data Erasure */}
+                <View style={styles.dangerZoneCard}>
+                  <View style={styles.dangerZoneHeader}>
+                    <Ionicons name="warning-outline" size={18} color="#DC2626" />
+                    <Text style={styles.dangerZoneTitle}>Danger Zone • Data Erasure</Text>
+                  </View>
+                  <Text style={styles.dangerZoneDesc}>
+                    Permanently delete your trader account, cashbox drawers, customer credit records, and session keys from this device in accordance with statutory privacy regulations (Right to Be Forgotten). This action cannot be undone.
+                  </Text>
+                  <Pressable
+                    onPress={handleDeleteAccountAndData}
+                    style={styles.deleteAccountBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete Account and Permanently Erase All Data"
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                    <Text style={styles.deleteAccountBtnText}>DELETE ACCOUNT & ERASE ALL DATA</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1103,7 +1170,7 @@ const styles = StyleSheet.create({
     backgroundColor: EmeraldTokens.mintCta,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 10,
   },
   headerSaveBtnSuccess: {
     backgroundColor: '#059669',
@@ -1123,7 +1190,7 @@ const styles = StyleSheet.create({
     borderColor: EmeraldTokens.mintCta,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 8,
     marginBottom: 8,
     alignSelf: 'center',
   },
@@ -1133,11 +1200,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Segmented Pill Switcher
+  // Segmented Switcher
   modeToggleContainer: {
     flexDirection: 'row',
     backgroundColor: 'rgba(0, 0, 0, 0.22)',
-    borderRadius: 999,
+    borderRadius: 12,
     padding: 3,
     marginTop: 4,
     maxWidth: 420,
@@ -1151,7 +1218,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 10,
   },
   modeToggleBtnActive: {
     backgroundColor: '#FFFFFF',
@@ -1218,7 +1285,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 6,
   },
   bannerBadgeText: {
     fontSize: 10,
@@ -1282,7 +1349,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5EF',
     paddingHorizontal: 16,
     paddingVertical: 9,
-    borderRadius: 999,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CDE9DE',
   },
@@ -1297,7 +1364,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 999,
+    borderRadius: 10,
     backgroundColor: '#FEE2E2',
   },
   avatarRemoveBtnText: {
@@ -1425,7 +1492,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAF9',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.07)',
   },
@@ -1493,7 +1560,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(52, 211, 153, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 6,
   },
   passStatusDot: {
     width: 5,
@@ -1632,7 +1699,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: 10,
   },
   passActionReturnText: {
     fontSize: 12,
@@ -1674,7 +1741,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#A7F3D0',
   },
@@ -1725,7 +1792,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#BBF7D0',
     marginBottom: 12,
@@ -1747,7 +1814,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: EmeraldTokens.deepPine,
     paddingVertical: 14,
-    borderRadius: 9999,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1756,5 +1823,49 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.5,
+  },
+  // Danger Zone Data Erasure
+  dangerZoneCard: {
+    marginTop: 18,
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    borderRadius: 14,
+    gap: 10,
+  },
+  dangerZoneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dangerZoneTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#DC2626',
+    letterSpacing: 0.3,
+  },
+  dangerZoneDesc: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#991B1B',
+  },
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#F87171',
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 8,
+    marginTop: 4,
+  },
+  deleteAccountBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#DC2626',
+    letterSpacing: 0.4,
   },
 });

@@ -98,7 +98,12 @@ function RootLayoutNav() {
 
   const firstSegment = segments[0] as string | undefined;
   const isAuthScreen =
-    firstSegment === 'login' || firstSegment === 'signup' || firstSegment === 'legal';
+    firstSegment === 'login' ||
+    firstSegment === 'signup' ||
+    firstSegment === 'legal' ||
+    firstSegment === 'refund' ||
+    firstSegment === 'cookies' ||
+    firstSegment === 'disclaimer';
   const isOnboardingScreen = firstSegment === 'onboarding';
 
   useEffect(() => {
@@ -180,6 +185,9 @@ function ThemedRootContainer({
           <Stack.Screen name="profile" options={{ headerShown: false }} />
           <Stack.Screen name="admin" options={{ headerShown: false }} />
           <Stack.Screen name="legal" options={{ headerShown: false }} />
+          <Stack.Screen name="refund" options={{ headerShown: false }} />
+          <Stack.Screen name="cookies" options={{ headerShown: false }} />
+          <Stack.Screen name="disclaimer" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
 

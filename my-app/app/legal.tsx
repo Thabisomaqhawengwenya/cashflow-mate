@@ -8,18 +8,19 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { EmeraldTokens, BlueTokens } from '@/constants/Colors';
-import { DesignTokens } from '@/constants/DesignTokens';
 import { AppLogo } from '@/components/BrandLogos';
 import { M3Badge } from '@/components/M3/M3Badge';
 import { useAppearance } from '@/context/AppearanceContext';
 
-type LegalTab = 'privacy' | 'terms' | 'refund' | 'cookies' | 'disclaimer' | 'publisher';
+type LegalTab = 'terms' | 'privacy';
 
 export default function LegalScreen() {
-  const { palette, surfaces } = useAppearance();
-  const [activeTab, setActiveTab] = useState<LegalTab>('privacy');
+  const { palette, surfaces, cardRadius } = useAppearance();
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const initialTab: LegalTab = params.tab === 'privacy' ? 'privacy' : 'terms';
+  const [activeTab, setActiveTab] = useState<LegalTab>(initialTab);
 
   return (
     <View style={[styles.container, { backgroundColor: palette.headerBg }]}>
@@ -52,108 +53,62 @@ export default function LegalScreen() {
           </View>
         </View>
 
-        {/* Scrollable Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}
-        >
-          <Pressable
-            onPress={() => setActiveTab('privacy')}
-            style={[styles.tabChip, activeTab === 'privacy' && { backgroundColor: palette.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === 'privacy' }}
-          >
-            <Ionicons
-              name="shield-checkmark"
-              size={14}
-              color={activeTab === 'privacy' ? '#FFFFFF' : '#E2E8F0'}
-            />
-            <Text style={[styles.tabChipText, activeTab === 'privacy' && styles.tabChipTextActive]}>
-              Privacy Policy
-            </Text>
-          </Pressable>
-
+        {/* Clean 2-Way Document Switcher (Squircle, No Pills) */}
+        <View style={styles.segmentContainer}>
           <Pressable
             onPress={() => setActiveTab('terms')}
-            style={[styles.tabChip, activeTab === 'terms' && { backgroundColor: palette.primary }]}
+            style={[
+              styles.segmentBtn,
+              activeTab === 'terms' && {
+                backgroundColor: palette.primary,
+                borderColor: palette.accent,
+              },
+            ]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'terms' }}
           >
             <Ionicons
               name="document-text"
-              size={14}
-              color={activeTab === 'terms' ? '#FFFFFF' : '#E2E8F0'}
+              size={15}
+              color={activeTab === 'terms' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)'}
             />
-            <Text style={[styles.tabChipText, activeTab === 'terms' && styles.tabChipTextActive]}>
+            <Text
+              style={[
+                styles.segmentBtnText,
+                activeTab === 'terms' && styles.segmentBtnTextActive,
+              ]}
+            >
               Terms of Service
             </Text>
           </Pressable>
 
           <Pressable
-            onPress={() => setActiveTab('refund')}
-            style={[styles.tabChip, activeTab === 'refund' && { backgroundColor: palette.primary }]}
+            onPress={() => setActiveTab('privacy')}
+            style={[
+              styles.segmentBtn,
+              activeTab === 'privacy' && {
+                backgroundColor: palette.primary,
+                borderColor: palette.accent,
+              },
+            ]}
             accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === 'refund' }}
+            accessibilityState={{ selected: activeTab === 'privacy' }}
           >
             <Ionicons
-              name="card"
-              size={14}
-              color={activeTab === 'refund' ? '#FFFFFF' : '#E2E8F0'}
+              name="shield-checkmark"
+              size={15}
+              color={activeTab === 'privacy' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)'}
             />
-            <Text style={[styles.tabChipText, activeTab === 'refund' && styles.tabChipTextActive]}>
-              Refund & Fees
+            <Text
+              style={[
+                styles.segmentBtnText,
+                activeTab === 'privacy' && styles.segmentBtnTextActive,
+              ]}
+            >
+              Privacy Policy
             </Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => setActiveTab('cookies')}
-            style={[styles.tabChip, activeTab === 'cookies' && { backgroundColor: palette.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === 'cookies' }}
-          >
-            <Ionicons
-              name="server"
-              size={14}
-              color={activeTab === 'cookies' ? '#FFFFFF' : '#E2E8F0'}
-            />
-            <Text style={[styles.tabChipText, activeTab === 'cookies' && styles.tabChipTextActive]}>
-              Cookies & Storage
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setActiveTab('disclaimer')}
-            style={[styles.tabChip, activeTab === 'disclaimer' && { backgroundColor: palette.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === 'disclaimer' }}
-          >
-            <Ionicons
-              name="alert-circle"
-              size={14}
-              color={activeTab === 'disclaimer' ? '#FFFFFF' : '#E2E8F0'}
-            />
-            <Text style={[styles.tabChipText, activeTab === 'disclaimer' && styles.tabChipTextActive]}>
-              AI Disclaimer
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setActiveTab('publisher')}
-            style={[styles.tabChip, activeTab === 'publisher' && { backgroundColor: palette.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === 'publisher' }}
-          >
-            <Ionicons
-              name="business"
-              size={14}
-              color={activeTab === 'publisher' ? '#FFFFFF' : '#E2E8F0'}
-            />
-            <Text style={[styles.tabChipText, activeTab === 'publisher' && styles.tabChipTextActive]}>
-              Business Details
-            </Text>
-          </Pressable>
-        </ScrollView>
+        </View>
       </View>
 
       {/* Sheet Content Canvas */}
@@ -625,132 +580,67 @@ export default function LegalScreen() {
           </View>
         )}
 
-        {activeTab === 'refund' && (
-          <View style={styles.card}>
-            <View style={styles.badgeRow}>
-              <M3Badge label="100% FREE CORE" variant="mint" />
-              <M3Badge label="14-DAY REFUND GUARANTEE" variant="neutral" />
+        {/* Specialized Policy Pages Navigation Hub */}
+        <View style={[styles.otherPoliciesCard, { borderRadius: cardRadius }]}>
+          <Text style={styles.otherPoliciesTitle}>Specialized Policies &amp; Disclaimers</Text>
+          <Text style={styles.otherPoliciesSubtitle}>
+            Specific commercial terms, storage practices, and AI calculation boundaries are published on their own dedicated pages:
+          </Text>
+
+          <Pressable
+            onPress={() => router.push('/refund' as any)}
+            style={styles.otherPolicyRow}
+            accessibilityRole="button"
+            accessibilityLabel="Open Refund and Fees Policy"
+          >
+            <View style={styles.otherPolicyLeft}>
+              <View style={[styles.policyIconBox, { backgroundColor: '#ECFDF5' }]}>
+                <Ionicons name="card" size={17} color="#059669" />
+              </View>
+              <View style={styles.policyTextBox}>
+                <Text style={styles.otherPolicyName}>Refund &amp; Fees Policy</Text>
+                <Text style={styles.otherPolicyDesc}>100% Free Core &bull; 14-day refund window</Text>
+              </View>
             </View>
+            <Ionicons name="chevron-forward" size={16} color="#64748B" />
+          </Pressable>
 
-            <Text style={styles.sectionHeading}>3. Refund Policy & Zero Hidden Fees</Text>
-            <Text style={styles.bodyParagraph}>
-              CashFlow Mate believes in complete financial transparency. We enforce a strict <Text style={styles.boldText}>No Hidden Fees</Text> guarantee.
-            </Text>
-
-            <Text style={styles.subHeading}>Free & Open Source Core</Text>
-            <Text style={styles.bodyParagraph}>
-              All offline bookkeeping features (including the 3-drawer cashbox, EcoCash/InnBucks SMS parser, CSV export/import, multi-currency till, and market stall pass) are 100% free and open source forever under the MIT License.
-            </Text>
-
-            <Text style={styles.subHeading}>Commercial License Refunds</Text>
-            <Text style={styles.bodyParagraph}>
-              For commercial enterprise activations and offline HMAC-SHA256 licenses, we offer a <Text style={styles.boldText}>14-day money-back guarantee</Text>. If an activation key fails to validate on your device or does not meet your operational requirements, contact support@cashflowmate.app within 14 days of purchase for a complete refund.
-            </Text>
-          </View>
-        )}
-
-        {activeTab === 'cookies' && (
-          <View style={styles.card}>
-            <View style={styles.badgeRow}>
-              <M3Badge label="NO TRACKING COOKIES" variant="mint" />
-              <M3Badge label="ESSENTIAL STORAGE ONLY" variant="neutral" />
+          <Pressable
+            onPress={() => router.push('/cookies' as any)}
+            style={styles.otherPolicyRow}
+            accessibilityRole="button"
+            accessibilityLabel="Open Cookies and Storage Policy"
+          >
+            <View style={styles.otherPolicyLeft}>
+              <View style={[styles.policyIconBox, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="server" size={17} color="#0284C7" />
+              </View>
+              <View style={styles.policyTextBox}>
+                <Text style={styles.otherPolicyName}>Cookies &amp; Storage Policy</Text>
+                <Text style={styles.otherPolicyDesc}>Strict local storage &bull; Zero tracking cookies</Text>
+              </View>
             </View>
+            <Ionicons name="chevron-forward" size={16} color="#64748B" />
+          </Pressable>
 
-            <Text style={styles.sectionHeading}>4. Cookie & Local Storage Policy</Text>
-            <Text style={styles.bodyParagraph}>
-              CashFlow Mate uses local browser storage exclusively for strictly necessary application operations when accessed on the web.
-            </Text>
-
-            <Text style={styles.subHeading}>What We Store Locally</Text>
-            <Text style={styles.bulletItem}>
-              &bull; <Text style={styles.boldText}>Theme & Appearance:</Text> Selected dark mode, light mode, or OLED high-contrast setting.
-            </Text>
-            <Text style={styles.bulletItem}>
-              &bull; <Text style={styles.boldText}>Active Currency & Language:</Text> English, ChiShona, or SiNdebele preference.
-            </Text>
-            <Text style={styles.bulletItem}>
-              &bull; <Text style={styles.boldText}>Session Tokens:</Text> Encrypted offline access tokens for secure return without relogging.
-            </Text>
-            <Text style={[styles.bodyParagraph, { marginTop: 12 }]}>
-              We do <Text style={styles.boldText}>NOT</Text> use tracking cookies, retargeting pixels, Google Analytics tracking scripts, or cross-domain marketing beacons.
-            </Text>
-          </View>
-        )}
-
-        {activeTab === 'disclaimer' && (
-          <View style={styles.card}>
-            <View style={styles.badgeRow}>
-              <M3Badge label="AI NOTICE" variant="amber" />
-              <M3Badge label="NOT FINANCIAL ADVICE" variant="neutral" />
+          <Pressable
+            onPress={() => router.push('/disclaimer' as any)}
+            style={styles.otherPolicyRow}
+            accessibilityRole="button"
+            accessibilityLabel="Open AI and Financial Disclaimer"
+          >
+            <View style={styles.otherPolicyLeft}>
+              <View style={[styles.policyIconBox, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="alert-circle" size={17} color="#D97706" />
+              </View>
+              <View style={styles.policyTextBox}>
+                <Text style={styles.otherPolicyName}>AI &amp; Financial Disclaimer</Text>
+                <Text style={styles.otherPolicyDesc}>Deterministic calculation &bull; Not tax advice</Text>
+              </View>
             </View>
-
-            <Text style={styles.sectionHeading}>5. AI Assistant & Financial Disclaimer</Text>
-            <Text style={styles.bodyParagraph}>
-              CashFlow Mate incorporates AI-powered business analytics (powered by Google Gemini) to assist informal traders in summarizing sales trends, forecasting reorders, and flagging overdue customer accounts.
-            </Text>
-
-            <View style={styles.noticeBox}>
-              <Ionicons name="information-circle" size={20} color="#047857" />
-              <Text style={styles.noticeText}>
-                CashFlow Mate AI is an assistive algorithmic calculation tool. It does NOT provide certified legal, taxation, statutory accounting, or investment advice.
-              </Text>
-            </View>
-
-            <Text style={styles.subHeading}>Verification Requirement</Text>
-            <Text style={styles.bodyParagraph}>
-              Merchants must independently verify cash totals, bank reconciliation amounts, and tax filings before submitting statutory returns to revenue authorities.
-            </Text>
-          </View>
-        )}
-
-        {activeTab === 'publisher' && (
-          <View style={styles.card}>
-            <View style={styles.badgeRow}>
-              <M3Badge label="OFFICIAL PUBLISHER" variant="mint" />
-              <M3Badge label="REGISTERED IDENTITY" variant="neutral" />
-            </View>
-
-            <Text style={styles.sectionHeading}>6. Publisher & Business Details</Text>
-            <Text style={styles.bodyParagraph}>
-              In compliance with international transparency directives, our verified publisher information is published below:
-            </Text>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Software Title:</Text>
-              <Text style={styles.detailValue}>CashFlow Mate (Professional Trader OS)</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Developer / Architect:</Text>
-              <Text style={styles.detailValue}>Mr Q (Maqhawe T Ngwenya)</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Headquarters / Hub:</Text>
-              <Text style={styles.detailValue}>Harare, Zimbabwe</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>License:</Text>
-              <Text style={styles.detailValue}>MIT Open Source License</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>Support Email:</Text>
-              <Text style={styles.detailValue}>support@cashflowmate.app</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailKey}>In-App Helpdesk:</Text>
-              <Text style={styles.detailValue}>Profile & Security &rarr; Report a Problem</Text>
-            </View>
-
-            <Text style={styles.subHeading}>Asset & Icon Licensing</Text>
-            <Text style={styles.bodyParagraph}>
-              All icons utilized are provided by Ionicons / Lucide under the MIT and SIL Open Font Licenses. All trademarks, market stall badges, and vector assets are proprietary designs by Mr Q.
-            </Text>
-          </View>
-        )}
+            <Ionicons name="chevron-forward" size={16} color="#64748B" />
+          </Pressable>
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -823,31 +713,96 @@ const styles = StyleSheet.create({
     color: '#34D399',
     letterSpacing: 0.5,
   },
-  tabsRow: {
+  segmentContainer: {
     flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 4,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
-  tabChip: {
+  segmentBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  tabChipActive: {
-    backgroundColor: '#34D399',
-  },
-  tabChipText: {
-    fontSize: 12,
+  segmentBtnText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: '#E2E8F0',
+    color: 'rgba(255, 255, 255, 0.75)',
   },
-  tabChipTextActive: {
-    color: '#064E3B',
+  segmentBtnTextActive: {
+    color: '#FFFFFF',
     fontWeight: '800',
+  },
+  otherPoliciesCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 18,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+      },
+      default: {
+        elevation: 2,
+      },
+    }),
+  },
+  otherPoliciesTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  otherPoliciesSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  otherPolicyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  otherPolicyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  policyIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  policyTextBox: {
+    flex: 1,
+  },
+  otherPolicyName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  otherPolicyDesc: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
   },
   sheet: {
     flex: 1,
