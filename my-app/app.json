@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Cashflow",
-    "slug": "cashflow",
+    "slug": "cashflow-mate",
     "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,7 +11,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.maqhawe.cashflow",
+      "package": "com.maqhawe.cashflowmate",
       "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#06152E",
