@@ -32,28 +32,28 @@ const NAV_STYLES: Array<{
     title: 'Floating Pill Dock',
     subtitle: 'Detached stadium capsule floating above the bottom edge with active pill tags',
     badge: 'POPULAR',
-    icon: 'albums-outline' as any,
+    icon: 'albums' as any,
   },
   {
     id: 'compact_pill',
     title: 'Compact Floating Capsule',
     subtitle: 'Centered narrow floating pill dock with dark glass surface and glowing active tab',
     badge: 'SLEEK',
-    icon: 'sparkles-outline',
+    icon: 'sparkles',
   },
   {
     id: 'curved_sheet',
     title: 'Curved Top-Edge Dock',
     subtitle: 'Full-width bar with 26px sculpted top corners hugging the bottom edge',
     badge: 'MODERN',
-    icon: 'layers-outline',
+    icon: 'layers',
   },
   {
     id: 'classic_dock',
     title: 'Classic Full-Width Bar',
     subtitle: 'Traditional edge-to-edge bottom navigation bar with crisp top divider',
     badge: 'CLASSIC',
-    icon: 'grid-outline',
+    icon: 'grid',
   },
 ];
 

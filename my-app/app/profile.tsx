@@ -342,7 +342,7 @@ export default function ProfileScreen() {
             ]}
           >
             <Ionicons
-              name="create-outline"
+              name="create"
               size={15}
               color={viewMode === 'edit' ? EmeraldTokens.deepPine : '#FFFFFF'}
             />
@@ -364,7 +364,7 @@ export default function ProfileScreen() {
             ]}
           >
             <Ionicons
-              name="card-outline"
+              name="card"
               size={15}
               color={viewMode === 'pass' ? EmeraldTokens.deepPine : '#FFFFFF'}
             />
@@ -445,7 +445,7 @@ export default function ProfileScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Upload photo from device"
                   >
-                    <Ionicons name="image-outline" size={16} color={EmeraldTokens.deepPine} />
+                    <Ionicons name="image" size={16} color={EmeraldTokens.deepPine} />
                     <Text style={styles.avatarActionBtnText}>Upload Photo</Text>
                   </Pressable>
 
@@ -459,7 +459,7 @@ export default function ProfileScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Remove photo"
                     >
-                      <Ionicons name="trash-outline" size={15} color="#DC2626" />
+                      <Ionicons name="trash" size={15} color="#DC2626" />
                       <Text style={styles.avatarRemoveBtnText}>Remove</Text>
                     </Pressable>
                   )}
@@ -786,7 +786,7 @@ export default function ProfileScreen() {
                   size="lg"
                   icon={
                     <Ionicons
-                      name={saveSuccess ? 'checkmark-circle' : 'save-outline'}
+                      name={saveSuccess ? 'checkmark-circle' : 'save'}
                       size={20}
                       color={EmeraldTokens.mintDarkText}
                     />
@@ -812,7 +812,7 @@ export default function ProfileScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Log out of Cashflow"
                   >
-                    <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                    <Ionicons name="log-out" size={18} color="#EF4444" />
                     <Text style={{ fontSize: 13, fontWeight: '800', color: '#EF4444', letterSpacing: 0.5 }}>
                       LOG OUT OF CASHFLOW
                     </Text>

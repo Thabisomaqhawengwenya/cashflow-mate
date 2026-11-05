@@ -397,7 +397,7 @@ export default function ModalScreen() {
             accessibilityRole="button"
             accessibilityLabel="Open Appearance and Theme Settings"
           >
-            <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+            <Ionicons name="settings" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
       </View>
@@ -451,7 +451,7 @@ export default function ModalScreen() {
               accessibilityRole="button"
               accessibilityLabel="Edit profile details and photo"
             >
-              <Ionicons name="create-outline" size={13} color={EmeraldTokens.deepPine} />
+              <Ionicons name="create" size={13} color={EmeraldTokens.deepPine} />
               <Text style={styles.editProfileBtnText}>Edit Profile</Text>
             </Pressable>
           </View>
@@ -470,7 +470,7 @@ export default function ModalScreen() {
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: '#F3E8FF' }]}>
-                <Ionicons name="color-palette-outline" size={18} color="#7E22CE" />
+                <Ionicons name="color-palette" size={20} color="#9333EA" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Appearance & Nav Bar Studio</Text>
@@ -490,8 +490,8 @@ export default function ModalScreen() {
             accessibilityLabel="Manage Trader Profile, Photo and Details"
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
-                <Ionicons name="person-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#EDE9FE' }]}>
+                <Ionicons name="person" size={20} color="#4F46E5" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Trader Profile & Photo</Text>
@@ -554,8 +554,8 @@ export default function ModalScreen() {
           {/* Item 1: Language Setup */}
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
-                <Ionicons name="language-outline" size={18} color={EmeraldTokens.pastelMintText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#CCFBF1' }]}>
+                <Ionicons name="language" size={20} color="#0D9488" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>{t('language_setup')}</Text>
@@ -590,11 +590,11 @@ export default function ModalScreen() {
             style={styles.settingItem}
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: security?.isPinSet ? EmeraldTokens.pastelMint : EmeraldTokens.pastelRose }]}>
+              <View style={[styles.iconSquircle, { backgroundColor: security?.isPinSet ? '#DCFCE7' : '#FEE2E2' }]}>
                 <Ionicons
-                  name={security?.isPinSet ? "lock-closed" : "lock-open-outline"}
-                  size={18}
-                  color={security?.isPinSet ? EmeraldTokens.pastelMintText : EmeraldTokens.pastelRoseText}
+                  name={security?.isPinSet ? "lock-closed" : "lock-open"}
+                  size={20}
+                  color={security?.isPinSet ? "#16A34A" : "#DC2626"}
                 />
               </View>
               <View style={styles.settingTextCol}>
@@ -663,11 +663,11 @@ export default function ModalScreen() {
           {/* Item 3: Counter Privacy Shield */}
           <Pressable onPress={handleTogglePrivacy} style={styles.settingItem}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#FEF3C7' }]}>
                 <Ionicons
-                  name={security?.isPrivacyMaskActive ? "eye-off" : "eye-outline"}
-                  size={18}
-                  color={EmeraldTokens.pastelAmberText}
+                  name={security?.isPrivacyMaskActive ? "eye-off" : "eye"}
+                  size={20}
+                  color="#D97706"
                 />
               </View>
               <View style={styles.settingTextCol}>
@@ -690,8 +690,8 @@ export default function ModalScreen() {
             style={styles.settingItem}
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
-                <Ionicons name="key-outline" size={18} color={EmeraldTokens.pastelRoseText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#FFE4E6' }]}>
+                <Ionicons name="key" size={20} color="#E11D48" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>License & Activation</Text>
@@ -750,8 +750,8 @@ export default function ModalScreen() {
             accessibilityLabel="Configure Market Exchange Rates"
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
-                <Ionicons name="swap-horizontal" size={18} color={EmeraldTokens.pastelAmberText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="swap-horizontal" size={20} color="#D97706" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Market Exchange Rates</Text>
@@ -802,8 +802,8 @@ export default function ModalScreen() {
             accessibilityLabel="Backup and Restore Database"
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
-                <Ionicons name="cloud-download-outline" size={18} color={EmeraldTokens.pastelMintText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#DCFCE7' }]}>
+                <Ionicons name="cloud-download" size={20} color="#16A34A" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Backup & Restore Ledger</Text>
@@ -866,8 +866,8 @@ export default function ModalScreen() {
             accessibilityLabel="Sync with cloud server"
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
-                <Ionicons name="sync-outline" size={18} color={EmeraldTokens.pastelSkyText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="sync" size={20} color="#0284C7" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Cloud Ledger Synchronization</Text>
@@ -876,14 +876,14 @@ export default function ModalScreen() {
                 </Text>
               </View>
             </View>
-            <Ionicons name="cloud-upload-outline" size={18} color={EmeraldTokens.deepPine} />
+            <Ionicons name="cloud-upload" size={18} color="#0284C7" />
           </Pressable>
 
           {/* Item 5: Multi-Currency Till Drawers */}
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelSky }]}>
-                <Ionicons name="wallet-outline" size={18} color={EmeraldTokens.pastelSkyText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="wallet" size={20} color="#0284C7" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Active Till Drawers</Text>
@@ -896,8 +896,8 @@ export default function ModalScreen() {
           {/* Item 6: Privacy & MIT Licensing */}
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelMint }]}>
-                <Ionicons name="shield-checkmark-outline" size={18} color={EmeraldTokens.pastelMintText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#DCFCE7' }]}>
+                <Ionicons name="shield-checkmark" size={20} color="#16A34A" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Privacy & Copyright</Text>
@@ -913,8 +913,8 @@ export default function ModalScreen() {
             style={styles.settingItem}
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelAmber }]}>
-                <Ionicons name="construct-outline" size={18} color={EmeraldTokens.pastelAmberText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#FFEDD5' }]}>
+                <Ionicons name="construct" size={20} color="#EA580C" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Report a Problem to Admin HQ</Text>
@@ -964,8 +964,8 @@ export default function ModalScreen() {
             style={styles.settingItem}
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelRose }]}>
-                <Ionicons name="warning-outline" size={18} color={EmeraldTokens.pastelRoseText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="warning" size={20} color="#DC2626" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Flag Scammer or Credit Defaulter</Text>
@@ -1025,8 +1025,8 @@ export default function ModalScreen() {
           {/* Item 7: Restore Demo Data */}
           <Pressable onPress={handleReset} style={styles.settingItem}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconSquircle, { backgroundColor: EmeraldTokens.pastelIndigo }]}>
-                <Ionicons name="refresh-outline" size={18} color={EmeraldTokens.pastelIndigoText} />
+              <View style={[styles.iconSquircle, { backgroundColor: '#EDE9FE' }]}>
+                <Ionicons name="refresh" size={20} color="#7C3AED" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Reset Harare Demo Data</Text>
@@ -1040,7 +1040,7 @@ export default function ModalScreen() {
           <Pressable onPress={handleCheckForUpdates} style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: '#E0F2FE' }]}>
-                <Ionicons name="sparkles" size={18} color="#0284C7" />
+                <Ionicons name="sparkles" size={20} color="#0284C7" />
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Software Update & Changelog</Text>
@@ -1321,9 +1321,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   iconSquircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
