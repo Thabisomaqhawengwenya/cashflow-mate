@@ -150,9 +150,12 @@ export const UpdateNotificationModal: React.FC<UpdateNotificationModalProps> = (
             <Text style={styles.changelogTitle}>
               Changelog • v{updateInfo.latestVersion}
             </Text>
-            <Text style={styles.changelogSubTitle}>
-              {updateInfo.changelogTitle || '⚡ Fixes & Improvements'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="flash" size={13} color="#D97706" />
+              <Text style={styles.changelogSubTitle}>
+                {updateInfo.changelogTitle || 'Fixes & Improvements'}
+              </Text>
+            </View>
 
             <ScrollView
               style={styles.changelogScroll}
@@ -391,9 +394,12 @@ export const UpToDateModal: React.FC<{
           {/* Changelog / Release Highlights Section */}
           <View style={styles.changelogBox}>
             <Text style={styles.changelogTitle}>Release Highlights • v{currentVersion}</Text>
-            <Text style={[styles.changelogSubTitle, { color: '#15803D' }]}>
-              ⚡ Production Engine Active
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="checkmark-circle" size={13} color="#15803D" />
+              <Text style={[styles.changelogSubTitle, { color: '#15803D' }]}>
+                Production Engine Active
+              </Text>
+            </View>
 
             <ScrollView
               style={styles.changelogScroll}

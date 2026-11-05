@@ -136,7 +136,7 @@ export function getSimulatedUpdate(targetVersion = '1.3.1'): AppUpdateInfo {
     apkDownloadUrl: `https://github.com/${GITHUB_REPO}/releases/download/v${targetVersion}/Cashflow-v${targetVersion}.apk`,
     apkSize: '98.2 MB',
     targetAbi: 'Universal',
-    changelogTitle: '⚡ Fixes & Improvements',
+    changelogTitle: 'Fixes & Improvements',
     changelog: [
       {
         title: 'Instant Till Sync',
@@ -217,7 +217,7 @@ export class MobileUpdateService {
             `https://github.com/${GITHUB_REPO}/releases/download/v${CURRENT_APP_VERSION}/Cashflow-v${CURRENT_APP_VERSION}.apk`,
           apkSize: currentSize,
           targetAbi: 'Universal',
-          changelogTitle: '⚡ Current Version Highlights',
+          changelogTitle: 'Current Version Highlights',
           changelog: [
             {
               title: 'Supabase Cloud Sync',

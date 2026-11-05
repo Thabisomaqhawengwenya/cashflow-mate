@@ -45,7 +45,7 @@ This document codifies the 20 mandatory legal, compliance, and consumer protecti
   - Registration form (`signup.tsx`) features an explicit, unchecked-by-default consent toggle requiring users to affirm agreement to the Terms of Service and Privacy Policy before account creation.
 
 ### 7. Collect Only Needed Data (Data Minimization)
-- **Requirement:** Principle of data minimization—only solicit data strictly necessary for application functionality.
+- **Requirement:** Principle of data minimization: only solicit data strictly necessary for application functionality.
 - **CashFlow Mate Implementation:**
   - CashFlow Mate asks only for a trader nickname/business name, till currency preference, and credentials. Phone numbers, national IDs, and GPS coordinates are never demanded or harvested.
 

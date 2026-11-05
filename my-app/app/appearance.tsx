@@ -569,7 +569,7 @@ export default function AppearanceScreen() {
             <View style={styles.customHeaderRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.customBuilderTitle, { color: surfaces.textPrimary }]}>
-                  Custom Color Dropdowns — Choose Your Own Colors
+                  Custom Color Dropdowns: Choose Your Own Colors
                 </Text>
                 <Text style={[styles.customBuilderSub, { color: surfaces.textMuted }]}>
                   Open each color dropdown below to pick from 24 shades per channel, or enter any #HEX code.

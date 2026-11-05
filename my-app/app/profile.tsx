@@ -793,7 +793,7 @@ export default function ProfileScreen() {
                     saving
                       ? 'SAVING CHANGES...'
                       : saveSuccess
-                      ? 'SAVED SUCCESSFULLY ✓'
+                      ? 'SAVED SUCCESSFULLY'
                       : 'SAVE PROFILE CHANGES'
                   }
                   variant={saveSuccess ? 'tonal' : 'mint'}

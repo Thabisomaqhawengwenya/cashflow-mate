@@ -97,16 +97,16 @@ export default function SignupScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go to Sign In"
             >
-              <Ionicons name="log-in-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
             </Pressable>
 
             <Pressable
               onPress={() => router.replace('/login' as any)}
-              style={styles.skipButton}
+              style={styles.topLink}
               accessibilityRole="button"
               accessibilityLabel="Sign in"
             >
-              <Text style={styles.skipText}>Sign In</Text>
+              <Text style={styles.topLinkText}>Sign In</Text>
             </Pressable>
           </View>
 
@@ -126,17 +126,6 @@ export default function SignupScreen() {
           <Text style={styles.heroSub}>
             Set up your multi-currency market cashbox in 30 seconds.
           </Text>
-
-          <View style={styles.featurePillRow}>
-            <View style={styles.featurePill}>
-              <Ionicons name="shield-checkmark" size={13} color={EmeraldTokens.mintCta} />
-              <Text style={styles.featurePillText}>Offline Encrypted</Text>
-            </View>
-            <View style={styles.featurePill}>
-              <Ionicons name="wallet-outline" size={13} color={EmeraldTokens.mintCta} />
-              <Text style={styles.featurePillText}>3-Drawer Float</Text>
-            </View>
-          </View>
         </View>
 
         {/* 2. Curved White Body Sheet */}
@@ -360,16 +349,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  skipButton: {
-    paddingHorizontal: 12,
+  topLink: {
     paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 4,
   },
-  skipText: {
-    fontSize: 12,
+  topLinkText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: BlueTokens.accent,
+    color: '#FFFFFF',
+    letterSpacing: -0.1,
   },
   heroGreeting: {
     fontSize: 24,
@@ -382,27 +370,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.72)',
     lineHeight: 18,
-    marginBottom: 14,
-  },
-  featurePillRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  featurePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(21, 101, 216, 0.22)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(85, 215, 255, 0.35)',
-    gap: 6,
-  },
-  featurePillText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: BlueTokens.accent,
+    marginBottom: 16,
   },
   sheetCard: {
     flex: 1,

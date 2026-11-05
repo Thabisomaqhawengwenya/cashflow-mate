@@ -69,7 +69,7 @@ export const InsightsPage: React.FC = () => {
     const connected = checkWifiConnection();
     if (!connected) {
       const proceed = window.confirm(
-        '⚠️ Not Connected to Wi-Fi\n\nAI queries require an active Wi-Fi connection to reach the Gemini AI intelligence engine.\n\nClick OK to attempt anyway with local cache, or Cancel to connect to Wi-Fi first.'
+        'Not Connected to Wi-Fi\n\nAI queries require an active Wi-Fi connection to reach the Gemini AI intelligence engine.\n\nClick OK to attempt anyway with local cache, or Cancel to connect to Wi-Fi first.'
       );
       if (!proceed) return;
     }

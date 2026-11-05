@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   detailsBtn: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 9999,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   detailsBtnText: {
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   acceptBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 9999,
+    borderRadius: 10,
     backgroundColor: '#34D399',
   },
   acceptBtnText: {

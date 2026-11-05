@@ -109,12 +109,12 @@ export default function LoginScreen() {
             <View style={{ flex: 1 }} />
             <Pressable
               onPress={() => router.push('/signup' as any)}
-              style={styles.skipButton}
+              style={styles.topBarLink}
               accessibilityRole="button"
               accessibilityLabel="Create Account"
             >
-              <Text style={styles.skipText}>Sign Up</Text>
-              <Ionicons name="arrow-forward" size={15} color={palette.accent} />
+              <Text style={styles.topBarLinkText}>Sign Up</Text>
+              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
             </Pressable>
           </View>
 
@@ -132,13 +132,6 @@ export default function LoginScreen() {
           <Text style={styles.heroSub}>
             Sign in to access your multi-drawer cashbox and records.
           </Text>
-
-          <View style={styles.statusPill}>
-            <View style={styles.pulseDot} />
-            <Text style={styles.statusPillText}>
-              OFFLINE FIRST • SECURE LOCAL TILL
-            </Text>
-          </View>
         </View>
 
         {/* 2. Curved Body Card */}
@@ -337,19 +330,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  skipButton: {
+  topBarLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
+    gap: 4,
     paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
-    gap: 6,
+    paddingHorizontal: 4,
   },
-  skipText: {
-    fontSize: 12,
+  topBarLinkText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: BlueTokens.accent,
+    color: '#FFFFFF',
+    letterSpacing: -0.1,
   },
   brandRow: {
     flexDirection: 'row',
@@ -389,31 +381,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.72)',
     lineHeight: 20,
-    marginBottom: 16,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(21, 101, 216, 0.22)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(85, 215, 255, 0.35)',
-  },
-  pulseDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: BlueTokens.success,
-    marginRight: 8,
-  },
-  statusPillText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: BlueTokens.accent,
-    letterSpacing: 0.6,
+    marginBottom: 20,
   },
   sheetCard: {
     flex: 1,
@@ -476,7 +444,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 9999,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#FDE68A',
     gap: 5,

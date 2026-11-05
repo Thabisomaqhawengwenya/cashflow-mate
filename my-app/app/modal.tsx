@@ -1106,7 +1106,7 @@ export default function ModalScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ backgroundColor: '#E0F2FE', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 9999, marginRight: 6 }}>
+              <View style={{ backgroundColor: '#E0F2FE', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 6 }}>
                 <Text style={{ fontSize: 11, fontWeight: '800', color: '#0284C7' }}>v1.3.0</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
@@ -1133,7 +1133,7 @@ export default function ModalScreen() {
                 backgroundColor: '#E0F2FE',
                 paddingHorizontal: 12,
                 paddingVertical: 6,
-                borderRadius: 9999,
+                borderRadius: 12,
                 marginTop: 8,
               },
               pressed && { opacity: 0.8 },
@@ -1323,7 +1323,7 @@ const styles = StyleSheet.create({
     backgroundColor: EmeraldTokens.pastelMint,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   mintChipText: {
     fontSize: 11,
@@ -1338,7 +1338,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5EF',
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CDE9DE',
   },
@@ -1417,14 +1417,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F1F5F3',
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 10,
     padding: 2,
     gap: 2,
   },
   langChip: {
     paddingHorizontal: 8,
     paddingVertical: 5,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   langChipActive: {
     backgroundColor: EmeraldTokens.deepPine,
@@ -1443,7 +1443,7 @@ const styles = StyleSheet.create({
   statusToggleBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
     backgroundColor: '#F1F5F3',
   },
   statusToggleBadgeActive: {
@@ -1499,7 +1499,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F3',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   sampleBadgeText: {
     fontSize: 11,
@@ -1539,7 +1539,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 9999,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#FCA5A5',
     backgroundColor: '#FEF2F2',

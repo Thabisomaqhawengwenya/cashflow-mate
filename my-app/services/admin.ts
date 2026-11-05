@@ -250,7 +250,7 @@ const INITIAL_SUPPORT_TICKETS: UserProblemTicket[] = [
     category: 'license_activation',
     priority: 'high',
     status: 'open',
-    subject: 'Paid $15 via EcoCash for Enterprise upgrade — awaiting license key',
+    subject: 'Paid $15 via EcoCash for Enterprise upgrade : awaiting license key',
     description:
       'Sent $15 USD via EcoCash merchant code 449012 (Ref: MP261102.0911.A09123). Please issue my CFM-ENT activation key.',
     createdAt: '2026-11-02 09:20',
@@ -697,7 +697,7 @@ export class MobileAdminService {
       eventType: 'WATCHLIST_BLACKLIST',
       severity: status === 'blacklisted' ? 'critical' : 'info',
       target: targetName,
-      summary: `Updated watchlist status to ${status.toUpperCase()}${adminNotes ? ` — Note: ${adminNotes}` : ''}.`,
+      summary: `Updated watchlist status to ${status.toUpperCase()}${adminNotes ? `: Note: ${adminNotes}` : ''}.`,
     });
     return updated;
   }

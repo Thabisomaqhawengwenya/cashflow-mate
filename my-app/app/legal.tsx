@@ -236,7 +236,7 @@ export default function LegalScreen() {
 
             <Text style={styles.subHeading}>Free & Open Source Core</Text>
             <Text style={styles.bodyParagraph}>
-              All offline bookkeeping features—including the 3-drawer cashbox, EcoCash/InnBucks SMS parser, CSV export/import, multi-currency till, and market stall pass—are 100% free and open source forever under the MIT License.
+              All offline bookkeeping features (including the 3-drawer cashbox, EcoCash/InnBucks SMS parser, CSV export/import, multi-currency till, and market stall pass) are 100% free and open source forever under the MIT License.
             </Text>
 
             <Text style={styles.subHeading}>Commercial License Refunds</Text>
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 9999,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   tabChipActive: {
