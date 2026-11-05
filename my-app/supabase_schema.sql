@@ -30,11 +30,31 @@ create policy "Users can view own profile"
 
 create policy "Users can update own profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 create policy "Users can insert own profile"
   on public.profiles for insert
   with check (auth.uid() = id);
+
+-- Security Trigger: Prevent tampering with immutable identifiers (id, merchant_code)
+create or replace function public.protect_profile_immutable_fields()
+returns trigger as $$
+begin
+  if new.id <> old.id then
+    raise exception 'Security Error: Profile ID cannot be modified.';
+  end if;
+  if new.merchant_code is distinct from old.merchant_code then
+    raise exception 'Security Error: merchant_code is an immutable internal identifier and cannot be modified.';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists trg_protect_profile_immutable_fields on public.profiles;
+create trigger trg_protect_profile_immutable_fields
+  before update on public.profiles
+  for each row execute function public.protect_profile_immutable_fields();
 
 -- Auto-provision profile on auth signup trigger
 create or replace function public.handle_new_user()

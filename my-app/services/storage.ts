@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSupabaseConfigured } from './supabase';
+import { SecureVault } from '../utils/secureVault';
 
 export type CurrencyCode = 'USD' | 'ZWG' | 'ZAR';
 
@@ -527,7 +528,7 @@ export class MobileStorageService {
 
   static async getGeminiApiKey(): Promise<string> {
     try {
-      const key = await AsyncStorage.getItem(STORAGE_KEY_GEMINI_KEY);
+      const key = await SecureVault.getSecret(STORAGE_KEY_GEMINI_KEY);
       return (key || (process.env as any).EXPO_PUBLIC_GEMINI_API_KEY || '').trim();
     } catch {
       return '';
@@ -535,11 +536,11 @@ export class MobileStorageService {
   }
 
   static async setGeminiApiKey(key: string): Promise<void> {
-    await AsyncStorage.setItem(STORAGE_KEY_GEMINI_KEY, key.trim());
+    await SecureVault.setSecret(STORAGE_KEY_GEMINI_KEY, key.trim());
   }
 
   static async clearGeminiApiKey(): Promise<void> {
-    await AsyncStorage.removeItem(STORAGE_KEY_GEMINI_KEY);
+    await SecureVault.removeSecret(STORAGE_KEY_GEMINI_KEY);
   }
 }
 

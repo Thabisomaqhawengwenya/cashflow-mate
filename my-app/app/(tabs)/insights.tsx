@@ -35,6 +35,7 @@ import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
 import { SupportedLanguage } from '@/services/i18n';
+import { SecureVault } from '@/utils/secureVault';
 
 const QUICK_QUESTIONS_MAP: Record<SupportedLanguage, string[]> = {
   en: [
@@ -76,6 +77,7 @@ export default function InsightsScreen() {
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [tempApiKey, setTempApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [keyTestMessage, setKeyTestMessage] = useState<{ success: boolean; text: string } | null>(null);
 
@@ -680,15 +682,38 @@ export default function InsightsScreen() {
               </Text>
             </View>
 
-            <M3Input
-              label="Google Gemini API Key"
-              placeholder="Paste AIzaSy... key from Google AI Studio"
-              value={tempApiKey}
-              onChangeText={setTempApiKey}
-              autoCapitalize="none"
-              autoCorrect={false}
-              secureTextEntry={false}
-            />
+            {geminiApiKey ? (
+              <View style={styles.vaultActiveBox}>
+                <Ionicons name="lock-closed" size={14} color="#059669" />
+                <Text style={styles.vaultActiveText}>
+                  Encrypted Vault Key: {SecureVault.maskApiKey(geminiApiKey)}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={{ position: 'relative' }}>
+              <M3Input
+                label="Google Gemini API Key"
+                placeholder={geminiApiKey ? "Paste new key to replace" : "Paste AIzaSy... key from Google AI Studio"}
+                value={tempApiKey}
+                onChangeText={setTempApiKey}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={!showApiKey}
+              />
+              <Pressable
+                onPress={() => setShowApiKey(!showApiKey)}
+                style={styles.eyeToggleBtn}
+                accessibilityRole="button"
+                accessibilityLabel={showApiKey ? "Hide API key" : "Show API key"}
+              >
+                <Ionicons
+                  name={showApiKey ? "eye-off-outline" : "eye-outline"}
+                  size={18}
+                  color={EmeraldTokens.textMuted}
+                />
+              </Pressable>
+            </View>
 
             {keyTestMessage && (
               <View
@@ -1284,5 +1309,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: EmeraldTokens.textMuted,
     marginTop: 14,
+  },
+  vaultActiveBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 14,
+  },
+  vaultActiveText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  eyeToggleBtn: {
+    position: 'absolute',
+    right: 14,
+    top: 36,
+    padding: 6,
   },
 });
