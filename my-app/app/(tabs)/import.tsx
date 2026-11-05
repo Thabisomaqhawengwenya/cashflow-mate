@@ -216,11 +216,13 @@ export default function ImportScreen() {
       {/* 1. Deep Forest Emerald Header */}
       <View style={styles.emeraldHeader}>
         <View style={styles.topNavRow}>
-          <Pressable onPress={() => router.push('/(tabs)')} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-          </Pressable>
           <Text style={styles.headerTitle}>{t('import_title')}</Text>
-          <Pressable onPress={() => router.push('/modal')} style={styles.backButton}>
+          <Pressable
+            onPress={() => router.push('/modal')}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
             <Ionicons name="key-outline" size={20} color="#FFFFFF" />
           </Pressable>
         </View>

@@ -119,20 +119,13 @@ export default function TransactionsScreen() {
       <View style={styles.emeraldHeader}>
         {/* Top Navigation Row */}
         <View style={styles.topNavRow}>
-          <Pressable
-            onPress={() => router.push('/(tabs)')}
-            hitSlop={10}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Home"
-          >
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-          </Pressable>
           <Text style={styles.headerTitle}>{t('my_transactions')}</Text>
           <Pressable
             onPress={() => router.push('/modal')}
             hitSlop={10}
             style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
           >
             <Ionicons name="filter-outline" size={20} color="#FFFFFF" />
           </Pressable>
@@ -453,7 +446,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 12,
     paddingHorizontal: 14,
     height: 42,
     marginBottom: 14,
@@ -471,7 +464,7 @@ const styles = StyleSheet.create({
   filterPill: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   filterPillText: {
     fontSize: 12,
@@ -547,7 +540,7 @@ const styles = StyleSheet.create({
   cardAmountBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 6,
   },
   cardAmountText: {
     fontSize: 12,
@@ -666,7 +659,7 @@ const styles = StyleSheet.create({
   catChoiceChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
     marginRight: 8,
   },
   catChoiceText: {
@@ -679,7 +672,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: EmeraldTokens.mintSoft,
     paddingVertical: 12,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 12,
     marginTop: 12,
     gap: 8,
     borderWidth: 1,

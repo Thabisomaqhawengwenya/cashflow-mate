@@ -479,52 +479,52 @@ export default function OverviewScreen() {
             })}
           </View>
 
-          {/* 3-Column Stat Bar (Directly from Reference Screen 1) */}
+          {/* 3-Column Stat Bar with Integrated Unified Portfolio Footer */}
           <View style={styles.statBar}>
-            <View style={styles.statCol}>
-              <Text style={styles.statNumber}>
-                {String(inflowCount).padStart(2, '0')}
-              </Text>
-              <Text style={styles.statLabel}>{currency} {t('filter_inflows')}</Text>
+            <View style={styles.statColumnsRow}>
+              <View style={styles.statCol}>
+                <Text style={styles.statNumber}>
+                  {String(inflowCount).padStart(2, '0')}
+                </Text>
+                <Text style={styles.statLabel}>{currency} {t('filter_inflows')}</Text>
+              </View>
+
+              <View style={styles.statDivider} />
+
+              <View style={styles.statCol}>
+                <Text style={styles.statNumber}>
+                  {String(outflowCount).padStart(2, '0')}
+                </Text>
+                <Text style={styles.statLabel}>{currency} {t('filter_outflows')}</Text>
+              </View>
+
+              <View style={styles.statDivider} />
+
+              <View style={styles.statCol}>
+                <Text style={[styles.statNumber, { color: palette.accent }]}>
+                  {isMasked
+                    ? '••••'
+                    : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
+                </Text>
+                <Text style={styles.statLabel}>{t('net_till_flow')}</Text>
+              </View>
             </View>
 
-            <View style={styles.statDivider} />
-
-            <View style={styles.statCol}>
-              <Text style={styles.statNumber}>
-                {String(outflowCount).padStart(2, '0')}
+            {/* Integrated Minimalist Unified Worth Footer (No floating pill, no AI sparkles) */}
+            <Pressable
+              onPress={() => setShowPortfolioTotal(!showPortfolioTotal)}
+              style={styles.unifiedFooterRow}
+              accessibilityRole="button"
+              accessibilityLabel="Toggle unified portfolio valuation"
+            >
+              <Text style={styles.unifiedFooterLabel}>
+                {t('unified_worth')}
               </Text>
-              <Text style={styles.statLabel}>{currency} {t('filter_outflows')}</Text>
-            </View>
-
-            <View style={styles.statDivider} />
-
-            <View style={styles.statCol}>
-              <Text style={[styles.statNumber, { color: BlueTokens.accent }]}>
-                {isMasked
-                  ? '••••'
-                  : `${summary.netCashFlow >= 0 ? '+' : ''}${formatMoney(summary.netCashFlow, currency)}`}
-              </Text>
-              <Text style={styles.statLabel}>{t('net_till_flow')}</Text>
-            </View>
-          </View>
-
-          {/* Unified Multi-Currency Portfolio Valuation Pill */}
-          <Pressable
-            onPress={() => setShowPortfolioTotal(!showPortfolioTotal)}
-            style={styles.portfolioValuationPill}
-            accessibilityRole="button"
-            accessibilityLabel="Toggle unified portfolio valuation"
-          >
-            <Ionicons name="sparkles" size={13} color={EmeraldTokens.mintCta} />
-            <Text style={styles.portfolioValuationText}>
-              {t('unified_worth')}:{' '}
-              <Text style={styles.portfolioValuationAmount}>
+              <Text style={styles.unifiedFooterAmount}>
                 {isMasked ? '••••' : `$${portfolioValuation?.totalUsdEquivalent?.toFixed(2) || '0.00'} ${t('usd_eq')}`}
               </Text>
-            </Text>
-            <Ionicons name="swap-horizontal" size={13} color={BlueTokens.accent} />
-          </Pressable>
+            </Pressable>
+          </View>
         </View>
 
         {/* 3. White Curved Body Sheet */}
@@ -1444,33 +1444,42 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   currencyDrawerChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: DesignTokens.shapes.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
   },
   currencyDrawerChipActive: {
-    backgroundColor: EmeraldTokens.mintCta,
+    backgroundColor: '#1565D8',
+    borderColor: '#55D7FF',
   },
   currencyDrawerChipText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#E2E8F0',
   },
   currencyDrawerChipTextActive: {
-    color: EmeraldTokens.mintDarkText,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
 
-  // 3-Column Stat Bar (Directly from Screen 1)
+  // 3-Column Stat Bar with Integrated Footer
   statBar: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 18,
+    paddingTop: 14,
+    paddingBottom: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+  },
+  statColumnsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingBottom: 10,
   },
   statCol: {
     flex: 1,
@@ -1494,25 +1503,20 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
-
-  portfolioValuationPill: {
+  unifiedFooterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(21, 101, 216, 0.22)',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: DesignTokens.shapes.pill,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(85, 215, 255, 0.35)',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.12)',
   },
-  portfolioValuationText: {
+  unifiedFooterLabel: {
     fontSize: 11,
-    color: BlueTokens.accent,
     fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.75)',
   },
-  portfolioValuationAmount: {
+  unifiedFooterAmount: {
     fontSize: 12,
     fontWeight: '800',
     color: '#FFFFFF',
@@ -1649,9 +1653,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   periodChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: DesignTokens.shapes.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
   },
   periodText: {
     fontSize: 12,
@@ -1817,9 +1821,9 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   amountBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: DesignTokens.shapes.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   amountBadgeText: {
     fontSize: 12,
@@ -1912,14 +1916,14 @@ const styles = StyleSheet.create({
   directionToggle: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F3',
-    borderRadius: DesignTokens.shapes.pill,
-    padding: 4,
+    borderRadius: 10,
+    padding: 3,
     marginBottom: 16,
   },
   toggleBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: DesignTokens.shapes.pill,
+    paddingVertical: 9,
+    borderRadius: 8,
     alignItems: 'center',
   },
   toggleBtnText: {
@@ -1943,7 +1947,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F3',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
     marginRight: 8,
   },
   smsChipText: {

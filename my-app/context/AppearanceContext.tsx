@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const STORAGE_KEY_APPEARANCE = '@cashflow_appearance_settings_v2';
+export const STORAGE_KEY_APPEARANCE = '@cashflow_appearance_settings_v3';
 
 export type NavBarStyle = 'floating_pill' | 'compact_pill' | 'curved_sheet' | 'classic_dock';
 export type ThemePaletteId =
@@ -199,9 +199,9 @@ const DEFAULT_CUSTOM_COLORS: CustomColorConfig = {
 };
 
 const DEFAULT_APPEARANCE: AppearanceSettings = {
-  navBarStyle: 'floating_pill',
+  navBarStyle: 'classic_dock',
   themeId: 'royal_navy',
-  cornerGeometry: 'pill',
+  cornerGeometry: 'squircle',
   isDarkMode: false,
   customColors: DEFAULT_CUSTOM_COLORS,
 };
@@ -249,9 +249,9 @@ const AppearanceContext = createContext<AppearanceContextValue>({
   ...DEFAULT_APPEARANCE,
   palette: THEME_PALETTES.royal_navy,
   surfaces: LIGHT_SURFACES,
-  cardRadius: 24,
-  buttonRadius: 9999,
-  chipRadius: 9999,
+  cardRadius: 18,
+  buttonRadius: 14,
+  chipRadius: 10,
   setNavBarStyle: async () => {},
   setThemeId: async () => {},
   setCornerGeometry: async () => {},

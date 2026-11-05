@@ -362,9 +362,6 @@ export default function InsightsScreen() {
       {/* 1. Deep Forest Emerald Header */}
       <View style={styles.emeraldHeader}>
         <View style={styles.topNavRow}>
-          <Pressable onPress={() => router.push('/(tabs)')} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-          </Pressable>
           <Text style={styles.headerTitle}>{t('assistant_title')}</Text>
           <Pressable
             onPress={() => {
@@ -376,7 +373,7 @@ export default function InsightsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Configure Gemini API Key"
           >
-            <Ionicons name="sparkles" size={18} color={geminiApiKey ? '#34D399' : '#FFFFFF'} />
+            <Ionicons name="key-outline" size={18} color={geminiApiKey ? '#34D399' : '#FFFFFF'} />
           </Pressable>
         </View>
 
@@ -840,7 +837,7 @@ const styles = StyleSheet.create({
   langPill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   langPillText: {
     fontSize: 12,
@@ -906,7 +903,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F3',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 8,
   },
   engineConfigBtnText: {
     fontSize: 11,
@@ -1081,7 +1078,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDE68A',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 6,
   },
   noWifiBadgeText: {
     fontSize: 10,
@@ -1110,7 +1107,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 999,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#FCD34D',
   },
@@ -1125,7 +1122,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 8,
   },
   noWifiBtnGhostText: {
     fontSize: 11,
@@ -1139,7 +1136,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#BBF7D0',
     marginBottom: 16,
@@ -1176,7 +1173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
@@ -1194,7 +1191,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0F2FE',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#BAE6FD',
   },
@@ -1211,7 +1208,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F3',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 6,
   },
   guardrailPillText: {
     fontSize: 10,

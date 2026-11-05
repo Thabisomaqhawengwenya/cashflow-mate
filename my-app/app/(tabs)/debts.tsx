@@ -141,18 +141,13 @@ export default function DebtsScreen() {
       {/* 1. Deep Forest Emerald Header */}
       <View style={styles.emeraldHeader}>
         <View style={styles.topNavRow}>
-          <Pressable
-            onPress={() => router.push('/(tabs)')}
-            hitSlop={10}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-          </Pressable>
           <Text style={styles.headerTitle}>{t('debts_title')}</Text>
           <Pressable
             onPress={() => setIsAddOpen(true)}
             hitSlop={10}
             style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Add Record"
           >
             <Ionicons name="add" size={22} color="#FFFFFF" />
           </Pressable>
@@ -585,7 +580,7 @@ const styles = StyleSheet.create({
   filterPill: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   filterPillText: {
     fontSize: 12,
@@ -662,7 +657,7 @@ const styles = StyleSheet.create({
   remainingBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 6,
   },
   remainingBadgeText: {
     fontSize: 11,
@@ -713,7 +708,7 @@ const styles = StyleSheet.create({
     backgroundColor: EmeraldTokens.pastelMint,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
   },
   payChipText: {
     fontSize: 12,
@@ -778,14 +773,14 @@ const styles = StyleSheet.create({
   directionToggle: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F3',
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 10,
     padding: 4,
     marginBottom: 16,
   },
   toggleBtn: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: DesignTokens.shapes.pill,
+    borderRadius: 8,
     alignItems: 'center',
   },
   toggleBtnText: {
