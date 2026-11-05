@@ -77,7 +77,7 @@ describe('MobileUpdateService', () => {
       expect(update.hasUpdate).toBe(true);
       expect(update.currentVersion).toBe(CURRENT_APP_VERSION);
       expect(update.latestVersion).toBe('1.3.1');
-      expect(update.apkSize).toBe('42.9 MB');
+      expect(update.apkSize).toBe('98.2 MB');
       expect(update.statusText).toContain('verified');
       expect(update.changelog.length).toBe(3);
     });

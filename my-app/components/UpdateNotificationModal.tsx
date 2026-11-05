@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { AppUpdateInfo, MobileUpdateService } from '@/services/updates';
+import { AppUpdateInfo, ChangelogItem, MobileUpdateService } from '@/services/updates';
 import { BlueTokens } from '@/constants/Colors';
 
 interface UpdateNotificationModalProps {
@@ -125,15 +125,15 @@ export const UpdateNotificationModal: React.FC<UpdateNotificationModalProps> = (
           <View style={styles.specGrid}>
             {/* Card 1: Target ABI */}
             <View style={styles.specCard}>
-              <Ionicons name="hardware-chip-outline" size={19} color="#0284C7" />
-              <Text style={styles.specValue}>{updateInfo.targetAbi || 'ARM64'}</Text>
+              <Ionicons name="hardware-chip" size={19} color="#0284C7" />
+              <Text style={styles.specValue}>{updateInfo.targetAbi || 'Universal'}</Text>
               <Text style={styles.specLabel}>Target ABI</Text>
             </View>
 
             {/* Card 2: Package Size */}
             <View style={styles.specCard}>
-              <Ionicons name="download-outline" size={19} color="#0284C7" />
-              <Text style={styles.specValue}>{updateInfo.apkSize || '42.9 MB'}</Text>
+              <Ionicons name="download" size={19} color="#0284C7" />
+              <Text style={styles.specValue}>{updateInfo.apkSize || '98.2 MB'}</Text>
               <Text style={styles.specLabel}>Package Size</Text>
             </View>
 
@@ -175,7 +175,7 @@ export const UpdateNotificationModal: React.FC<UpdateNotificationModalProps> = (
           <View style={styles.statusBanner}>
             <Ionicons name="checkmark-circle" size={16} color="#0284C7" style={{ marginRight: 6 }} />
             <Text style={styles.statusBannerText}>
-              {updateInfo.statusText || 'Download Complete • Package verified'}
+              {updateInfo.statusText || 'Ready to Download • Official APK verified'}
             </Text>
           </View>
 
@@ -257,6 +257,202 @@ export const UpdateNoticeBanner: React.FC<{
         <Ionicons name="chevron-forward" size={12} color="#0284C7" />
       </View>
     </Pressable>
+  );
+};
+
+/**
+ * Bottom Sheet Modal shown when the user is already running the current / latest version
+ */
+export const UpToDateModal: React.FC<{
+  visible: boolean;
+  updateInfo: AppUpdateInfo | null;
+  onClose: () => void;
+}> = ({ visible, updateInfo, onClose }) => {
+  if (!visible) return null;
+
+  const currentVersion = updateInfo?.currentVersion || '1.3.0';
+  const releaseUrl =
+    updateInfo?.releaseUrl ||
+    'https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases';
+
+  const handleOpenGitHub = () => {
+    Linking.openURL(releaseUrl).catch(() => {});
+  };
+
+  const defaultHighlights: ChangelogItem[] = [
+    {
+      title: 'Supabase Cloud Sync',
+      description: 'Multi-user tenant isolation with PostgreSQL Row-Level Security.',
+    },
+    {
+      title: '3-Drawer Market Till',
+      description: 'Simultaneous cashbox drawers for USD Cash, EcoCash ZiG & ZAR Rand.',
+    },
+    {
+      title: 'EcoCash & InnBucks SMS Parser',
+      description: 'Instant regex parsing of mobile payment notifications into records.',
+    },
+    {
+      title: 'Offline Market Till Shield',
+      description: 'Local SQLite offline persistence with 4-digit till PIN security.',
+    },
+  ];
+
+  const highlights =
+    updateInfo?.changelog && updateInfo.changelog.length > 0
+      ? updateInfo.changelog
+      : defaultHighlights;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <View style={styles.modalBackdrop}>
+        {/* Tap outside backdrop to dismiss */}
+        <Pressable
+          style={styles.backdropPressable}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss modal"
+        />
+
+        {/* Bottom Sheet Card */}
+        <View style={styles.bottomSheetContainer}>
+          {/* Top Drag Handle */}
+          <View style={styles.dragHandle} />
+
+          {/* Top Header Row */}
+          <View style={styles.headerRow}>
+            {/* Up to Date Badge */}
+            <View style={styles.upToDateBadge}>
+              <Ionicons name="checkmark-circle" size={13} color="#16A34A" style={styles.badgeIcon} />
+              <Text style={styles.upToDateBadgeText}>CURRENT VERSION</Text>
+            </View>
+
+            {/* Circular Close Button */}
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+              ]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Close modal"
+            >
+              <Ionicons name="close" size={18} color="#1E293B" />
+            </Pressable>
+          </View>
+
+          {/* Hero App & Version Row */}
+          <View style={styles.heroRow}>
+            <View style={[styles.appIconContainer, { backgroundColor: '#DCFCE7' }]}>
+              <Ionicons name="shield-checkmark" size={32} color="#16A34A" />
+            </View>
+
+            <View style={styles.heroTextCol}>
+              <Text style={styles.appTitle}>Cashflow is Up to Date</Text>
+              <View style={styles.versionRow}>
+                <Text style={styles.upToDateVersion}>v{currentVersion}</Text>
+                <Text style={styles.versionArrow}>•</Text>
+                <Text style={styles.upToDateSubText}>Latest Official Release</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 3-Column Spec Cards */}
+          <View style={styles.specGrid}>
+            {/* Card 1: Target ABI */}
+            <View style={styles.specCard}>
+              <Ionicons name="hardware-chip" size={19} color="#16A34A" />
+              <Text style={styles.specValue}>{updateInfo?.targetAbi || 'Universal'}</Text>
+              <Text style={styles.specLabel}>Architecture</Text>
+            </View>
+
+            {/* Card 2: Package Size */}
+            <View style={styles.specCard}>
+              <Ionicons name="download" size={19} color="#16A34A" />
+              <Text style={styles.specValue}>{updateInfo?.apkSize || '98.2 MB'}</Text>
+              <Text style={styles.specLabel}>Package Size</Text>
+            </View>
+
+            {/* Card 3: Source */}
+            <View style={styles.specCard}>
+              <Ionicons name="checkmark-circle" size={19} color="#16A34A" />
+              <Text style={styles.specValue}>Official</Text>
+              <Text style={styles.specLabel}>GitHub</Text>
+            </View>
+          </View>
+
+          {/* Changelog / Release Highlights Section */}
+          <View style={styles.changelogBox}>
+            <Text style={styles.changelogTitle}>Release Highlights • v{currentVersion}</Text>
+            <Text style={[styles.changelogSubTitle, { color: '#15803D' }]}>
+              ⚡ Production Engine Active
+            </Text>
+
+            <ScrollView
+              style={styles.changelogScroll}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
+              {highlights.map((item, index) => (
+                <View key={index} style={styles.changelogItemRow}>
+                  <Text style={[styles.bulletDot, { color: '#16A34A' }]}>•</Text>
+                  <Text style={styles.changelogItemText}>
+                    <Text style={styles.changelogItemBold}>{item.title}: </Text>
+                    {item.description}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Status Banner */}
+          <View style={[styles.statusBanner, { backgroundColor: '#DCFCE7' }]}>
+            <Ionicons name="checkmark-circle" size={16} color="#16A34A" style={{ marginRight: 6 }} />
+            <Text style={[styles.statusBannerText, { color: '#15803D' }]}>
+              System Up to Date • No newer release available
+            </Text>
+          </View>
+
+          {/* Bottom Action Buttons */}
+          <View style={styles.actionRow}>
+            {/* GitHub Button */}
+            <Pressable
+              onPress={handleOpenGitHub}
+              style={({ pressed }) => [
+                styles.githubButton,
+                pressed && { backgroundColor: '#F1F5F9', transform: [{ scale: 0.98 }] },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="View release notes on GitHub"
+            >
+              <Ionicons name="open-outline" size={15} color="#0F172A" style={{ marginRight: 6 }} />
+              <Text style={styles.githubButtonText}>GitHub</Text>
+            </Pressable>
+
+            {/* Done Primary Action Button */}
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.doneButton,
+                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss modal"
+            >
+              <Ionicons name="checkmark" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.doneButtonText}>Done</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 };
 
@@ -553,5 +749,49 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0284C7',
     marginRight: 2,
+  },
+  upToDateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 9999,
+  },
+  upToDateBadgeText: {
+    color: '#16A34A',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  upToDateVersion: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#16A34A',
+  },
+  upToDateSubText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  doneButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0C3E35',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    shadowColor: '#0C3E35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  doneButtonText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

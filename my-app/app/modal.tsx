@@ -37,7 +37,7 @@ import { useAppearance } from '@/context/AppearanceContext';
 import { AppLogo } from '@/components/BrandLogos';
 import { TraderAvatar } from '@/components/TraderAvatar';
 import { MobileUpdateService, AppUpdateInfo } from '@/services/updates';
-import { UpdateNotificationModal } from '@/components/UpdateNotificationModal';
+import { UpdateNotificationModal, UpToDateModal } from '@/components/UpdateNotificationModal';
 
 export default function ModalScreen() {
   const colorScheme = useColorScheme();
@@ -94,15 +94,20 @@ export default function ModalScreen() {
   // In-App Update State
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+  const [isUpToDateModalVisible, setIsUpToDateModalVisible] = useState(false);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
 
   const handleCheckForUpdates = async () => {
     setIsCheckingUpdate(true);
     try {
-      // Passes true for simulateIfNone so Mr Q can preview the update modal anytime
-      const info = await MobileUpdateService.checkForUpdate(true, true);
+      // simulateIfNone is false so it checks actual GitHub release status
+      const info = await MobileUpdateService.checkForUpdate(true, false);
       setUpdateInfo(info);
-      setIsUpdateModalVisible(true);
+      if (info.hasUpdate) {
+        setIsUpdateModalVisible(true);
+      } else {
+        setIsUpToDateModalVisible(true);
+      }
     } catch {
       Alert.alert('Update Check', 'Could not fetch latest release information.');
     } finally {
@@ -1109,11 +1114,18 @@ export default function ModalScreen() {
         </View>
       </ScrollView>
 
-      {/* Standalone In-App Update Notification Bottom Sheet */}
+      {/* 1. Standalone In-App Update Notification Bottom Sheet (Only when there is an update) */}
       <UpdateNotificationModal
         visible={isUpdateModalVisible}
         updateInfo={updateInfo}
         onClose={() => setIsUpdateModalVisible(false)}
+      />
+
+      {/* 2. Standalone In-App Up-To-Date Bottom Sheet (When the user is running the current version) */}
+      <UpToDateModal
+        visible={isUpToDateModalVisible}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpToDateModalVisible(false)}
       />
     </View>
   );
