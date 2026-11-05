@@ -89,7 +89,7 @@ export default function AdminBackOfficePortalScreen() {
   const [repEvidence, setRepEvidence] = useState('');
 
   // Inline Inputs
-  const [genUserId, setGenUserId] = useState('mrq@mbaretuckshop.co.zw');
+  const [genUserId, setGenUserId] = useState('trader@cashflow.co.zw');
   const [genTier, setGenTier] = useState<Exclude<LicenseTier, 'starter'>>('enterprise');
   const [generatedKey, setGeneratedKey] = useState('');
   const [ticketReplyDrafts, setTicketReplyDrafts] = useState<Record<string, string>>({});
@@ -151,7 +151,7 @@ export default function AdminBackOfficePortalScreen() {
 
     setGeneratedKey(
       generateLicenseKey({
-        traderName: 'mrq@mbaretuckshop.co.zw',
+        traderName: 'trader@cashflow.co.zw',
         tier: 'enterprise',
         expiresYear: 2029,
       })

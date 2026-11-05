@@ -17,8 +17,10 @@ import { MobileAuthService } from '@/services/auth';
 import { M3Input } from '@/components/M3/M3Input';
 import { M3Button } from '@/components/M3/M3Button';
 import { AppLogo } from '@/components/BrandLogos';
+import { useAppearance } from '@/context/AppearanceContext';
 
 export default function SignupScreen() {
+  const { palette, surfaces } = useAppearance();
   const [name, setName] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('USD');
@@ -79,11 +81,11 @@ export default function SignupScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      style={[styles.keyboardContainer, { backgroundColor: palette.headerBg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: palette.headerBg }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -116,7 +118,7 @@ export default function SignupScreen() {
               <Text style={{ fontSize: 19, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.3 }}>
                 Cashflow
               </Text>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: BlueTokens.accent, letterSpacing: 0.6 }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: palette.accent, letterSpacing: 0.6 }}>
                 PROFESSIONAL TRADER OS
               </Text>
             </View>
@@ -129,8 +131,8 @@ export default function SignupScreen() {
         </View>
 
         {/* 2. Curved White Body Sheet */}
-        <View style={styles.sheetCard}>
-          <Text style={styles.formTitle}>Trader & Enterprise Profile</Text>
+        <View style={[styles.sheetCard, { backgroundColor: surfaces.cardBg }]}>
+          <Text style={[styles.formTitle, { color: surfaces.textPrimary }]}>Trader & Enterprise Profile</Text>
 
           {error ? (
             <View style={styles.errorBanner}>
@@ -271,21 +273,26 @@ export default function SignupScreen() {
             accessibilityState={{ checked: agreedToTerms }}
             accessibilityLabel="Confirm 18+ and agree to Terms of Service and Privacy Policy"
           >
-            <View style={[styles.checkboxBox, agreedToTerms && styles.checkboxBoxChecked]}>
+            <View
+              style={[
+                styles.checkboxBox,
+                agreedToTerms && { backgroundColor: palette.primary, borderColor: palette.primary },
+              ]}
+            >
               {agreedToTerms && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
             </View>
-            <Text style={styles.consentText}>
-              I confirm I am <Text style={styles.consentBold}>18+ years of age</Text> and accept the{' '}
+            <Text style={[styles.consentText, { color: surfaces.textSecondary }]}>
+              I confirm I am <Text style={[styles.consentBold, { color: surfaces.textPrimary }]}>18+ years of age</Text> and accept the{' '}
               <Text
                 onPress={() => router.push('/legal' as any)}
-                style={styles.consentLink}
+                style={[styles.consentLink, { color: palette.primary }]}
               >
                 Terms of Service
               </Text>{' '}
               &amp;{' '}
               <Text
                 onPress={() => router.push('/legal' as any)}
-                style={styles.consentLink}
+                style={[styles.consentLink, { color: palette.primary }]}
               >
                 Privacy Policy
               </Text>.
@@ -304,12 +311,12 @@ export default function SignupScreen() {
 
           {/* Switch to Login */}
           <View style={styles.footerRow}>
-            <Text style={styles.footerPrompt}>Already have an account?</Text>
+            <Text style={[styles.footerPrompt, { color: surfaces.textMuted }]}>Already have an account?</Text>
             <Pressable
               onPress={() => router.replace('/login' as any)}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
-              <Text style={styles.loginLink}>Sign In</Text>
+              <Text style={[styles.loginLink, { color: palette.primary }]}>Sign In</Text>
             </Pressable>
           </View>
         </View>
@@ -475,8 +482,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxBoxChecked: {
-    backgroundColor: '#0C3E35',
-    borderColor: '#0C3E35',
+    backgroundColor: '#1565D8',
+    borderColor: '#1565D8',
   },
   consentText: {
     flex: 1,
@@ -506,12 +513,12 @@ const styles = StyleSheet.create({
   },
   footerPrompt: {
     fontSize: 13,
-    color: EmeraldTokens.textMuted,
+    color: '#64748B',
   },
   loginLink: {
     fontSize: 13,
     fontWeight: '800',
-    color: EmeraldTokens.deepPine,
+    color: '#1565D8',
     textDecorationLine: 'underline',
   },
 });

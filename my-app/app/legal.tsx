@@ -13,16 +13,18 @@ import { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { AppLogo } from '@/components/BrandLogos';
 import { M3Badge } from '@/components/M3/M3Badge';
+import { useAppearance } from '@/context/AppearanceContext';
 
 type LegalTab = 'privacy' | 'terms' | 'refund' | 'cookies' | 'disclaimer' | 'publisher';
 
 export default function LegalScreen() {
+  const { palette, surfaces } = useAppearance();
   const [activeTab, setActiveTab] = useState<LegalTab>('privacy');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: palette.headerBg }]}>
       {/* Header Canvas */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: palette.headerBg }]}>
         <View style={styles.topBar}>
           <Pressable
             onPress={() => router.back()}
@@ -35,7 +37,7 @@ export default function LegalScreen() {
 
           <View style={styles.headerTitleWrap}>
             <Text style={styles.headerTitle}>Legal & Trust Center</Text>
-            <Text style={styles.headerSubtitle}>20-Point Compliance & Data Safeguards</Text>
+            <Text style={[styles.headerSubtitle, { color: palette.accent }]}>20-Point Compliance & Data Safeguards</Text>
           </View>
 
           <View style={styles.placeholderButton} />
@@ -46,7 +48,7 @@ export default function LegalScreen() {
           <AppLogo size={36} />
           <View>
             <Text style={styles.brandName}>CashFlow Mate</Text>
-            <Text style={styles.brandBadge}>VERIFIED COMPLIANCE • MIT LICENSED</Text>
+            <Text style={[styles.brandBadge, { color: palette.accent }]}>VERIFIED COMPLIANCE • MIT LICENSED</Text>
           </View>
         </View>
 
@@ -58,14 +60,14 @@ export default function LegalScreen() {
         >
           <Pressable
             onPress={() => setActiveTab('privacy')}
-            style={[styles.tabChip, activeTab === 'privacy' && styles.tabChipActive]}
+            style={[styles.tabChip, activeTab === 'privacy' && { backgroundColor: palette.primary }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'privacy' }}
           >
             <Ionicons
               name="shield-checkmark"
               size={14}
-              color={activeTab === 'privacy' ? '#064E3B' : '#E2E8F0'}
+              color={activeTab === 'privacy' ? '#FFFFFF' : '#E2E8F0'}
             />
             <Text style={[styles.tabChipText, activeTab === 'privacy' && styles.tabChipTextActive]}>
               Privacy Policy
@@ -74,14 +76,14 @@ export default function LegalScreen() {
 
           <Pressable
             onPress={() => setActiveTab('terms')}
-            style={[styles.tabChip, activeTab === 'terms' && styles.tabChipActive]}
+            style={[styles.tabChip, activeTab === 'terms' && { backgroundColor: palette.primary }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'terms' }}
           >
             <Ionicons
               name="document-text"
               size={14}
-              color={activeTab === 'terms' ? '#064E3B' : '#E2E8F0'}
+              color={activeTab === 'terms' ? '#FFFFFF' : '#E2E8F0'}
             />
             <Text style={[styles.tabChipText, activeTab === 'terms' && styles.tabChipTextActive]}>
               Terms of Service
@@ -90,14 +92,14 @@ export default function LegalScreen() {
 
           <Pressable
             onPress={() => setActiveTab('refund')}
-            style={[styles.tabChip, activeTab === 'refund' && styles.tabChipActive]}
+            style={[styles.tabChip, activeTab === 'refund' && { backgroundColor: palette.primary }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'refund' }}
           >
             <Ionicons
               name="card"
               size={14}
-              color={activeTab === 'refund' ? '#064E3B' : '#E2E8F0'}
+              color={activeTab === 'refund' ? '#FFFFFF' : '#E2E8F0'}
             />
             <Text style={[styles.tabChipText, activeTab === 'refund' && styles.tabChipTextActive]}>
               Refund & Fees
@@ -106,14 +108,14 @@ export default function LegalScreen() {
 
           <Pressable
             onPress={() => setActiveTab('cookies')}
-            style={[styles.tabChip, activeTab === 'cookies' && styles.tabChipActive]}
+            style={[styles.tabChip, activeTab === 'cookies' && { backgroundColor: palette.primary }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'cookies' }}
           >
             <Ionicons
               name="server"
               size={14}
-              color={activeTab === 'cookies' ? '#064E3B' : '#E2E8F0'}
+              color={activeTab === 'cookies' ? '#FFFFFF' : '#E2E8F0'}
             />
             <Text style={[styles.tabChipText, activeTab === 'cookies' && styles.tabChipTextActive]}>
               Cookies & Storage
@@ -122,14 +124,14 @@ export default function LegalScreen() {
 
           <Pressable
             onPress={() => setActiveTab('disclaimer')}
-            style={[styles.tabChip, activeTab === 'disclaimer' && styles.tabChipActive]}
+            style={[styles.tabChip, activeTab === 'disclaimer' && { backgroundColor: palette.primary }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'disclaimer' }}
           >
             <Ionicons
               name="alert-circle"
               size={14}
-              color={activeTab === 'disclaimer' ? '#064E3B' : '#E2E8F0'}
+              color={activeTab === 'disclaimer' ? '#FFFFFF' : '#E2E8F0'}
             />
             <Text style={[styles.tabChipText, activeTab === 'disclaimer' && styles.tabChipTextActive]}>
               AI Disclaimer
@@ -138,14 +140,14 @@ export default function LegalScreen() {
 
           <Pressable
             onPress={() => setActiveTab('publisher')}
-            style={[styles.tabChip, activeTab === 'publisher' && styles.tabChipActive]}
+            style={[styles.tabChip, activeTab === 'publisher' && { backgroundColor: palette.primary }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === 'publisher' }}
           >
             <Ionicons
               name="business"
               size={14}
-              color={activeTab === 'publisher' ? '#064E3B' : '#E2E8F0'}
+              color={activeTab === 'publisher' ? '#FFFFFF' : '#E2E8F0'}
             />
             <Text style={[styles.tabChipText, activeTab === 'publisher' && styles.tabChipTextActive]}>
               Business Details
@@ -156,7 +158,7 @@ export default function LegalScreen() {
 
       {/* Sheet Content Canvas */}
       <ScrollView
-        style={styles.sheet}
+        style={[styles.sheet, { backgroundColor: surfaces.sheetBg }]}
         contentContainerStyle={styles.sheetContent}
         showsVerticalScrollIndicator={false}
       >
@@ -358,13 +360,13 @@ export default function LegalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0C3E35', // Emerald canvas
+    backgroundColor: '#06152E',
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 56 : 40,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: '#0C3E35',
+    backgroundColor: '#06152E',
   },
   topBar: {
     flexDirection: 'row',
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
   subHeading: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0C3E35',
+    color: '#0A192F',
     marginTop: 16,
     marginBottom: 8,
   },

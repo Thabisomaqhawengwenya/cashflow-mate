@@ -134,7 +134,7 @@ export function getSimulatedUpdate(targetVersion = '1.3.1'): AppUpdateInfo {
     releaseTitle: `Cashflow v${targetVersion}`,
     releaseUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v${targetVersion}`,
     apkDownloadUrl: `https://github.com/${GITHUB_REPO}/releases/download/v${targetVersion}/Cashflow-v${targetVersion}.apk`,
-    apkSize: '98.2 MB',
+    apkSize: '42.9 MB',
     targetAbi: 'Universal',
     changelogTitle: 'Fixes & Improvements',
     changelog: [
@@ -301,7 +301,7 @@ export class MobileUpdateService {
         releaseTitle: `Cashflow v${CURRENT_APP_VERSION}`,
         releaseUrl: `https://github.com/${GITHUB_REPO}/releases`,
         apkDownloadUrl: `https://github.com/${GITHUB_REPO}/releases/download/v${CURRENT_APP_VERSION}/Cashflow-v${CURRENT_APP_VERSION}.apk`,
-        apkSize: '98.2 MB',
+        apkSize: '42.9 MB',
         targetAbi: 'Universal',
         changelogTitle: 'Current Version Highlights',
         changelog: [

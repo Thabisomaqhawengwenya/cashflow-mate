@@ -15,7 +15,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { LanguageProvider } from '@/context/LanguageContext';
-import { AppearanceProvider } from '@/context/AppearanceContext';
+import { AppearanceProvider, useAppearance } from '@/context/AppearanceContext';
 import { MobileAuthService } from '@/services/auth';
 import { BlueTokens } from '@/constants/Colors';
 import { CookieBanner } from '@/components/CookieBanner';
@@ -147,34 +147,51 @@ function RootLayoutNav() {
   return (
     <AppearanceProvider>
       <LanguageProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <View style={styles.rootContainer}>
-            <Stack>
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="signup" options={{ headerShown: false }} />
-              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="inventory" options={{ headerShown: false }} />
-              <Stack.Screen name="invoices" options={{ headerShown: false }} />
-              <Stack.Screen name="contacts" options={{ headerShown: false }} />
-              <Stack.Screen name="appearance" options={{ headerShown: false }} />
-              <Stack.Screen name="profile" options={{ headerShown: false }} />
-              <Stack.Screen name="admin" options={{ headerShown: false }} />
-              <Stack.Screen name="legal" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
-            </Stack>
-
-            <CookieBanner />
-
-            {shouldMaskProtectedContent && (
-              <View style={styles.authGateMask}>
-                <ActivityIndicator size="large" color={BlueTokens.accent} />
-              </View>
-            )}
-          </View>
-        </ThemeProvider>
+        <ThemedRootContainer
+          colorScheme={colorScheme}
+          shouldMaskProtectedContent={shouldMaskProtectedContent}
+        />
       </LanguageProvider>
     </AppearanceProvider>
+  );
+}
+
+function ThemedRootContainer({
+  colorScheme,
+  shouldMaskProtectedContent,
+}: {
+  colorScheme: 'light' | 'dark' | null | undefined;
+  shouldMaskProtectedContent: boolean;
+}) {
+  const { palette } = useAppearance();
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <View style={[styles.rootContainer, { backgroundColor: palette.headerBg }]}>
+        <Stack>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="signup" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="inventory" options={{ headerShown: false }} />
+          <Stack.Screen name="invoices" options={{ headerShown: false }} />
+          <Stack.Screen name="contacts" options={{ headerShown: false }} />
+          <Stack.Screen name="appearance" options={{ headerShown: false }} />
+          <Stack.Screen name="profile" options={{ headerShown: false }} />
+          <Stack.Screen name="admin" options={{ headerShown: false }} />
+          <Stack.Screen name="legal" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
+        </Stack>
+
+        <CookieBanner />
+
+        {shouldMaskProtectedContent && (
+          <View style={[styles.authGateMask, { backgroundColor: palette.headerBg }]}>
+            <ActivityIndicator size="large" color={palette.accent} />
+          </View>
+        )}
+      </View>
+    </ThemeProvider>
   );
 }
 
@@ -217,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1565D8',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 9999,
+    borderRadius: 10,
   },
   errorRetryText: {
     fontSize: 14,

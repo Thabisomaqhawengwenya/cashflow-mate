@@ -17,6 +17,7 @@ import { MobileAuthService, UserSession } from '@/services/auth';
 import { M3Input } from '@/components/M3/M3Input';
 import { M3Button } from '@/components/M3/M3Button';
 import { AppLogo } from '@/components/BrandLogos';
+import { useAppearance } from '@/context/AppearanceContext';
 
 const TRADING_SECTORS = [
   'Tuckshop & Grocery',
@@ -62,6 +63,7 @@ const LANGUAGE_OPTIONS = [
 ];
 
 export default function OnboardingScreen() {
+  const { palette, surfaces, buttonRadius } = useAppearance();
   const [session, setSession] = useState<UserSession | null>(null);
 
   // User Customizable Profile Fields
@@ -128,11 +130,11 @@ export default function OnboardingScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
+      style={[styles.keyboardContainer, { backgroundColor: palette.headerBg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: palette.headerBg }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -143,13 +145,13 @@ export default function OnboardingScreen() {
             <AppLogo size={56} style={styles.appLogo} />
           </View>
           <Text style={styles.heroTitle}>Customize Your Till</Text>
-          <Text style={styles.heroSub}>
+          <Text style={[styles.heroSub, { color: 'rgba(255, 255, 255, 0.75)' }]}>
             Welcome aboard, {session?.name || 'Trader'}! Choose your stall and market preferences.
           </Text>
         </View>
 
         {/* Setup Card */}
-        <View style={styles.sheetContainer}>
+        <View style={[styles.sheetContainer, { backgroundColor: surfaces.cardBg }]}>
           {error ? (
             <View style={styles.errorBanner}>
               <Ionicons name="alert-circle" size={18} color="#EF4444" style={{ marginRight: 8 }} />
@@ -158,7 +160,7 @@ export default function OnboardingScreen() {
           ) : null}
 
           {/* 1. Business / Stall Name */}
-          <Text style={styles.sectionLabel}>BUSINESS OR STALL NAME</Text>
+          <Text style={[styles.sectionLabel, { color: surfaces.textPrimary }]}>BUSINESS OR STALL NAME</Text>
           <M3Input
             label="Trading Name"
             placeholder="e.g. Mbare Fresh Produce & Tuckshop"
@@ -169,8 +171,8 @@ export default function OnboardingScreen() {
             }}
           />
 
-          {/* 2. Trading Sector (Screenshot 1) */}
-          <Text style={[styles.sectionLabel, { marginTop: 22 }]}>Trading Sector</Text>
+          {/* 2. Trading Sector */}
+          <Text style={[styles.sectionLabel, { marginTop: 22, color: surfaces.textPrimary }]}>Trading Sector</Text>
           <View style={styles.chipsContainer}>
             {TRADING_SECTORS.map((sector) => {
               const active = tradingSector === sector;
@@ -178,11 +180,23 @@ export default function OnboardingScreen() {
                 <Pressable
                   key={sector}
                   onPress={() => setTradingSector(sector)}
-                  style={[styles.pillChip, active && styles.pillChipActive]}
+                  style={[
+                    styles.squircleChip,
+                    {
+                      backgroundColor: active ? palette.headerBg : surfaces.cardBg,
+                      borderColor: active ? palette.headerBg : surfaces.border,
+                    },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Select sector ${sector}`}
                 >
-                  <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                  <Text
+                    style={[
+                      styles.squircleChipText,
+                      { color: active ? '#FFFFFF' : surfaces.textPrimary },
+                      active && styles.squircleChipTextActive,
+                    ]}
+                  >
                     {sector}
                   </Text>
                 </Pressable>
@@ -190,8 +204,8 @@ export default function OnboardingScreen() {
             })}
           </View>
 
-          {/* 3. Market Location / Town (Screenshot 1) */}
-          <Text style={[styles.sectionLabel, { marginTop: 22 }]}>Market Location / Town</Text>
+          {/* 3. Market Location / Town */}
+          <Text style={[styles.sectionLabel, { marginTop: 22, color: surfaces.textPrimary }]}>Market Location / Town</Text>
           <View style={styles.chipsContainer}>
             {MARKET_LOCATIONS.map((loc) => {
               const active = marketLocation === loc;
@@ -199,11 +213,23 @@ export default function OnboardingScreen() {
                 <Pressable
                   key={loc}
                   onPress={() => setMarketLocation(loc)}
-                  style={[styles.pillChip, active && styles.pillChipActive]}
+                  style={[
+                    styles.squircleChip,
+                    {
+                      backgroundColor: active ? palette.headerBg : surfaces.cardBg,
+                      borderColor: active ? palette.headerBg : surfaces.border,
+                    },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Select location ${loc}`}
                 >
-                  <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                  <Text
+                    style={[
+                      styles.squircleChipText,
+                      { color: active ? '#FFFFFF' : surfaces.textPrimary },
+                      active && styles.squircleChipTextActive,
+                    ]}
+                  >
                     {loc}
                   </Text>
                 </Pressable>
@@ -211,8 +237,8 @@ export default function OnboardingScreen() {
             })}
           </View>
 
-          {/* 4. Store Motto / Tagline (Screenshot 1) */}
-          <Text style={[styles.sectionLabel, { marginTop: 22 }]}>Store Motto / Tagline</Text>
+          {/* 4. Store Motto / Tagline */}
+          <Text style={[styles.sectionLabel, { marginTop: 22, color: surfaces.textPrimary }]}>Store Motto / Tagline</Text>
           <M3Input
             label="Tagline"
             placeholder="Fresh quality produce and cold drinks daily."
@@ -220,17 +246,17 @@ export default function OnboardingScreen() {
             onChangeText={(txt) => setTagline(txt)}
           />
 
-          {/* 5. Operating Hours & Defaults (Screenshot 2) */}
+          {/* 5. Operating Hours & Defaults */}
           <View style={styles.subSectionHeader}>
-            <View style={styles.subSectionBadge}>
-              <Text style={styles.subSectionBadgeText}>03</Text>
+            <View style={[styles.subSectionBadge, { backgroundColor: palette.surfaceTint }]}>
+              <Text style={[styles.subSectionBadgeText, { color: palette.badgeText }]}>03</Text>
             </View>
-            <Text style={styles.subSectionTitle}>Operating Hours & Defaults</Text>
+            <Text style={[styles.subSectionTitle, { color: surfaces.textPrimary }]}>Operating Hours & Defaults</Text>
           </View>
 
-          <View style={styles.nestedCard}>
+          <View style={[styles.nestedCard, { backgroundColor: surfaces.cardElevatedBg, borderColor: surfaces.border }]}>
             {/* Operating Hours Chips */}
-            <Text style={styles.chipFieldLabel}>Operating Hours</Text>
+            <Text style={[styles.chipFieldLabel, { color: surfaces.textSecondary }]}>Operating Hours</Text>
             <View style={styles.chipsContainer}>
               {OPERATING_HOURS_OPTIONS.map((hours) => {
                 const active = operatingHours === hours;
@@ -238,11 +264,23 @@ export default function OnboardingScreen() {
                   <Pressable
                     key={hours}
                     onPress={() => setOperatingHours(hours)}
-                    style={[styles.pillChip, active && styles.pillChipActive]}
+                    style={[
+                      styles.squircleChip,
+                      {
+                        backgroundColor: active ? palette.headerBg : surfaces.cardBg,
+                        borderColor: active ? palette.headerBg : surfaces.border,
+                      },
+                    ]}
                     accessibilityRole="button"
                     accessibilityLabel={`Select hours ${hours}`}
                   >
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                    <Text
+                      style={[
+                        styles.squircleChipText,
+                        { color: active ? '#FFFFFF' : surfaces.textPrimary },
+                        active && styles.squircleChipTextActive,
+                      ]}
+                    >
                       {hours}
                     </Text>
                   </Pressable>
@@ -251,7 +289,7 @@ export default function OnboardingScreen() {
             </View>
 
             {/* Primary Till Currency Chips */}
-            <Text style={[styles.chipFieldLabel, { marginTop: 18 }]}>Primary Till Currency</Text>
+            <Text style={[styles.chipFieldLabel, { marginTop: 18, color: surfaces.textSecondary }]}>Primary Till Currency</Text>
             <View style={styles.chipsContainer}>
               {CURRENCY_OPTIONS.map((item) => {
                 const active = currency === item.code;
@@ -259,11 +297,23 @@ export default function OnboardingScreen() {
                   <Pressable
                     key={item.code}
                     onPress={() => setCurrency(item.code)}
-                    style={[styles.pillChip, active && styles.pillChipActive]}
+                    style={[
+                      styles.squircleChip,
+                      {
+                        backgroundColor: active ? palette.headerBg : surfaces.cardBg,
+                        borderColor: active ? palette.headerBg : surfaces.border,
+                      },
+                    ]}
                     accessibilityRole="button"
                     accessibilityLabel={`Select currency ${item.label}`}
                   >
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                    <Text
+                      style={[
+                        styles.squircleChipText,
+                        { color: active ? '#FFFFFF' : surfaces.textPrimary },
+                        active && styles.squircleChipTextActive,
+                      ]}
+                    >
                       {item.label}
                     </Text>
                   </Pressable>
@@ -272,7 +322,7 @@ export default function OnboardingScreen() {
             </View>
 
             {/* Preferred Language Chips */}
-            <Text style={[styles.chipFieldLabel, { marginTop: 18 }]}>Preferred Language</Text>
+            <Text style={[styles.chipFieldLabel, { marginTop: 18, color: surfaces.textSecondary }]}>Preferred Language</Text>
             <View style={styles.chipsContainer}>
               {LANGUAGE_OPTIONS.map((item) => {
                 const active = preferredLang === item.code;
@@ -280,11 +330,23 @@ export default function OnboardingScreen() {
                   <Pressable
                     key={item.code}
                     onPress={() => setPreferredLang(item.code)}
-                    style={[styles.pillChip, active && styles.pillChipActive]}
+                    style={[
+                      styles.squircleChip,
+                      {
+                        backgroundColor: active ? palette.headerBg : surfaces.cardBg,
+                        borderColor: active ? palette.headerBg : surfaces.border,
+                      },
+                    ]}
                     accessibilityRole="button"
                     accessibilityLabel={`Select language ${item.name}`}
                   >
-                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                    <Text
+                      style={[
+                        styles.squircleChipText,
+                        { color: active ? '#FFFFFF' : surfaces.textPrimary },
+                        active && styles.squircleChipTextActive,
+                      ]}
+                    >
                       {item.name}
                     </Text>
                   </Pressable>
@@ -294,8 +356,8 @@ export default function OnboardingScreen() {
           </View>
 
           {/* 6. Starting Cashbox Float (Optional) */}
-          <Text style={[styles.sectionLabel, { marginTop: 24 }]}>OPENING CASH FLOAT (OPTIONAL)</Text>
-          <Text style={styles.inputHelper}>
+          <Text style={[styles.sectionLabel, { marginTop: 24, color: surfaces.textPrimary }]}>OPENING CASH FLOAT (OPTIONAL)</Text>
+          <Text style={[styles.inputHelper, { color: surfaces.textMuted }]}>
             Have cash physically in your till drawer right now? Enter the amount to begin with an accurate balance.
           </Text>
           <M3Input
@@ -396,24 +458,24 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  pillChip: {
+  squircleChip: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
+    borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
   },
-  pillChipActive: {
+  squircleChipActive: {
     backgroundColor: '#0A192F',
     borderColor: '#0A192F',
   },
-  pillChipText: {
+  squircleChipText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#334155',
   },
-  pillChipTextActive: {
+  squircleChipTextActive: {
     color: '#FFFFFF',
     fontWeight: '700',
   },

@@ -5,7 +5,7 @@ import { router, usePathname } from 'expo-router';
 import { BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAppearance } from '@/context/AppearanceContext';
+import { useAppearance, hexToRgba } from '@/context/AppearanceContext';
 import { AppLogo } from '@/components/BrandLogos';
 import { TraderAvatar } from '@/components/TraderAvatar';
 import { MobileStorageService, BusinessProfile } from '@/services/storage';
@@ -170,7 +170,13 @@ export const DesktopSidebar: React.FC = () => {
                 accessibilityLabel={t(item.labelKey)}
                 style={({ pressed }) => [
                   styles.navItem,
-                  active && styles.navItemActive,
+                  active && [
+                    styles.navItemActive,
+                    {
+                      backgroundColor: hexToRgba(palette.primary, 0.22),
+                      borderColor: hexToRgba(palette.accent, 0.35),
+                    },
+                  ],
                   pressed && { opacity: 0.88, transform: [{ scale: 0.985 }] },
                 ]}
               >
@@ -178,7 +184,9 @@ export const DesktopSidebar: React.FC = () => {
                 <View
                   style={[
                     styles.iconSquircle,
-                    active ? styles.iconSquircleActive : styles.iconSquircleInactive,
+                    active
+                      ? { backgroundColor: hexToRgba(palette.primary, 0.35) }
+                      : styles.iconSquircleInactive,
                   ]}
                 >
                   <Ionicons

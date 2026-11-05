@@ -83,6 +83,108 @@ function formatAuthError(err: any): string {
   return msg || 'Authentication request failed.';
 }
 
+export interface DemoAccountDefinition {
+  userId: string;
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  alternatePasswords?: string[];
+  businessName: string;
+  stallNumber: string;
+  merchantTillNumber: string;
+  city: string;
+  phone: string;
+  tagline: string;
+  operatingHours: string;
+  currency: CurrencyCode;
+  role: 'trader' | 'admin';
+  tier: 'starter' | 'pro' | 'enterprise';
+  initialBalance?: number;
+}
+
+export const PRECONFIGURED_DEMO_ACCOUNTS: DemoAccountDefinition[] = [
+  // 1. Admin HQ Command Center
+  {
+    userId: 'admin_hq_001',
+    name: 'Cashflow Admin HQ',
+    username: 'admin',
+    email: 'admin@cashflow.co.zw',
+    password: 'admin',
+    alternatePasswords: ['admin123', 'password', '123456'],
+    businessName: 'Cashflow Command Center',
+    stallNumber: 'Suite 401, Celestial Park',
+    merchantTillNumber: 'ADMIN-HQ-01',
+    city: 'Harare (CBD)',
+    phone: '+263 77 100 0000',
+    tagline: 'Centralized small merchant till oversight and fraud protection.',
+    operatingHours: '24/7 Continuous Booth',
+    currency: 'USD',
+    role: 'admin',
+    tier: 'enterprise',
+  },
+  // 2. Client Demo 1: Farai Moyo (Fresh Produce Stall)
+  {
+    userId: 'trader_farai_001',
+    name: 'Farai Moyo',
+    username: 'trader',
+    email: 'trader@cashflow.co.zw',
+    password: 'trader123',
+    alternatePasswords: ['123456', 'password', 'trader', 'farai123'],
+    businessName: 'Mbare Fresh Produce & Tuckshop',
+    stallNumber: 'Stall #14, Vegetable Shed',
+    merchantTillNumber: 'EcoCash: 194827',
+    city: 'Harare (Mbare Musika)',
+    phone: '+263 77 234 5678',
+    tagline: 'Fresh quality farm produce and cold drinks daily.',
+    operatingHours: '6:00 AM - 6:00 PM (Mon - Sat)',
+    currency: 'USD',
+    role: 'trader',
+    tier: 'starter',
+    initialBalance: 340,
+  },
+  // 3. Client Demo 2: Tendai Mutasa (Multi-Currency Grocery)
+  {
+    userId: 'trader_tendai_002',
+    name: 'Tendai Mutasa',
+    username: 'tuckshop',
+    email: 'tuckshop@cashflow.co.zw',
+    password: 'trader123',
+    alternatePasswords: ['123456', 'password', 'tuckshop'],
+    businessName: 'Highfield Corner Tuckshop',
+    stallNumber: 'Stand #8, Machipisa Shopping Centre',
+    merchantTillNumber: 'EcoCash: 552190',
+    city: 'Harare (Highfield)',
+    phone: '+263 71 889 0123',
+    tagline: 'Cold beverages, maize meal, cooking oil & groceries.',
+    operatingHours: '7:00 AM - 8:00 PM (Daily)',
+    currency: 'USD',
+    role: 'trader',
+    tier: 'pro',
+    initialBalance: 520,
+  },
+  // 4. Client Demo 3: Chipo Ndlovu (Clothing & Bales Boutique)
+  {
+    userId: 'trader_chipo_003',
+    name: 'Chipo Ndlovu',
+    username: 'retail',
+    email: 'retail@cashflow.co.zw',
+    password: 'trader123',
+    alternatePasswords: ['123456', 'password', 'retail', 'chipo123'],
+    businessName: 'Chipo Fashion Bales & Spares',
+    stallNumber: 'Bay 3, Renkini Market Complex',
+    merchantTillNumber: 'EcoCash: 883412',
+    city: 'Bulawayo (Renkini)',
+    phone: '+263 73 456 7890',
+    tagline: 'Imported first-grade clothing bales and shoes.',
+    operatingHours: '8:00 AM - 5:00 PM (Weekdays)',
+    currency: 'ZAR',
+    role: 'trader',
+    tier: 'enterprise',
+    initialBalance: 4500,
+  },
+];
+
 export class MobileAuthService {
   /**
    * Get active user session from Supabase or cached storage
@@ -174,12 +276,58 @@ export class MobileAuthService {
 
   static async getAllAccounts(): Promise<StoredTraderAccount[]> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_REGISTERED_USERS);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as StoredTraderAccount[];
-    } catch {
-      return [];
+    let accounts: StoredTraderAccount[] = [];
+    if (raw) {
+      try {
+        accounts = JSON.parse(raw) as StoredTraderAccount[];
+      } catch {}
     }
+
+    // Filter out any legacy, personal, or test accounts
+    accounts = accounts.filter(
+      (a) =>
+        !a.email.toLowerCase().includes('mrq') &&
+        !a.username.toLowerCase().includes('mrq') &&
+        !a.name.toLowerCase().includes('mrq') &&
+        !a.email.toLowerCase().includes('maqhawe')
+    );
+
+    // Merge default preconfigured client demo accounts if not already in the list
+    const clientDemos = PRECONFIGURED_DEMO_ACCOUNTS.filter((d) => d.role === 'trader');
+    for (const demo of clientDemos) {
+      const exists = accounts.some(
+        (a) =>
+          a.email.toLowerCase() === demo.email.toLowerCase() ||
+          a.username.toLowerCase() === demo.username.toLowerCase()
+      );
+      if (!exists) {
+        accounts.push({
+          userId: demo.userId,
+          name: demo.name,
+          username: demo.username,
+          email: demo.email,
+          phone: demo.phone,
+          city: demo.city,
+          tagline: demo.tagline,
+          stallNumber: demo.stallNumber,
+          merchantTillNumber: demo.merchantTillNumber,
+          operatingHours: demo.operatingHours,
+          password: demo.password,
+          businessName: demo.businessName,
+          currency: demo.currency,
+          tier: demo.tier,
+          status: 'active',
+          kycVerified: true,
+          txCount: 16,
+          monthlyVolumeUsd: demo.initialBalance || 450,
+          flagsCount: 0,
+          lastActive: 'Active today',
+          createdAt: '2026-10-15',
+        });
+      }
+    }
+
+    return accounts;
   }
 
   static async getAdminSecretCode(): Promise<string> {
@@ -216,11 +364,13 @@ export class MobileAuthService {
 
     const validUser =
       cleanUser === 'admin' ||
-      cleanUser === 'admin@cashflow.co.zw' ||
-      cleanUser === 'mrq' ||
-      cleanUser === 'mrq@cashflow.co.zw';
+      cleanUser === 'admin@cashflow.co.zw';
 
-    const validPass = cleanPass === 'admin' || cleanPass === 'admin123';
+    const validPass =
+      cleanPass === 'admin' ||
+      cleanPass === 'admin123' ||
+      cleanPass === 'password' ||
+      cleanPass === '123456';
 
     if (!validUser || !validPass) {
       throw new Error('Invalid Admin credentials. Use username "admin" and password "admin".');
@@ -386,32 +536,89 @@ export class MobileAuthService {
       throw new Error('Please enter both email and password.');
     }
 
-    // Stealth Admin Sign In Check: Admin logs in right here on the standard form
-    const isAdminDirect =
-      (cleanEmail === 'admin' ||
-        cleanEmail === 'admin@cashflow.co.zw' ||
-        cleanEmail === 'mrq' ||
-        cleanEmail === 'mrq@cashflow.co.zw') &&
-      (cleanPass === 'admin' || cleanPass === 'admin123');
+    // 1. Direct Preconfigured Demo Check (Online/Offline, Instant & Seamless)
+    const matchingDemo = PRECONFIGURED_DEMO_ACCOUNTS.find(
+      (d) =>
+        d.email.toLowerCase() === cleanEmail ||
+        d.username.toLowerCase() === cleanEmail
+    );
 
-    if (isAdminDirect) {
-      const adminSession: UserSession = {
-        userId: 'admin_hq_001',
-        name: 'Market Admin HQ',
-        username: 'admin',
-        email: 'admin@cashflow.co.zw',
-        businessName: 'Cashflow Command Center',
-        currency: 'USD',
-        role: 'admin',
-        token: `cfm_admin_jwt_${Date.now()}`,
+    if (matchingDemo) {
+      const allowedPasswords = [
+        matchingDemo.password,
+        ...(matchingDemo.alternatePasswords || []),
+      ];
+      const isPassValid = allowedPasswords.some(
+        (p) => p.toLowerCase() === cleanPass.toLowerCase()
+      );
+
+      if (!isPassValid) {
+        throw new Error(
+          `Incorrect password for "${matchingDemo.username}". Try password "${matchingDemo.password}".`
+        );
+      }
+
+      if (matchingDemo.role === 'admin') {
+        const adminSession: UserSession = {
+          userId: matchingDemo.userId,
+          name: matchingDemo.name,
+          username: matchingDemo.username,
+          email: matchingDemo.email,
+          businessName: matchingDemo.businessName,
+          currency: matchingDemo.currency,
+          role: 'admin',
+          token: `cfm_admin_jwt_${Date.now()}`,
+          isLoggedIn: true,
+          isDemo: false,
+          onboardingCompleted: true,
+          loggedInAt: new Date().toISOString(),
+        };
+        await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(adminSession));
+        await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+        return adminSession;
+      }
+
+      const clientSession: UserSession = {
+        userId: matchingDemo.userId,
+        merchantCode: 'CFM-' + matchingDemo.userId.replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase(),
+        name: matchingDemo.name,
+        username: matchingDemo.username,
+        email: matchingDemo.email,
+        phone: matchingDemo.phone,
+        city: matchingDemo.city,
+        tagline: matchingDemo.tagline,
+        stallNumber: matchingDemo.stallNumber,
+        merchantTillNumber: matchingDemo.merchantTillNumber,
+        operatingHours: matchingDemo.operatingHours,
+        businessName: matchingDemo.businessName,
+        currency: matchingDemo.currency,
+        role: 'trader',
+        token: `cfm_demo_jwt_${Date.now()}`,
         isLoggedIn: true,
-        isDemo: false,
+        isDemo: true,
         onboardingCompleted: true,
         loggedInAt: new Date().toISOString(),
       };
-      await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(adminSession));
+
+      await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(clientSession));
       await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
-      return adminSession;
+
+      await MobileStorageService.updateBusiness({
+        name: matchingDemo.businessName,
+        ownerName: matchingDemo.name,
+        businessType: 'retail',
+        currency: matchingDemo.currency,
+        country: 'ZW',
+        preferredLanguage: 'en',
+      });
+
+      // Seed realistic market transactions for demo accounts if none exist
+      const existingTxs = await MobileStorageService.getTransactions();
+      if (existingTxs.length === 0) {
+        await MobileStorageService.resetDemoData();
+      }
+
+      return clientSession;
     }
 
     if (isSupabaseConfigured) {

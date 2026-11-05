@@ -157,7 +157,7 @@ const INITIAL_REPORTED_INDIVIDUALS: ReportedIndividual[] = [
     severity: 'critical',
     status: 'blacklisted',
     reportedByTrader: 'Farai Moyo (Mbare Fresh Produce)',
-    reportedByEmail: 'farai@mbaretuckshop.co.zw',
+    reportedByEmail: 'trader@cashflow.co.zw',
     amountInvolvedUsd: 185.0,
     evidenceSummary:
       'Sent forged sender-ID SMS pretending to be EcoCash Cash-In for 3 crates of cooking oil and fled before wallet balance updated.',
@@ -299,7 +299,7 @@ const INITIAL_SAAS_PAYMENTS: SubscriptionPaymentRecord[] = [
     id: 'pay_001',
     invoiceRef: 'INV-CFM-9041',
     traderName: 'Farai Moyo',
-    traderEmail: 'farai@mbaretuckshop.co.zw',
+    traderEmail: 'trader@cashflow.co.zw',
     businessName: 'Mbare Fresh Produce & Tuckshop',
     city: 'Harare',
     planTier: 'enterprise',

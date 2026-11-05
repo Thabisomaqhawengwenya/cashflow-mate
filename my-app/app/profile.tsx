@@ -20,7 +20,7 @@ import { MobileAuthService, UserSession } from '@/services/auth';
 import { M3Button } from '@/components/M3/M3Button';
 import { M3Input } from '@/components/M3/M3Input';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAppearance } from '@/context/AppearanceContext';
+import { useAppearance, hexToRgba } from '@/context/AppearanceContext';
 import { PRESET_AVATARS, AvatarPreset, getPresetById } from '@/constants/Presets';
 import { TraderAvatar } from '@/components/TraderAvatar';
 import { compressAvatarForStorage } from '@/utils/imageCompressor';
@@ -837,18 +837,34 @@ export default function ProfileScreen() {
           ) : (
             /* Interactive Live Stall Pass Preview (Pinterest Style) */
             <View style={styles.passCardWrapper}>
-              <View style={styles.passCard}>
+              <View
+                style={[
+                  styles.passCard,
+                  {
+                    backgroundColor: palette.headerBg,
+                    borderColor: hexToRgba(palette.primary, 0.4),
+                  },
+                ]}
+              >
                 {/* Stall Pass Top Ribbon */}
-                <View style={styles.passHeader}>
+                <View style={[styles.passHeader, { backgroundColor: 'rgba(0, 0, 0, 0.22)' }]}>
                   <View style={styles.passGovSeal}>
                     <Ionicons name="shield-checkmark" size={16} color="#FBBF24" />
                     <Text style={styles.passGovText}>
                       REPUBLIC OF ZIMBABWE &bull; VERIFIED MARKET TILL
                     </Text>
                   </View>
-                  <View style={styles.passStatusPill}>
-                    <View style={styles.passStatusDot} />
-                    <Text style={styles.passStatusText}>ACTIVE 2026</Text>
+                  <View
+                    style={[
+                      styles.passStatusPill,
+                      {
+                        backgroundColor: hexToRgba(palette.accent, 0.16),
+                        borderRadius: 6,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.passStatusDot, { backgroundColor: palette.accent }]} />
+                    <Text style={[styles.passStatusText, { color: palette.accent }]}>ACTIVE 2026</Text>
                   </View>
                 </View>
 
@@ -861,7 +877,7 @@ export default function ProfileScreen() {
                       avatarPreset={selectedPresetId}
                       name={fullName}
                       borderWidth={2.5}
-                      borderColor={EmeraldTokens.mintCta}
+                      borderColor={palette.accent}
                     />
                   </View>
 
@@ -873,7 +889,7 @@ export default function ProfileScreen() {
                   </Text>
 
                   {tagline ? (
-                    <Text style={styles.passTagline}>&ldquo;{tagline}&rdquo;</Text>
+                    <Text style={[styles.passTagline, { color: palette.accent }]}>&ldquo;{tagline}&rdquo;</Text>
                   ) : null}
 
                   {/* Pass Details Grid */}
@@ -907,7 +923,7 @@ export default function ProfileScreen() {
 
                     <View style={styles.passDetailItem}>
                       <Text style={styles.passDetailLabel}>BASE CURRENCY</Text>
-                      <Text style={[styles.passDetailValue, { color: '#34D399' }]}>
+                      <Text style={[styles.passDetailValue, { color: palette.accent }]}>
                         {currency} Primary Drawer
                       </Text>
                     </View>
@@ -927,7 +943,7 @@ export default function ProfileScreen() {
                       <RealQRCode
                         value={qrPayload}
                         size={56}
-                        color={EmeraldTokens.deepPine}
+                        color={palette.headerBg}
                         backgroundColor="#FFFFFF"
                         quietZone={1}
                       />

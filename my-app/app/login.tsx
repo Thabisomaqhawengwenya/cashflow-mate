@@ -151,7 +151,7 @@ export default function LoginScreen() {
 
           <M3Input
             label="Email or Username"
-            placeholder="e.g. mrq@mbaretuckshop.co.zw"
+            placeholder="e.g. trader@cashflow.co.zw or admin"
             value={email}
             onChangeText={(txt) => {
               setEmail(txt);
@@ -195,6 +195,122 @@ export default function LoginScreen() {
               variant="mint"
               size="lg"
             />
+          </View>
+
+          {/* Quick Demo Accounts Helper (Admin & Client Demos) */}
+          <View
+            style={{
+              backgroundColor: surfaces.cardElevatedBg,
+              borderRadius: 12,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: surfaces.border,
+              marginTop: 6,
+              marginBottom: 8,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: surfaces.textMuted, letterSpacing: 0.5 }}>
+                DEMO ACCOUNTS &bull; 1-TAP FILL
+              </Text>
+              <Text style={{ fontSize: 10, color: palette.primary, fontWeight: '700' }}>
+                Instant Access
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              <Pressable
+                onPress={() => {
+                  setEmail('admin');
+                  setPassword('admin');
+                  setError(null);
+                }}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: surfaces.cardBg,
+                    borderWidth: 1,
+                    borderColor: surfaces.border,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: surfaces.textPrimary }}>
+                  Admin HQ
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setEmail('trader');
+                  setPassword('trader123');
+                  setError(null);
+                }}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: surfaces.cardBg,
+                    borderWidth: 1,
+                    borderColor: surfaces.border,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: surfaces.textPrimary }}>
+                  Farai (Produce)
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setEmail('tuckshop');
+                  setPassword('trader123');
+                  setError(null);
+                }}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: surfaces.cardBg,
+                    borderWidth: 1,
+                    borderColor: surfaces.border,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: surfaces.textPrimary }}>
+                  Tendai (Tuckshop)
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setEmail('retail');
+                  setPassword('trader123');
+                  setError(null);
+                }}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: surfaces.cardBg,
+                    borderWidth: 1,
+                    borderColor: surfaces.border,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: surfaces.textPrimary }}>
+                  Chipo (Retail)
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Forgot Password Action */}
