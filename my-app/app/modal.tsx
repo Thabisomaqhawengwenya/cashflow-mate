@@ -73,7 +73,7 @@ export default function ModalScreen() {
 
   // User Profile / Username State
   const [showProfileSection, setShowProfileSection] = useState(false);
-  const [editUsername, setEditUsername] = useState('Mr Q');
+  const [editUsername, setEditUsername] = useState('Farai Moyo');
   const [editStallName, setEditStallName] = useState('Mbare Fresh Produce & Tuckshop');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -379,7 +379,7 @@ export default function ModalScreen() {
     router.replace('/login' as any);
   };
 
-  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
+  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Trader';
 
   return (
     <View style={styles.screenWrapper}>
@@ -523,7 +523,7 @@ export default function ModalScreen() {
                 label="Username / Trader Display Name"
                 value={editUsername}
                 onChangeText={setEditUsername}
-                placeholder="e.g. Mr Q"
+                placeholder="e.g. Farai Moyo"
                 autoCapitalize="words"
               />
 
@@ -906,7 +906,7 @@ export default function ModalScreen() {
               </View>
               <View style={styles.settingTextCol}>
                 <Text style={styles.settingLabel}>Privacy & Copyright</Text>
-                <Text style={styles.settingSub}>MIT License &bull; Mr Q</Text>
+                <Text style={styles.settingSub}>MIT License &bull; CashFlow Mate Team</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />

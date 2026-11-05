@@ -455,11 +455,11 @@ export default function AdminBackOfficePortalScreen() {
             <View style={styles.sidebarFooter}>
               <View style={styles.adminProfileRow}>
                 <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarInitial}>Q</Text>
+                  <Text style={styles.avatarInitial}>{(session?.username || 'Admin').charAt(0).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.adminName} numberOfLines={1}>
-                    {session?.username || 'Mr Q'}
+                    {session?.username || 'System Admin'}
                   </Text>
                   <Text style={styles.adminCode}>Code: {adminSecret}</Text>
                 </View>

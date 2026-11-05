@@ -357,7 +357,7 @@ export default function OverviewScreen() {
     return formatMoney(val, cur);
   };
 
-  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
+  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Trader';
 
   return (
     <View style={[styles.screenWrapper, { backgroundColor: palette.headerBg }]}>

@@ -25,6 +25,7 @@ import { PRESET_AVATARS, AvatarPreset, getPresetById } from '@/constants/Presets
 import { TraderAvatar } from '@/components/TraderAvatar';
 import { compressAvatarForStorage } from '@/utils/imageCompressor';
 import { RealQRCode } from '@/components/RealQRCode';
+import { sanitizeForLocalhost, FAKE_DEMO_TRADER } from '@/utils/localhostSanitizer';
 
 const BUSINESS_TYPES = [
   'Tuckshop & Grocery',
@@ -97,21 +98,21 @@ export default function ProfileScreen() {
       setSession(sess);
       setBusiness(biz);
 
-      const name = sess?.name || biz?.ownerName || '';
-      const usr = sess?.username || biz?.username || (name ? name.toLowerCase().replace(/\s+/g, '_') : '');
-      const stall = biz?.name || sess?.businessName || '';
+      const name = sanitizeForLocalhost(sess?.name || biz?.ownerName || '', FAKE_DEMO_TRADER.fullName);
+      const usr = sanitizeForLocalhost(sess?.username || biz?.username || (name ? name.toLowerCase().replace(/\s+/g, '_') : ''), FAKE_DEMO_TRADER.username);
+      const stall = sanitizeForLocalhost(biz?.name || sess?.businessName || '', FAKE_DEMO_TRADER.stallName);
 
       setFullName(name);
       setUsername(usr.startsWith('@') ? usr.slice(1) : usr);
-      setPhone(biz?.phone || sess?.phone || '');
-      setEmail(sess?.email || biz?.email || '');
+      setPhone(sanitizeForLocalhost(biz?.phone || sess?.phone || '', FAKE_DEMO_TRADER.phone));
+      setEmail(sanitizeForLocalhost(sess?.email || biz?.email || '', FAKE_DEMO_TRADER.email));
       setStallName(stall);
-      setStallNumber(biz?.stallNumber || sess?.stallNumber || '');
-      setMerchantTillNumber(biz?.merchantTillNumber || sess?.merchantTillNumber || '');
+      setStallNumber(sanitizeForLocalhost(biz?.stallNumber || sess?.stallNumber || '', FAKE_DEMO_TRADER.stallNumber));
+      setMerchantTillNumber(sanitizeForLocalhost(biz?.merchantTillNumber || sess?.merchantTillNumber || '', FAKE_DEMO_TRADER.merchantTillNumber));
       setBusinessType(biz?.businessType || (sess as any)?.businessType || 'Tuckshop & Grocery');
-      setCity(biz?.city || sess?.city || 'Harare (Mbare Musika)');
-      setTagline(biz?.tagline || (sess as any)?.tagline || '');
-      setOperatingHours(biz?.operatingHours || (sess as any)?.operatingHours || '6:00 AM - 6:00 PM (Mon - Sat)');
+      setCity(biz?.city || sess?.city || FAKE_DEMO_TRADER.city);
+      setTagline(sanitizeForLocalhost(biz?.tagline || (sess as any)?.tagline || '', FAKE_DEMO_TRADER.tagline));
+      setOperatingHours(biz?.operatingHours || (sess as any)?.operatingHours || FAKE_DEMO_TRADER.operatingHours);
       setCurrency(biz?.currency || sess?.currency || 'USD');
       setAvatarUri(biz?.avatarUri || sess?.avatarUri || null);
       setSelectedPresetId(biz?.avatarPreset || (sess as any)?.avatarPreset || null);
@@ -542,7 +543,7 @@ export default function ProfileScreen() {
               <View style={styles.formCard}>
                 <M3Input
                   label="Full Name / Display Name"
-                  placeholder="e.g. Mr Q"
+                  placeholder="e.g. Farai Moyo"
                   value={fullName}
                   onChangeText={setFullName}
                 />
@@ -550,7 +551,7 @@ export default function ProfileScreen() {
                 <View style={{ marginTop: 14 }}>
                   <M3Input
                     label="Trader Username / Handle"
-                    placeholder="mrq_mbare"
+                    placeholder="farai_moyo"
                     prefix="@"
                     value={username}
                     onChangeText={setUsername}

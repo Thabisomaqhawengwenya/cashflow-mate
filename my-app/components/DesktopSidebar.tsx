@@ -101,7 +101,7 @@ export const DesktopSidebar: React.FC = () => {
     }
   }, []);
 
-  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Mr Q';
+  const userDisplayName = session?.username || session?.name || business?.ownerName || 'Trader';
 
   const isItemActive = (item: NavItem) => {
     if (item.id === 'index') {

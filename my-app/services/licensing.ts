@@ -147,8 +147,8 @@ export function verifyLicenseKey(rawKey: string, now: Date = new Date()): Licens
 export const SAMPLE_WORKING_LICENSES = [
   {
     tier: 'pro' as LicenseTier,
-    label: 'Mr Q Trader Pro',
-    key: generateLicenseKey({ traderName: 'MRQ', tier: 'pro', expiresYear: 2029 }),
+    label: 'Harare Market Pro',
+    key: generateLicenseKey({ traderName: 'HARARE', tier: 'pro', expiresYear: 2029 }),
   },
   {
     tier: 'pro' as LicenseTier,

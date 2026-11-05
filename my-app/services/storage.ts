@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSupabaseConfigured } from './supabase';
 import { SecureVault } from '../utils/secureVault';
+import { sanitizeBusinessForLocalhost } from '../utils/localhostSanitizer';
 
 export type CurrencyCode = 'USD' | 'ZWG' | 'ZAR';
 
@@ -212,7 +213,7 @@ export class MobileStorageService {
       const { SupabaseDataService } = await import('./supabaseData');
       const profile = await SupabaseDataService.getProfile();
       if (profile) {
-        return {
+        return sanitizeBusinessForLocalhost({
           name: profile.stallName || 'My Stall',
           ownerName: profile.fullName || '',
           businessType: 'Retail & Tuckshop',
@@ -222,15 +223,16 @@ export class MobileStorageService {
           phone: profile.phone || '',
           city: profile.city || 'Harare (CBD)',
           avatarUri: profile.avatarUri,
-        };
+        }) as BusinessProfile;
       }
     } catch {}
 
     const data = await AsyncStorage.getItem(STORAGE_KEY_BIZ);
     if (!data) {
-      return { ...DEFAULT_EMPTY_BUSINESS };
+      return sanitizeBusinessForLocalhost({ ...DEFAULT_EMPTY_BUSINESS }) as BusinessProfile;
     }
-    return parseStored<BusinessProfile>(data, { ...DEFAULT_EMPTY_BUSINESS });
+    const parsed = parseStored<BusinessProfile>(data, { ...DEFAULT_EMPTY_BUSINESS });
+    return sanitizeBusinessForLocalhost(parsed) as BusinessProfile;
   }
 
   static async updateBusiness(profile: Partial<BusinessProfile>): Promise<BusinessProfile> {

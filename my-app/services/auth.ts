@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MobileStorageService, CurrencyCode } from './storage';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { SupabaseDataService } from './supabaseData';
+import { sanitizeSessionForLocalhost, FAKE_DEMO_TRADER } from '../utils/localhostSanitizer';
 
 export const STORAGE_KEY_AUTH_SESSION = '@cashflow_user_session_v2';
 export const STORAGE_KEY_HAS_ACCOUNT = '@cashflow_has_registered_account_v1';
@@ -126,7 +127,7 @@ export class MobileAuthService {
         };
 
         await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(userSession));
-        return userSession;
+        return sanitizeSessionForLocalhost(userSession);
       } catch {
         // Fall back to AsyncStorage if offline
       }
@@ -139,7 +140,7 @@ export class MobileAuthService {
       if (!parsed.username && parsed.name) {
         parsed.username = parsed.name;
       }
-      return parsed;
+      return sanitizeSessionForLocalhost(parsed);
     } catch {
       return null;
     }
@@ -240,8 +241,8 @@ export class MobileAuthService {
 
     const adminSession: UserSession = {
       userId: 'admin_hq_001',
-      name: 'Mr Q (Admin HQ)',
-      username: 'Mr Q',
+      name: 'Market Admin HQ',
+      username: 'admin',
       email: 'admin@cashflow.co.zw',
       businessName: 'Cashflow Command Center',
       currency: 'USD',
@@ -358,10 +359,10 @@ export class MobileAuthService {
   static async demoLogin(): Promise<UserSession> {
     const session: UserSession = {
       userId: 'user_demo_001',
-      name: 'Mr Q',
-      username: 'Mr Q',
-      email: 'demo@cashflow.co.zw',
-      businessName: 'Mbare Fresh Produce',
+      name: FAKE_DEMO_TRADER.fullName,
+      username: FAKE_DEMO_TRADER.username,
+      email: FAKE_DEMO_TRADER.email,
+      businessName: FAKE_DEMO_TRADER.stallName,
       currency: 'USD',
       role: 'trader',
       token: 'cfm_demo_token',
@@ -396,8 +397,8 @@ export class MobileAuthService {
     if (isAdminDirect) {
       const adminSession: UserSession = {
         userId: 'admin_hq_001',
-        name: 'Mr Q (Admin HQ)',
-        username: 'Mr Q',
+        name: 'Market Admin HQ',
+        username: 'admin',
         email: 'admin@cashflow.co.zw',
         businessName: 'Cashflow Command Center',
         currency: 'USD',

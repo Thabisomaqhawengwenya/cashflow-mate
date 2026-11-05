@@ -28,7 +28,7 @@ export const TraderAvatar: React.FC<TraderAvatarProps> = ({
   style,
 }) => {
   const preset = getPresetById(avatarPreset);
-  const initials = (name || 'Mr Q')
+  const initials = (name || 'Trader')
     .trim()
     .slice(0, 2)
     .toUpperCase();

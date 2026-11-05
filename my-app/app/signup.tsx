@@ -145,7 +145,7 @@ export default function SignupScreen() {
 
           <M3Input
             label="Your Name / Username (shown in greeting)"
-            placeholder="e.g. Mr Q"
+            placeholder="e.g. Farai Moyo"
             value={name}
             onChangeText={(txt) => {
               setName(txt);

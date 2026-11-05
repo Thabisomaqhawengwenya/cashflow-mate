@@ -156,8 +156,8 @@ const INITIAL_REPORTED_INDIVIDUALS: ReportedIndividual[] = [
     category: 'fake_ecocash_sms',
     severity: 'critical',
     status: 'blacklisted',
-    reportedByTrader: 'Mr Q (Mbare Fresh Produce)',
-    reportedByEmail: 'mrq@mbaretuckshop.co.zw',
+    reportedByTrader: 'Farai Moyo (Mbare Fresh Produce)',
+    reportedByEmail: 'farai@mbaretuckshop.co.zw',
     amountInvolvedUsd: 185.0,
     evidenceSummary:
       'Sent forged sender-ID SMS pretending to be EcoCash Cash-In for 3 crates of cooking oil and fled before wallet balance updated.',
@@ -298,15 +298,15 @@ const INITIAL_SAAS_PAYMENTS: SubscriptionPaymentRecord[] = [
   {
     id: 'pay_001',
     invoiceRef: 'INV-CFM-9041',
-    traderName: 'Mr Q',
-    traderEmail: 'mrq@mbaretuckshop.co.zw',
+    traderName: 'Farai Moyo',
+    traderEmail: 'farai@mbaretuckshop.co.zw',
     businessName: 'Mbare Fresh Produce & Tuckshop',
     city: 'Harare',
     planTier: 'enterprise',
     amountUsd: 15.0,
     paymentMethod: 'EcoCash USD',
     status: 'paid',
-    licenseKeyIssued: 'CFM-ENT-MRQ-89F21C04',
+    licenseKeyIssued: 'CFM-ENT-FARAI-89F21C04',
     paidAt: '2026-10-15',
     expiresAt: '2029-10-15',
   },
@@ -503,7 +503,7 @@ const INITIAL_PUSH_CAMPAIGNS: PushCampaignRecord[] = [
 const INITIAL_ADMIN_TEAM: AdminStaffMember[] = [
   {
     id: 'adm_001',
-    name: 'Mr Q (Founder & Supreme Commander)',
+    name: 'Market Admin HQ (System Administrator)',
     email: 'admin@cashflowmate.co.zw',
     role: 'Super Admin',
     permissionsSummary: 'Full Root Governance, Secret Code Rotation, License Signing, RBAC & Billing',

@@ -30,12 +30,12 @@ describe('MobileAuthService', () => {
     const session = await MobileAuthService.demoLogin();
     expect(session.isLoggedIn).toBe(true);
     expect(session.isDemo).toBe(true);
-    expect(session.name).toBe('Mr Q');
-    expect(session.username).toBe('Mr Q');
+    expect(session.name).toBe('Farai Moyo');
+    expect(session.username).toBe('farai_moyo');
 
     const stored = await MobileAuthService.getSession();
-    expect(stored?.email).toContain('demo@cashflow');
-    expect(stored?.username).toBe('Mr Q');
+    expect(stored?.email).toContain('cashflowmate.co.zw');
+    expect(stored?.username).toBe('farai_moyo');
   });
 
   it('updates session username and details', async () => {
@@ -99,10 +99,10 @@ describe('MobileAuthService', () => {
     expect(await MobileAuthService.hasRegisteredAccount()).toBe(false);
 
     await MobileAuthService.register({
-      name: 'Mr Q',
-      email: 'mrq@cashflowmate.co.zw',
+      name: 'Farai Moyo',
+      email: 'farai@cashflowmate.co.zw',
       password: 'password123',
-      businessName: 'Mr Q Market Hub',
+      businessName: 'Farai Market Hub',
       currency: 'USD',
     });
     expect(await MobileAuthService.hasRegisteredAccount()).toBe(true);
@@ -112,8 +112,8 @@ describe('MobileAuthService', () => {
     expect(await MobileAuthService.getSession()).toBeNull();
     expect(await MobileAuthService.hasRegisteredAccount()).toBe(true);
 
-    const relogged = await MobileAuthService.login('mrq@cashflowmate.co.zw', 'password123');
-    expect(relogged.username).toBe('Mr Q');
-    expect(relogged.businessName).toBe('Mr Q Market Hub');
+    const relogged = await MobileAuthService.login('farai@cashflowmate.co.zw', 'password123');
+    expect(relogged.username).toBe('Farai Moyo');
+    expect(relogged.businessName).toBe('Farai Market Hub');
   });
 });
