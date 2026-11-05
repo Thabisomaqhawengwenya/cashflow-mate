@@ -36,17 +36,17 @@ Copy the SQL from `database/supabase_migrations.sql` and run it in the [Supabase
 
 | Platform | Download Link | Build Type | Status |
 | :--- | :--- | :--- | :--- |
-| **Android (APK v1.3.0 — Latest Production)** | [📦 **GitHub Release v1.3.0 Assets**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.3.0) | Standalone Production Release (`com.maqhawe.cashflow`) | ✅ Latest Production |
+| **Android (APK v1.3.0 — Direct Download)** | [📲 **Download Cashflow v1.3.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.3.0/Cashflow-v1.3.0.apk) | Standalone Production Release (`98.2 MB`) | ✅ Live Production |
+| **Expo EAS Cloud Build** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/cdcb0411-b480-4f47-a2fe-8b9abb7919dc) | EAS Cloud Artifact (`cdcb0411`) | ✅ Verified |
 | **Android (APK v1.2.0 — Review Archive)** | [📦 **GitHub Release v1.2.0 Assets**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/tag/v1.2.0) | Standalone Preview Release (`com.maqhawe.cashflowmate`) | 📦 Archived |
-| **Android (APK v1.1.0 — Direct Install)** | [⬇️ **Download CashFlow Mate v1.1.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) | Standalone Installable APK (`97.5 MB`) | ✅ Live Production |
-| **Expo EAS Cloud Build** | [🌐 **Expo Build Details**](https://expo.dev/accounts/maqhawengwenya/projects/cashflow-mate/builds/cba8389e-d954-4371-a8e5-5d1c61eb17ed) | EAS Cloud Artifact (`cba8389e`) | ✅ Verified |
+| **Android (APK v1.1.0 — Legacy Install)** | [⬇️ **Download CashFlow Mate v1.1.0 APK**](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) | Standalone Installable APK (`97.5 MB`) | 📦 Legacy |
 | **Android (APK v1.0.0 — Legacy)** | [⬇️ Download CashFlow Mate v1.0.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.0.0/CashFlowMate-v1.0.0.apk) | Standalone Preview APK | 📦 Archived |
 
 ### 🚀 Android Quick Install Steps
-1. **Download:** Tap the [Download CashFlow Mate v1.1.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.1.0/CashFlowMate-v1.1.0.apk) link directly from your Android phone browser.
+1. **Download:** Tap the [Download Cashflow v1.3.0 APK](https://github.com/Thabisomaqhawengwenya/cashflow-mate/releases/download/v1.3.0/Cashflow-v1.3.0.apk) link directly from your Android phone browser.
 2. **Open:** Tap the downloaded file from your notification tray or *Downloads* folder.
 3. **Allow Installation:** If prompted by Android, enable *"Install unknown apps"* for your browser or file manager.
-4. **Launch:** Open **CashFlow Mate** from your home screen. Full offline till capabilities run immediately without requiring Expo Go or internet access.
+4. **Launch:** Open **Cashflow** from your home screen. Full offline till capabilities run immediately without requiring Expo Go or internet access.
 
 ---
 
