@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -23,6 +24,7 @@ import { useAppearance } from '@/context/AppearanceContext';
 import { PRESET_AVATARS, AvatarPreset, getPresetById } from '@/constants/Presets';
 import { TraderAvatar } from '@/components/TraderAvatar';
 import { compressAvatarForStorage } from '@/utils/imageCompressor';
+import { RealQRCode } from '@/components/RealQRCode';
 
 const BUSINESS_TYPES = [
   'Tuckshop & Grocery',
@@ -83,6 +85,7 @@ export default function ProfileScreen() {
   const [currency, setCurrency] = useState<CurrencyCode>('USD');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -94,28 +97,38 @@ export default function ProfileScreen() {
       setSession(sess);
       setBusiness(biz);
 
-      const name = sess?.name || biz?.ownerName || 'Mr Q';
-      const usr = sess?.username || biz?.username || name.toLowerCase().replace(/\s+/g, '_');
-      const stall = biz?.name || sess?.businessName || 'Mbare Fresh Produce & Tuckshop';
+      const name = sess?.name || biz?.ownerName || '';
+      const usr = sess?.username || biz?.username || (name ? name.toLowerCase().replace(/\s+/g, '_') : '');
+      const stall = biz?.name || sess?.businessName || '';
 
       setFullName(name);
       setUsername(usr.startsWith('@') ? usr.slice(1) : usr);
-      setPhone(biz?.phone || sess?.phone || '+263 77 123 4567');
-      setEmail(sess?.email || biz?.email || 'demo@cashflowmate.co.zw');
+      setPhone(biz?.phone || sess?.phone || '');
+      setEmail(sess?.email || biz?.email || '');
       setStallName(stall);
-      setStallNumber(biz?.stallNumber || sess?.stallNumber || 'Stall #14, Vegetable Shed');
-      setMerchantTillNumber(biz?.merchantTillNumber || sess?.merchantTillNumber || 'EcoCash: 194827');
-      setBusinessType(biz?.businessType || 'Tuckshop & Grocery');
+      setStallNumber(biz?.stallNumber || sess?.stallNumber || '');
+      setMerchantTillNumber(biz?.merchantTillNumber || sess?.merchantTillNumber || '');
+      setBusinessType(biz?.businessType || (sess as any)?.businessType || 'Tuckshop & Grocery');
       setCity(biz?.city || sess?.city || 'Harare (Mbare Musika)');
-      setTagline(biz?.tagline || sess?.tagline || 'Fresh quality produce and cold drinks daily.');
-      setOperatingHours(biz?.operatingHours || sess?.operatingHours || '6:00 AM - 6:00 PM (Mon - Sat)');
+      setTagline(biz?.tagline || (sess as any)?.tagline || '');
+      setOperatingHours(biz?.operatingHours || (sess as any)?.operatingHours || '6:00 AM - 6:00 PM (Mon - Sat)');
       setCurrency(biz?.currency || sess?.currency || 'USD');
       setAvatarUri(biz?.avatarUri || sess?.avatarUri || null);
-      setSelectedPresetId(biz?.avatarPreset || sess?.avatarPreset || null);
+      setSelectedPresetId(biz?.avatarPreset || (sess as any)?.avatarPreset || null);
 
       setLoading(false);
     })();
   }, []);
+
+  const qrPayload = useMemo(() => {
+    const rawTill = merchantTillNumber ? merchantTillNumber.replace(/[^0-9]/g, '') : '';
+    if (rawTill && rawTill.length >= 4) {
+      // Direct EcoCash Merchant Till USSD trigger (*151*2*2*<till>#)
+      return `*151*2*2*${rawTill}#`;
+    }
+    const uid = (session as any)?.merchantCode || session?.userId || 'till-pass';
+    return `cashflow://merchant/pay?id=${encodeURIComponent(uid)}&till=${encodeURIComponent(merchantTillNumber || '')}&name=${encodeURIComponent(stallName || fullName || 'Till')}&city=${encodeURIComponent(city)}&curr=${currency}`;
+  }, [merchantTillNumber, session, stallName, fullName, city, currency]);
 
   const handlePickImage = async () => {
     try {
@@ -852,10 +865,10 @@ export default function ProfileScreen() {
                   </View>
 
                   <Text style={styles.passBusinessName}>
-                    {stallName || 'Mbare Fresh Produce & Tuckshop'}
+                    {stallName || fullName || 'Market Till'}
                   </Text>
                   <Text style={styles.passOwnerName}>
-                    Operated by {fullName || 'Mr Q'} &bull; @{username || 'mrq_mbare'}
+                    Operated by {fullName || 'Verified Trader'} &bull; @{username || (fullName ? fullName.toLowerCase().replace(/\s+/g, '_') : 'trader')}
                   </Text>
 
                   {tagline ? (
@@ -866,24 +879,24 @@ export default function ProfileScreen() {
                   <View style={styles.passDetailsGrid}>
                     <View style={styles.passDetailItem}>
                       <Text style={styles.passDetailLabel}>LOCATION / CITY</Text>
-                      <Text style={styles.passDetailValue}>{city}</Text>
+                      <Text style={styles.passDetailValue}>{city || 'Harare (Mbare Musika)'}</Text>
                     </View>
 
                     <View style={styles.passDetailItem}>
                       <Text style={styles.passDetailLabel}>STALL IDENTIFIER</Text>
-                      <Text style={styles.passDetailValue}>{stallNumber}</Text>
+                      <Text style={styles.passDetailValue}>{stallNumber || 'Stall #14, Vegetable Shed'}</Text>
                     </View>
 
                     <View style={styles.passDetailItem}>
                       <Text style={styles.passDetailLabel}>TILL / ECOCASH</Text>
                       <Text style={[styles.passDetailValue, { color: '#38BDF8' }]}>
-                        {merchantTillNumber}
+                        {merchantTillNumber || 'EcoCash: Ready for Till setup'}
                       </Text>
                     </View>
 
                     <View style={styles.passDetailItem}>
                       <Text style={styles.passDetailLabel}>WHATSAPP HOTLINE</Text>
-                      <Text style={styles.passDetailValue}>{phone}</Text>
+                      <Text style={styles.passDetailValue}>{phone || 'Contact at Stall'}</Text>
                     </View>
 
                     <View style={styles.passDetailItem}>
@@ -899,16 +912,33 @@ export default function ProfileScreen() {
                     </View>
                   </View>
 
-                  {/* Verified Till QR Code Placeholder */}
-                  <View style={styles.qrCard}>
-                    <Ionicons name="qr-code" size={54} color={EmeraldTokens.deepPine} />
+                  {/* Verified Till QR Code Generator (Tap to expand into Stall Counter Mode) */}
+                  <Pressable
+                    onPress={() => setQrModalVisible(true)}
+                    style={({ pressed }) => [
+                      styles.qrCard,
+                      pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open Full Screen Counter QR Display"
+                  >
+                    <View style={styles.qrCodeBox}>
+                      <RealQRCode
+                        value={qrPayload}
+                        size={56}
+                        color={EmeraldTokens.deepPine}
+                        backgroundColor="#FFFFFF"
+                        quietZone={1}
+                      />
+                    </View>
                     <View style={styles.qrTextCol}>
                       <Text style={styles.qrTitle}>Instant Merchant QR Code</Text>
                       <Text style={styles.qrSub}>
                         Scan to transfer directly into this merchant's till.
                       </Text>
                     </View>
-                  </View>
+                    <Ionicons name="expand-outline" size={18} color="#94A3B8" />
+                  </Pressable>
                 </View>
 
                 {/* Stall Pass Footer */}
@@ -932,6 +962,66 @@ export default function ProfileScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Full-Screen Counter Display Mode Modal for Stall Counter */}
+      <Modal
+        visible={qrModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <View style={styles.counterModalOverlay}>
+          <View style={styles.counterModalCard}>
+            <View style={styles.counterModalHeader}>
+              <View style={styles.counterBadge}>
+                <Ionicons name="storefront" size={14} color={EmeraldTokens.mintCta} />
+                <Text style={styles.counterBadgeText}>COUNTER TILL DISPLAY</Text>
+              </View>
+              <Pressable
+                onPress={() => setQrModalVisible(false)}
+                style={styles.counterCloseBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close Counter Mode"
+              >
+                <Ionicons name="close" size={20} color="#0F172A" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.counterStallName}>
+              {stallName || fullName || 'Market Till'}
+            </Text>
+            <Text style={styles.counterSub}>
+              {merchantTillNumber ? merchantTillNumber : `${city} • Verified Merchant`}
+            </Text>
+
+            {/* Enlarged QR Code Canvas */}
+            <View style={styles.counterQrContainer}>
+              <RealQRCode value={qrPayload} size={220} color="#062A20" quietZone={2} />
+            </View>
+
+            <View style={styles.counterCurrencyPill}>
+              <Ionicons name="flash" size={14} color="#065F46" />
+              <Text style={styles.counterCurrencyText}>
+                Accepting {currency} Cash &bull; EcoCash &bull; InnBucks
+              </Text>
+            </View>
+
+            <Text style={styles.counterInstruction}>
+              Customers can scan this official QR code with their mobile banking app or camera to pay your till instantly.
+            </Text>
+
+            <Pressable
+              onPress={() => setQrModalVisible(false)}
+              style={({ pressed }) => [
+                styles.counterDoneBtn,
+                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+              ]}
+            >
+              <Text style={styles.counterDoneBtnText}>DONE / RETURN TO PASS</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1470,6 +1560,22 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 18,
     width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  qrCodeBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   qrTextCol: {
     flex: 1,
@@ -1515,5 +1621,123 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  // Full-Screen Counter Mode Modal
+  counterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 20, 15, 0.88)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  counterModalCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 28,
+    elevation: 12,
+  },
+  counterModalHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  counterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  counterBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#065F46',
+    letterSpacing: 0.6,
+  },
+  counterCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterStallName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: EmeraldTokens.deepPine,
+    textAlign: 'center',
+  },
+  counterSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  counterQrContainer: {
+    marginVertical: 20,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: EmeraldTokens.mintCta,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  counterCurrencyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 12,
+  },
+  counterCurrencyText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  counterInstruction: {
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+  },
+  counterDoneBtn: {
+    width: '100%',
+    backgroundColor: EmeraldTokens.deepPine,
+    paddingVertical: 14,
+    borderRadius: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterDoneBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 });

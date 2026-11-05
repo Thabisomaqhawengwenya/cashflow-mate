@@ -6,6 +6,7 @@
 -- 1. PROFILES TABLE (Linked directly to Supabase Auth Users)
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  merchant_code text unique not null default ('CFM-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 10))),
   email text,
   full_name text,
   stall_name text,
@@ -39,9 +40,10 @@ create policy "Users can insert own profile"
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, full_name, stall_name, currency, onboarding_completed)
+  insert into public.profiles (id, merchant_code, email, full_name, stall_name, currency, onboarding_completed)
   values (
     new.id,
+    coalesce(new.raw_user_meta_data->>'merchant_code', 'CFM-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 10))),
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
     coalesce(new.raw_user_meta_data->>'stall_name', 'My Stall'),

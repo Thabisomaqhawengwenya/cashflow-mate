@@ -7,12 +7,10 @@ import {
   Pressable,
   Platform,
   KeyboardAvoidingView,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { EmeraldTokens, BlueTokens } from '@/constants/Colors';
+import { EmeraldTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { CurrencyCode } from '@/services/storage';
 import { MobileAuthService, UserSession } from '@/services/auth';
@@ -20,11 +18,62 @@ import { M3Input } from '@/components/M3/M3Input';
 import { M3Button } from '@/components/M3/M3Button';
 import { AppLogo } from '@/components/BrandLogos';
 
+const TRADING_SECTORS = [
+  'Tuckshop & Grocery',
+  'Fresh Farm Produce',
+  'Clothing & Bales',
+  'Electronics & Phones',
+  'Wholesale & Distribution',
+  'EcoCash & Money Agency',
+  'Hardware & Spares',
+  'Salon & Cosmetics',
+];
+
+const MARKET_LOCATIONS = [
+  'Harare (Mbare Musika)',
+  'Harare (CBD)',
+  'Bulawayo (CBD)',
+  'Bulawayo (Renkini)',
+  'Gweru (Kwekwe Road)',
+  'Mutare (Sakubva)',
+  'Masvingo (Mucheke)',
+  'Beitbridge Border',
+  'Chitungwiza (Makoni)',
+];
+
+const OPERATING_HOURS_OPTIONS = [
+  '6:00 AM - 6:00 PM (Mon - Sat)',
+  '7:00 AM - 8:00 PM (Daily)',
+  '6:00 AM - 1:00 PM (Market Morning)',
+  '8:00 AM - 5:00 PM (Weekdays)',
+  '24/7 Continuous Booth',
+];
+
+const CURRENCY_OPTIONS: Array<{ code: CurrencyCode; label: string }> = [
+  { code: 'USD', label: 'USD ($ Cash Drawer)' },
+  { code: 'ZWG', label: 'ZiG (EcoCash / ZWG)' },
+  { code: 'ZAR', label: 'ZAR (Rand Float)' },
+];
+
+const LANGUAGE_OPTIONS = [
+  { code: 'en', name: 'English' },
+  { code: 'sn', name: 'ChiShona' },
+  { code: 'nd', name: 'SiNdebele' },
+];
+
 export default function OnboardingScreen() {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [currency, setCurrency] = useState<CurrencyCode>('USD');
+
+  // User Customizable Profile Fields
   const [businessName, setBusinessName] = useState('');
+  const [tradingSector, setTradingSector] = useState('Tuckshop & Grocery');
+  const [marketLocation, setMarketLocation] = useState('Harare (Mbare Musika)');
+  const [tagline, setTagline] = useState('Fresh quality produce and cold drinks daily.');
+  const [operatingHours, setOperatingHours] = useState('6:00 AM - 6:00 PM (Mon - Sat)');
+  const [currency, setCurrency] = useState<CurrencyCode>('USD');
+  const [preferredLang, setPreferredLang] = useState('en');
   const [startingFloat, setStartingFloat] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +86,10 @@ export default function OnboardingScreen() {
       }
       setSession(sess);
       setCurrency(sess.currency || 'USD');
-      setBusinessName(sess.businessName || `${sess.name}'s Business`);
+      setBusinessName(sess.businessName || `${sess.name}'s Stall`);
+      if (sess.city) setMarketLocation(sess.city);
+      if (sess.tagline) setTagline(sess.tagline);
+      if (sess.operatingHours) setOperatingHours(sess.operatingHours);
     })();
   }, []);
 
@@ -59,6 +111,11 @@ export default function OnboardingScreen() {
       await MobileAuthService.completeOnboarding({
         currency,
         businessName: businessName.trim(),
+        city: marketLocation,
+        businessType: tradingSector,
+        tagline: tagline.trim(),
+        operatingHours,
+        preferredLanguage: preferredLang,
         startingFloat: floatNum,
       });
       setIsLoading(false);
@@ -85,9 +142,9 @@ export default function OnboardingScreen() {
           <View style={styles.logoRow}>
             <AppLogo size={56} style={styles.appLogo} />
           </View>
-          <Text style={styles.heroTitle}>Welcome to Cashflow</Text>
+          <Text style={styles.heroTitle}>Customize Your Till</Text>
           <Text style={styles.heroSub}>
-            Welcome aboard, {session?.name || 'Trader'}! Customize your daily till in 30 seconds.
+            Welcome aboard, {session?.name || 'Trader'}! Choose your stall and market preferences.
           </Text>
         </View>
 
@@ -104,7 +161,7 @@ export default function OnboardingScreen() {
           <Text style={styles.sectionLabel}>BUSINESS OR STALL NAME</Text>
           <M3Input
             label="Trading Name"
-            placeholder="e.g. Mbare Musika Wholesale #12"
+            placeholder="e.g. Mbare Fresh Produce & Tuckshop"
             value={businessName}
             onChangeText={(txt) => {
               setBusinessName(txt);
@@ -112,36 +169,131 @@ export default function OnboardingScreen() {
             }}
           />
 
-          {/* 2. Primary Operating Currency */}
-          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>PRIMARY OPERATING CURRENCY</Text>
-          <Text style={styles.inputHelper}>
-            Select your main trading drawer. You can switch or accept multi-currency payments at any time.
-          </Text>
-          <View style={styles.currencyRow}>
-            {(['USD', 'ZWG', 'ZAR'] as CurrencyCode[]).map((c) => {
-              const active = currency === c;
-              const label = c === 'USD' ? 'US Dollar ($)' : c === 'ZWG' ? 'Zimbabwe Gold (ZiG)' : 'SA Rand (R)';
-              const symbol = c === 'USD' ? '$' : c === 'ZWG' ? 'ZiG' : 'R';
-
+          {/* 2. Trading Sector (Screenshot 1) */}
+          <Text style={[styles.sectionLabel, { marginTop: 22 }]}>Trading Sector</Text>
+          <View style={styles.chipsContainer}>
+            {TRADING_SECTORS.map((sector) => {
+              const active = tradingSector === sector;
               return (
                 <Pressable
-                  key={c}
-                  onPress={() => setCurrency(c)}
-                  style={[styles.currencyCard, active && styles.currencyCardActive]}
+                  key={sector}
+                  onPress={() => setTradingSector(sector)}
+                  style={[styles.pillChip, active && styles.pillChipActive]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select sector ${sector}`}
                 >
-                  <View style={[styles.currencyIconBox, active && styles.currencyIconBoxActive]}>
-                    <Text style={[styles.currencyIconText, active && styles.currencyIconTextActive]}>
-                      {symbol}
-                    </Text>
-                  </View>
-                  <Text style={[styles.currencyTitle, active && styles.currencyTitleActive]}>{c}</Text>
-                  <Text style={styles.currencySub}>{label}</Text>
+                  <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                    {sector}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
 
-          {/* 3. Starting Float */}
+          {/* 3. Market Location / Town (Screenshot 1) */}
+          <Text style={[styles.sectionLabel, { marginTop: 22 }]}>Market Location / Town</Text>
+          <View style={styles.chipsContainer}>
+            {MARKET_LOCATIONS.map((loc) => {
+              const active = marketLocation === loc;
+              return (
+                <Pressable
+                  key={loc}
+                  onPress={() => setMarketLocation(loc)}
+                  style={[styles.pillChip, active && styles.pillChipActive]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select location ${loc}`}
+                >
+                  <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                    {loc}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* 4. Store Motto / Tagline (Screenshot 1) */}
+          <Text style={[styles.sectionLabel, { marginTop: 22 }]}>Store Motto / Tagline</Text>
+          <M3Input
+            label="Tagline"
+            placeholder="Fresh quality produce and cold drinks daily."
+            value={tagline}
+            onChangeText={(txt) => setTagline(txt)}
+          />
+
+          {/* 5. Operating Hours & Defaults (Screenshot 2) */}
+          <View style={styles.subSectionHeader}>
+            <View style={styles.subSectionBadge}>
+              <Text style={styles.subSectionBadgeText}>03</Text>
+            </View>
+            <Text style={styles.subSectionTitle}>Operating Hours & Defaults</Text>
+          </View>
+
+          <View style={styles.nestedCard}>
+            {/* Operating Hours Chips */}
+            <Text style={styles.chipFieldLabel}>Operating Hours</Text>
+            <View style={styles.chipsContainer}>
+              {OPERATING_HOURS_OPTIONS.map((hours) => {
+                const active = operatingHours === hours;
+                return (
+                  <Pressable
+                    key={hours}
+                    onPress={() => setOperatingHours(hours)}
+                    style={[styles.pillChip, active && styles.pillChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select hours ${hours}`}
+                  >
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                      {hours}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Primary Till Currency Chips */}
+            <Text style={[styles.chipFieldLabel, { marginTop: 18 }]}>Primary Till Currency</Text>
+            <View style={styles.chipsContainer}>
+              {CURRENCY_OPTIONS.map((item) => {
+                const active = currency === item.code;
+                return (
+                  <Pressable
+                    key={item.code}
+                    onPress={() => setCurrency(item.code)}
+                    style={[styles.pillChip, active && styles.pillChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select currency ${item.label}`}
+                  >
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Preferred Language Chips */}
+            <Text style={[styles.chipFieldLabel, { marginTop: 18 }]}>Preferred Language</Text>
+            <View style={styles.chipsContainer}>
+              {LANGUAGE_OPTIONS.map((item) => {
+                const active = preferredLang === item.code;
+                return (
+                  <Pressable
+                    key={item.code}
+                    onPress={() => setPreferredLang(item.code)}
+                    style={[styles.pillChip, active && styles.pillChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select language ${item.name}`}
+                  >
+                    <Text style={[styles.pillChipText, active && styles.pillChipTextActive]}>
+                      {item.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* 6. Starting Cashbox Float (Optional) */}
           <Text style={[styles.sectionLabel, { marginTop: 24 }]}>OPENING CASH FLOAT (OPTIONAL)</Text>
           <Text style={styles.inputHelper}>
             Have cash physically in your till drawer right now? Enter the amount to begin with an accurate balance.
@@ -192,11 +344,11 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: Platform.OS === 'ios' ? 60 : 44,
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 28,
     alignItems: 'center',
   },
   logoRow: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   appLogo: {
     borderRadius: 16,
@@ -206,13 +358,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   heroSub: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: 'rgba(255, 255, 255, 0.75)',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
     maxWidth: 320,
   },
   sheetContainer: {
@@ -220,91 +372,101 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingHorizontal: 20,
+    paddingTop: 28,
     paddingBottom: 40,
     ...DesignTokens.shadows.softCard,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
-    color: EmeraldTokens.textSubtle,
-    letterSpacing: 1.1,
-    marginBottom: 8,
+    color: EmeraldTokens.textSlate,
+    marginBottom: 10,
+    letterSpacing: -0.1,
   },
   inputHelper: {
     fontSize: 12,
     color: EmeraldTokens.textMuted,
     lineHeight: 17,
-    marginBottom: 14,
-  },
-  currencyRow: {
-    flexDirection: 'row',
-    gap: 10,
     marginBottom: 12,
   },
-  currencyCard: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1.5,
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  pillChip: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
     borderColor: '#E2E8F0',
-    borderRadius: 16,
-    padding: 12,
-    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
   },
-  currencyCardActive: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#1565D8',
+  pillChipActive: {
+    backgroundColor: '#0A192F',
+    borderColor: '#0A192F',
   },
-  currencyIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+  pillChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
   },
-  currencyIconBoxActive: {
-    backgroundColor: '#1565D8',
-  },
-  currencyIconText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#475569',
-  },
-  currencyIconTextActive: {
+  pillChipTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
-  currencyTitle: {
-    fontSize: 13,
+  subSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  subSectionBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  subSectionBadgeText: {
+    color: '#16A34A',
+    fontSize: 11,
     fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 2,
   },
-  currencyTitleActive: {
-    color: '#1565D8',
+  subSectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  currencySub: {
-    fontSize: 10,
-    color: '#64748B',
-    textAlign: 'center',
+  nestedCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 12,
+  },
+  chipFieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 8,
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FEE2E2',
     borderWidth: 1,
-    borderColor: '#FCA5A5',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginBottom: 20,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 18,
   },
   errorText: {
     fontSize: 13,
     color: '#DC2626',
     flex: 1,
-    fontWeight: '500',
   },
 });

@@ -21,12 +21,9 @@ import { useAppearance } from '@/context/AppearanceContext';
 
 export default function LoginScreen() {
   const { palette, surfaces } = useAppearance();
-  const [loginMode, setLoginMode] = useState<'trader' | 'admin'>('trader');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [secretCode, setSecretCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showSecretCode, setShowSecretCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -38,12 +35,6 @@ export default function LoginScreen() {
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
 
-  const isTypingAdmin =
-    email.trim().toLowerCase() === 'admin' ||
-    email.trim().toLowerCase() === 'admin@cashflow.co.zw';
-
-  const showAdminFields = loginMode === 'admin' || isTypingAdmin;
-
   const handleLogin = async () => {
     setError(null);
     if (!email.trim() || !password.trim()) {
@@ -53,43 +44,33 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      if (showAdminFields) {
-        await MobileAuthService.adminLogin(email, password, secretCode);
-        setIsLoading(false);
+      const sess = await MobileAuthService.login(email, password);
+      setIsLoading(false);
+      if (sess.role === 'admin') {
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
           window.location.assign('/admin');
           return;
         }
         router.replace('/admin' as any);
-      } else {
-        const sess = await MobileAuthService.login(email, password);
-        setIsLoading(false);
-        if (sess.role === 'admin') {
-          if (Platform.OS === 'web' && typeof window !== 'undefined') {
-            window.location.assign('/admin');
-            return;
-          }
-          router.replace('/admin' as any);
-          return;
-        }
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          window.location.assign('/');
-          return;
-        }
-        router.replace('/(tabs)');
+        return;
       }
+      if (sess.onboardingCompleted === false) {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.location.assign('/onboarding');
+          return;
+        }
+        router.replace('/onboarding' as any);
+        return;
+      }
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.assign('/');
+        return;
+      }
+      router.replace('/(tabs)');
     } catch (err: any) {
       setIsLoading(false);
       setError(err.message || 'Login failed. Please check your credentials.');
     }
-  };
-
-  const handleQuickFillAdmin = () => {
-    setLoginMode('admin');
-    setEmail('admin');
-    setPassword('admin');
-    setSecretCode('CFM-HQ-2026');
-    setError(null);
   };
 
   const handleResetPassword = async () => {
@@ -125,36 +106,7 @@ export default function LoginScreen() {
         {/* 1. Header Hero Canvas */}
         <View style={styles.header}>
           <View style={styles.topBar}>
-            <Pressable
-              onPress={() => {
-                setLoginMode(loginMode === 'admin' ? 'trader' : 'admin');
-                setError(null);
-              }}
-              style={[
-                styles.adminSwitchPill,
-                loginMode === 'admin' && {
-                  backgroundColor: 'rgba(245, 158, 11, 0.22)',
-                  borderColor: '#F59E0B',
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Toggle Admin HQ Login"
-            >
-              <Ionicons
-                name="shield-checkmark"
-                size={14}
-                color={loginMode === 'admin' ? '#FBBF24' : palette.accent}
-              />
-              <Text
-                style={[
-                  styles.adminSwitchText,
-                  { color: loginMode === 'admin' ? '#FBBF24' : palette.accent },
-                ]}
-              >
-                {loginMode === 'admin' ? 'Admin HQ Mode Active' : 'Admin HQ Portal'}
-              </Text>
-            </Pressable>
-
+            <View style={{ flex: 1 }} />
             <Pressable
               onPress={() => router.push('/signup' as any)}
               style={styles.skipButton}
@@ -171,101 +123,30 @@ export default function LoginScreen() {
             <View>
               <Text style={styles.brandTitle}>Cashflow</Text>
               <Text style={[styles.brandSubtitle, { color: palette.accent }]}>
-                {showAdminFields ? 'DESKTOP ADMIN COMMAND CENTER' : 'PROFESSIONAL TRADER OS'}
+                PROFESSIONAL TRADER OS
               </Text>
             </View>
           </View>
 
-          <Text style={styles.heroGreeting}>
-            {showAdminFields ? 'Admin Command Sign In' : 'Welcome Back'}
-          </Text>
+          <Text style={styles.heroGreeting}>Welcome Back</Text>
           <Text style={styles.heroSub}>
-            {showAdminFields
-              ? 'Enter your Admin credentials and Secret Access Code to launch the Desktop Command Center.'
-              : 'Sign in to access your multi-drawer cashbox and records.'}
+            Sign in to access your multi-drawer cashbox and records.
           </Text>
 
           <View style={styles.statusPill}>
             <View style={styles.pulseDot} />
             <Text style={styles.statusPillText}>
-              {showAdminFields
-                ? 'SECRET CODE REQUIRED • DESKTOP CONSOLE READY'
-                : 'OFFLINE FIRST • ZERO DATA READY'}
+              OFFLINE FIRST • SECURE LOCAL TILL
             </Text>
           </View>
         </View>
 
         {/* 2. Curved Body Card */}
         <View style={[styles.sheetCard, { backgroundColor: surfaces.cardBg }]}>
-          {/* Mode Switcher Tabs */}
-          <View style={[styles.modeTabContainer, { backgroundColor: surfaces.cardElevatedBg }]}>
-            <Pressable
-              onPress={() => {
-                setLoginMode('trader');
-                setError(null);
-              }}
-              style={[
-                styles.modeTabBtn,
-                !showAdminFields && [
-                  styles.modeTabBtnActive,
-                  { backgroundColor: surfaces.cardBg },
-                ],
-              ]}
-            >
-              <Ionicons
-                name="storefront-outline"
-                size={15}
-                color={!showAdminFields ? palette.primary : surfaces.textMuted}
-              />
-              <Text
-                style={[
-                  styles.modeTabText,
-                  { color: !showAdminFields ? surfaces.textPrimary : surfaces.textMuted },
-                ]}
-              >
-                Trader Till Sign In
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => {
-                setLoginMode('admin');
-                setError(null);
-              }}
-              style={[
-                styles.modeTabBtn,
-                showAdminFields && [
-                  styles.modeTabBtnActive,
-                  { backgroundColor: surfaces.cardBg },
-                ],
-              ]}
-            >
-              <Ionicons
-                name="desktop-outline"
-                size={15}
-                color={showAdminFields ? '#D97706' : surfaces.textMuted}
-              />
-              <Text
-                style={[
-                  styles.modeTabText,
-                  { color: showAdminFields ? surfaces.textPrimary : surfaces.textMuted },
-                ]}
-              >
-                Admin HQ (Desktop)
-              </Text>
-            </Pressable>
-          </View>
-
           <View style={styles.formHeaderRow}>
             <Text style={[styles.formTitle, { color: surfaces.textPrimary }]}>
-              {showAdminFields ? 'Administrator Verification' : 'Trader Sign In'}
+              Sign In to Till
             </Text>
-            {showAdminFields && (
-              <Pressable onPress={handleQuickFillAdmin} style={styles.quickFillBadge}>
-                <Ionicons name="key-outline" size={13} color="#B45309" />
-                <Text style={styles.quickFillText}>Auto-Fill Admin</Text>
-              </Pressable>
-            )}
           </View>
 
           {error ? (
@@ -276,10 +157,8 @@ export default function LoginScreen() {
           ) : null}
 
           <M3Input
-            label={showAdminFields ? 'Admin Username or Email' : 'Trader Email or Username'}
-            placeholder={
-              showAdminFields ? 'admin (or admin@cashflow.co.zw)' : 'e.g. mrq@mbaretuckshop.co.zw'
-            }
+            label="Email or Username"
+            placeholder="e.g. mrq@mbaretuckshop.co.zw"
             value={email}
             onChangeText={(txt) => {
               setEmail(txt);
@@ -293,7 +172,7 @@ export default function LoginScreen() {
           <View style={styles.passwordContainer}>
             <M3Input
               label="Password"
-              placeholder={showAdminFields ? 'Enter admin password (admin)' : 'Enter your account password'}
+              placeholder="Enter your account password"
               value={password}
               onChangeText={(txt) => {
                 setPassword(txt);
@@ -308,67 +187,20 @@ export default function LoginScreen() {
               accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
             >
               <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                name={showPassword ? 'eye-off' : 'eye'}
                 size={20}
                 color={surfaces.textMuted}
               />
             </Pressable>
           </View>
 
-          {/* Secret Code Field when in Admin Mode */}
-          {showAdminFields && (
-            <View style={styles.secretCodeSection}>
-              <View style={styles.passwordContainer}>
-                <M3Input
-                  label="Admin Secret Access Code"
-                  placeholder="Enter secret code (CFM-HQ-2026 or 7788)"
-                  value={secretCode}
-                  onChangeText={(txt) => {
-                    setSecretCode(txt);
-                    setError(null);
-                  }}
-                  secureTextEntry={!showSecretCode}
-                  autoCapitalize="characters"
-                />
-                <Pressable
-                  onPress={() => setShowSecretCode(!showSecretCode)}
-                  style={styles.eyeToggle}
-                  accessibilityLabel={showSecretCode ? 'Hide secret code' : 'Show secret code'}
-                >
-                  <Ionicons
-                    name={showSecretCode ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={surfaces.textMuted}
-                  />
-                </Pressable>
-              </View>
-              <View style={styles.secretHintRow}>
-                <M3Badge label="SECRET CODE" variant="amber" />
-                <Text style={[styles.secretHintText, { color: surfaces.textMuted }]}>
-                  Default HQ Code: <Text style={{ fontWeight: '800', color: surfaces.textPrimary }}>CFM-HQ-2026</Text> (or PIN <Text style={{ fontWeight: '800', color: surfaces.textPrimary }}>7788</Text>)
-                </Text>
-              </View>
-            </View>
-          )}
-
           <View style={styles.buttonSpacing}>
             <M3Button
-              label={
-                isLoading
-                  ? 'Verifying...'
-                  : showAdminFields
-                  ? 'Launch Desktop Admin Console'
-                  : 'Sign In to Till'
-              }
+              label={isLoading ? 'Signing In...' : 'Sign In to Till'}
               onPress={handleLogin}
               isLoading={isLoading}
               variant="mint"
               size="lg"
-              icon={
-                showAdminFields ? (
-                  <Ionicons name="shield-checkmark-outline" size={18} color="#FFFFFF" />
-                ) : undefined
-              }
             />
           </View>
 
@@ -504,21 +336,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  adminSwitchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: DesignTokens.shapes.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    gap: 6,
-  },
-  adminSwitchText: {
-    fontSize: 12,
-    fontWeight: '700',
   },
   skipButton: {
     flexDirection: 'row',

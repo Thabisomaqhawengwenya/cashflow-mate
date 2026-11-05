@@ -14,6 +14,7 @@ const CACHE_PREFIX = '@cashflow_cache_';
 
 export interface UserProfileData {
   id: string;
+  merchantCode?: string;
   email: string;
   fullName: string;
   stallName: string;
@@ -85,6 +86,7 @@ export class SupabaseDataService {
 
       return {
         id: data.id,
+        merchantCode: data.merchant_code || undefined,
         email: data.email,
         fullName: data.full_name || '',
         stallName: data.stall_name || '',

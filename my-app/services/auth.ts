@@ -12,6 +12,7 @@ export const DEFAULT_ADMIN_SECRET_CODE = 'CFM-HQ-2026';
 
 export interface UserSession {
   userId: string;
+  merchantCode?: string;
   name: string;
   username?: string;
   avatarUri?: string;
@@ -107,6 +108,7 @@ export class MobileAuthService {
 
         const userSession: UserSession = {
           userId: user.id,
+          merchantCode: profile?.merchantCode || (user.user_metadata?.merchant_code as string) || ('CFM-' + user.id.slice(0, 8).toUpperCase()),
           name: profile?.fullName || (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'Trader',
           username: profile?.fullName || (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'Trader',
           email: user.email || '',
@@ -383,6 +385,34 @@ export class MobileAuthService {
       throw new Error('Please enter both email and password.');
     }
 
+    // Stealth Admin Sign In Check: Admin logs in right here on the standard form
+    const isAdminDirect =
+      (cleanEmail === 'admin' ||
+        cleanEmail === 'admin@cashflow.co.zw' ||
+        cleanEmail === 'mrq' ||
+        cleanEmail === 'mrq@cashflow.co.zw') &&
+      (cleanPass === 'admin' || cleanPass === 'admin123');
+
+    if (isAdminDirect) {
+      const adminSession: UserSession = {
+        userId: 'admin_hq_001',
+        name: 'Mr Q (Admin HQ)',
+        username: 'Mr Q',
+        email: 'admin@cashflow.co.zw',
+        businessName: 'Cashflow Command Center',
+        currency: 'USD',
+        role: 'admin',
+        token: `cfm_admin_jwt_${Date.now()}`,
+        isLoggedIn: true,
+        isDemo: false,
+        onboardingCompleted: true,
+        loggedInAt: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(adminSession));
+      await AsyncStorage.setItem(STORAGE_KEY_HAS_ACCOUNT, 'true');
+      return adminSession;
+    }
+
     if (isSupabaseConfigured) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
@@ -401,15 +431,17 @@ export class MobileAuthService {
       const resolvedName = profile?.fullName || (data.user.user_metadata?.full_name as string) || cleanEmail.split('@')[0];
       const resolvedBiz = profile?.stallName || (data.user.user_metadata?.business_name as string) || `${resolvedName}'s Business`;
       const resolvedCurrency = (profile?.currency || data.user.user_metadata?.currency || 'USD') as CurrencyCode;
+      const isUserAdmin = data.user.user_metadata?.role === 'admin' || (profile as any)?.role === 'admin';
 
       const session: UserSession = {
         userId: data.user.id,
+        merchantCode: profile?.merchantCode || (data.user.user_metadata?.merchant_code as string) || ('CFM-' + data.user.id.slice(0, 8).toUpperCase()),
         name: resolvedName,
         username: resolvedName,
         email: cleanEmail,
         businessName: resolvedBiz,
         currency: resolvedCurrency,
-        role: 'trader',
+        role: isUserAdmin ? 'admin' : 'trader',
         token: data.session.access_token,
         isLoggedIn: true,
         isDemo: false,
@@ -457,6 +489,7 @@ export class MobileAuthService {
 
     const session: UserSession = {
       userId: existing?.userId || `usr_${Date.now()}`,
+      merchantCode: (existing as any)?.merchantCode || ('CFM-' + (existing?.userId || Date.now().toString()).slice(-8).toUpperCase()),
       name: resolvedName,
       username: resolvedUsername,
       email: cleanEmail,
@@ -499,6 +532,11 @@ export class MobileAuthService {
     const cleanEmail = data.email.trim().toLowerCase();
     const cleanPass = data.password.trim();
     const cleanBiz = data.businessName.trim() || `${cleanName}'s Business`;
+    const uniqueMerchantCode =
+      'CFM-' +
+      Math.random().toString(36).substring(2, 6).toUpperCase() +
+      '-' +
+      Math.random().toString(36).substring(2, 6).toUpperCase();
 
     if (!cleanName) throw new Error('Please enter your full name.');
     if (!cleanEmail || !cleanEmail.includes('@')) throw new Error('Please enter a valid email address.');
@@ -513,6 +551,7 @@ export class MobileAuthService {
             full_name: cleanName,
             business_name: cleanBiz,
             currency: data.currency || 'USD',
+            merchant_code: uniqueMerchantCode,
           },
         },
       });
@@ -526,10 +565,11 @@ export class MobileAuthService {
         throw new Error('Registration could not be completed. Please try again.');
       }
 
-      // Upsert profile row into Supabase
+      // Upsert profile row into Supabase with unique secret merchant_code
       try {
         await supabase.from('profiles').upsert({
           id: user.id,
+          merchant_code: uniqueMerchantCode,
           email: cleanEmail,
           full_name: cleanName,
           stall_name: cleanBiz,
@@ -541,6 +581,7 @@ export class MobileAuthService {
 
       const session: UserSession = {
         userId: user.id,
+        merchantCode: uniqueMerchantCode,
         name: cleanName,
         username: cleanName,
         email: cleanEmail,
@@ -573,6 +614,7 @@ export class MobileAuthService {
     const userId = `usr_${Date.now()}`;
     const session: UserSession = {
       userId,
+      merchantCode: uniqueMerchantCode,
       name: cleanName,
       username: cleanName,
       email: cleanEmail,
@@ -644,12 +686,17 @@ export class MobileAuthService {
   }
 
   /**
-   * Complete user onboarding setup (currency, optional starting float)
+   * Complete user onboarding setup (currency, optional starting float, business details)
    */
   static async completeOnboarding(params: {
     currency: CurrencyCode;
     startingFloat?: number;
     businessName?: string;
+    city?: string;
+    businessType?: string;
+    tagline?: string;
+    operatingHours?: string;
+    preferredLanguage?: string;
   }): Promise<void> {
     const session = await this.getSession();
     if (!session) throw new Error('No active session.');
@@ -657,6 +704,7 @@ export class MobileAuthService {
     const startingFloat = Number(params.startingFloat) || 0;
     const currency = params.currency || session.currency;
     const businessName = params.businessName?.trim() || session.businessName;
+    const city = params.city || session.city || 'Harare (Mbare Musika)';
 
     // 1. Update profile in Supabase
     if (isSupabaseConfigured) {
@@ -664,6 +712,7 @@ export class MobileAuthService {
         await SupabaseDataService.updateProfile({
           currency,
           stallName: businessName,
+          city,
           startingBalance: startingFloat,
           onboardingCompleted: true,
         });
@@ -685,10 +734,24 @@ export class MobileAuthService {
       });
     }
 
-    // 3. Update session
+    // 3. Update Business Profile in Storage
+    await MobileStorageService.updateBusiness({
+      name: businessName,
+      currency,
+      city,
+      businessType: params.businessType || 'Tuckshop & Grocery',
+      tagline: params.tagline || '',
+      operatingHours: params.operatingHours || '6:00 AM - 6:00 PM (Mon - Sat)',
+      preferredLanguage: (params.preferredLanguage as 'en' | 'sn' | 'nd') || 'en',
+    });
+
+    // 4. Update session
     await this.updateSession({
       currency,
       businessName,
+      city,
+      tagline: params.tagline,
+      operatingHours: params.operatingHours,
       onboardingCompleted: true,
     });
   }
