@@ -269,36 +269,63 @@ export const LandingPage: React.FC = () => {
       <Modal
         isOpen={legalModal !== null}
         onClose={() => setLegalModal(null)}
-        title={legalModal === 'privacy' ? 'CashFlow Mate Privacy Policy' : 'Terms of Use & Operational Limits'}
+        title={legalModal === 'privacy' ? 'CashFlow Mate – Privacy Policy' : 'CashFlow Mate – Terms and Conditions'}
         subtitle={
           legalModal === 'privacy'
-            ? 'Commitment to Zimbabwean informal trader data autonomy & strict privacy'
-            : 'Responsible software boundaries and financial recordkeeping guidelines'
+            ? 'Last updated: 4 November 2026 • Effective date: 4 November 2026'
+            : 'Last updated: 4 November 2026 • Effective date: 4 November 2026'
         }
       >
-        <div className="space-y-4 text-sm text-md-on-surface-variant py-2">
+        <div className="space-y-4 text-sm text-md-on-surface-variant py-2 max-h-[60vh] overflow-y-auto pr-2">
           {legalModal === 'privacy' ? (
             <>
               <p>
-                <strong>1. Local-First & Tenant Isolation:</strong> Your transaction records and customer credit books remain strictly private. Data is segregated by your business ID and never shared with competitor stalls or third-party marketing firms.
+                <strong>1. Who we are:</strong> CashFlow Mate is made by <strong>Maqhawe T Ngwenya</strong> (“we”, “us”, “our”), Harare, Zimbabwe. Contact: <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">privacy@cashflowmate.app</code>.
               </p>
               <p>
-                <strong>2. Responsible AI Grounding:</strong> When requesting AI financial insights, only sanitized descriptions and aggregated monetary totals are processed. Phone numbers and sensitive customer identifiers are scrubbed.
+                <strong>2. The short version:</strong> The App is built to work mostly on your device. Your till records stay on your phone unless you choose cloud sync. We do not sell data or show ads. We never auto-read SMS or contacts. AI features are optional.
               </p>
               <p>
-                <strong>3. Export and Data Freedom:</strong> You retain complete ownership of your ledger. You can export all records to standard CSV files or purge your local database at any time.
+                <strong>3. What we handle:</strong> Trader profile (name, username, stall info, hashed passwords/PINs), business records (transactions, 3-drawer balances, debts, inventory, pasted SMS/CSV), and essential operational logs.
+              </p>
+              <p>
+                <strong>4. Where stored:</strong> Default on your device in local encrypted storage. Optional server storage is isolated by account.
+              </p>
+              <p>
+                <strong>5. AI & Gemini:</strong> Optional AI requests process only necessary transaction figures. Sensitive IDs are sanitized.
+              </p>
+              <p>
+                <strong>6. Legal Basis & POTRAZ:</strong> Governed by Zimbabwe’s Cyber and Data Protection Act [Chapter 12:07]. Users retain full rights to access, correct, export and delete data or appeal to POTRAZ.
+              </p>
+              <p>
+                <strong>7. Retention:</strong> On-device data persists until cleared; server accounts deleted within 30 days of request; server logs purged after 90 days.
               </p>
             </>
           ) : (
             <>
               <p>
-                <strong>1. Recordkeeping Purpose:</strong> CashFlow Mate is a specialized cash-flow tracking and recordkeeping assistant engineered for microbusinesses in Zimbabwe. It is not a licensed commercial bank or deposit-taking entity.
+                <strong>1. Agreement:</strong> Terms between you and <strong>Maqhawe T Ngwenya</strong>, maker of CashFlow Mate (package <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">com.maqhawe.cashflowmate</code>).
               </p>
               <p>
-                <strong>2. Arithmetic Determinism:</strong> All financial aggregates, drawer balances, and operating profits are generated through deterministic mathematical equations. AI models do not perform arithmetic.
+                <strong>2. Nature of the App:</strong> Recordkeeping and decision-support tool. Not a bank, deposit-taker, payment processor, or certified tax/financial adviser. Does not move money.
               </p>
               <p>
-                <strong>3. Mukando & Credit Records:</strong> Mukando group contributions and informal credit entries are mutual merchant agreements and do not constitute formal legal underwriting.
+                <strong>3. Device & Backup Security:</strong> You are responsible for safeguarding your device, PIN, and making regular export backups.
+              </p>
+              <p>
+                <strong>4. Accuracy & Estimates:</strong> Calculations depend on merchant entry accuracy. Operating profit and conversion values are estimates.
+              </p>
+              <p>
+                <strong>5. Plans & Licenses:</strong> Starter core is 100% free forever. Pro and Enterprise commercial licenses include a 14-day free trial or money-back guarantee. Paid plans are not yet charged during public preview.
+              </p>
+              <p>
+                <strong>6. Intellectual Property:</strong> Source code is published under the MIT Licence. App branding and custom vector assets are retained by the maker.
+              </p>
+              <p>
+                <strong>7. Responsibility Limit & Law:</strong> Governed by the laws of Zimbabwe. Total liability is limited to fees paid in the prior 12 months, or <strong>US$25.00</strong> if using free tier.
+              </p>
+              <p>
+                <strong>8. Contact:</strong> Questions to <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">support@cashflowmate.app</code>, Maqhawe T Ngwenya, Harare, Zimbabwe.
               </p>
             </>
           )}
