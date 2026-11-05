@@ -643,6 +643,21 @@ export default function InsightsScreen() {
             )}
           </View>
         )}
+
+        {/* Compliance & AI Disclaimer Banner (20-Point Compliance) */}
+        <Pressable
+          onPress={() => router.push('/legal' as any)}
+          style={styles.legalDisclaimerBox}
+          accessibilityRole="button"
+          accessibilityLabel="Read AI financial disclaimer and legal terms"
+        >
+          <Ionicons name="information-circle-outline" size={16} color="#047857" />
+          <Text style={styles.legalDisclaimerText}>
+            CashFlow Mate AI is an assistive calculation tool and does not constitute certified legal,
+            tax, or financial advice.{' '}
+            <Text style={styles.legalDisclaimerLink}>View Legal &amp; Trust Center &rarr;</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
 
       {/* 3. Google Gemini API Key & Guardrail Configuration Modal */}
@@ -1332,5 +1347,28 @@ const styles = StyleSheet.create({
     right: 14,
     top: 36,
     padding: 6,
+  },
+  legalDisclaimerBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 18,
+    marginBottom: 20,
+  },
+  legalDisclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#166534',
+    lineHeight: 16,
+  },
+  legalDisclaimerLink: {
+    fontWeight: '800',
+    color: '#047857',
+    textDecorationLine: 'underline',
   },
 });

@@ -379,6 +379,52 @@ export default function ModalScreen() {
     router.replace('/login' as any);
   };
 
+  const handleDeleteAccountAndData = () => {
+    const executeErasure = async () => {
+      try {
+        await MobileStorageService.eraseAllUserData();
+        await MobileSecurityService.clearPin();
+        await MobileAuthService.logout();
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(
+            'Your account and all device records have been permanently erased in compliance with privacy regulations.'
+          );
+          window.location.assign('/login');
+          return;
+        }
+        Alert.alert(
+          'Account & Records Erased',
+          'Your account and all local records have been permanently erased (Right to Be Forgotten).'
+        );
+        router.replace('/login' as any);
+      } catch (err: any) {
+        Alert.alert('Error', err.message || 'Failed to erase data.');
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm(
+        'PERMANENT DATA ERASURE (Right to Be Forgotten):\n\nAre you sure you want to permanently delete your account and erase all records?\n\nAll local transactions, till drawers, customer credits, and credentials will be permanently erased. This action cannot be undone.'
+      );
+      if (confirmed) {
+        executeErasure();
+      }
+    } else {
+      Alert.alert(
+        'Delete Account & Erase All Data?',
+        'This will permanently destroy all local ledger transactions, customer credit balances, till drawers, and credentials from this device.\n\nThis action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Permanently Erase Everything',
+            style: 'destructive',
+            onPress: executeErasure,
+          },
+        ]
+      );
+    }
+  };
+
   const userDisplayName = session?.username || session?.name || business?.ownerName || 'Trader';
 
   return (
@@ -898,19 +944,24 @@ export default function ModalScreen() {
             <M3Badge label="3 CURRENCIES" variant="mint" />
           </View>
 
-          {/* Item 6: Privacy & MIT Licensing */}
-          <View style={styles.settingItem}>
+          {/* Item 6: Privacy & Legal Trust Center (20-Point Compliance) */}
+          <Pressable
+            onPress={() => router.push('/legal' as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Open Legal and Trust Center"
+          >
             <View style={styles.settingLeft}>
               <View style={[styles.iconSquircle, { backgroundColor: '#DCFCE7' }]}>
                 <Ionicons name="shield-checkmark" size={20} color="#16A34A" />
               </View>
               <View style={styles.settingTextCol}>
-                <Text style={styles.settingLabel}>Privacy & Copyright</Text>
-                <Text style={styles.settingSub}>MIT License &bull; CashFlow Mate Team</Text>
+                <Text style={styles.settingLabel}>Privacy &amp; Legal Trust Center</Text>
+                <Text style={styles.settingSub}>20-Point Compliance &bull; MIT License &bull; Mr Q</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
-          </View>
+          </Pressable>
 
           {/* Item 6b: Report a Problem to Admin Support */}
           <Pressable
@@ -1110,6 +1161,17 @@ export default function ModalScreen() {
               size="md"
               onPress={handleSignOut}
             />
+          </View>
+          <View style={{ marginTop: 14 }}>
+            <Pressable
+              onPress={handleDeleteAccountAndData}
+              style={styles.deleteAccountBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account and Permanently Erase All Data"
+            >
+              <Ionicons name="trash-outline" size={15} color="#DC2626" />
+              <Text style={styles.deleteAccountBtnText}>DELETE ACCOUNT &amp; ERASE ALL DATA</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -1469,5 +1531,23 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 960,
     alignSelf: 'center',
+  },
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 9999,
+    borderWidth: 1.5,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FEF2F2',
+  },
+  deleteAccountBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#DC2626',
+    letterSpacing: 0.4,
   },
 });

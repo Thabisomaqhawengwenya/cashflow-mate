@@ -27,6 +27,7 @@ export default function SignupScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +47,12 @@ export default function SignupScreen() {
     }
     if (password !== confirmPassword) {
       setError('Passwords do not match. Please confirm your password.');
+      return;
+    }
+    if (!agreedToTerms) {
+      setError(
+        'Please affirm that you are 18+ and agree to the Terms of Service & Privacy Policy.'
+      );
       return;
     }
 
@@ -264,6 +271,38 @@ export default function SignupScreen() {
             </Pressable>
           </View>
 
+          {/* Explicit Legal & Age Consent Checkbox (20-Point Compliance) */}
+          <Pressable
+            onPress={() => {
+              setAgreedToTerms(!agreedToTerms);
+              setError(null);
+            }}
+            style={styles.consentRow}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: agreedToTerms }}
+            accessibilityLabel="Confirm 18+ and agree to Terms of Service and Privacy Policy"
+          >
+            <View style={[styles.checkboxBox, agreedToTerms && styles.checkboxBoxChecked]}>
+              {agreedToTerms && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+            </View>
+            <Text style={styles.consentText}>
+              I confirm I am <Text style={styles.consentBold}>18+ years of age</Text> and accept the{' '}
+              <Text
+                onPress={() => router.push('/legal' as any)}
+                style={styles.consentLink}
+              >
+                Terms of Service
+              </Text>{' '}
+              &amp;{' '}
+              <Text
+                onPress={() => router.push('/legal' as any)}
+                style={styles.consentLink}
+              >
+                Privacy Policy
+              </Text>.
+            </Text>
+          </Pressable>
+
           <View style={styles.buttonSpacing}>
             <M3Button
               label={isLoading ? 'Creating Till...' : 'Create My Till & Start'}
@@ -448,6 +487,43 @@ const styles = StyleSheet.create({
     right: 14,
     top: 36,
     padding: 4,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
+    marginBottom: 4,
+    paddingHorizontal: 2,
+  },
+  checkboxBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#94A3B8',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxBoxChecked: {
+    backgroundColor: '#0C3E35',
+    borderColor: '#0C3E35',
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 18,
+  },
+  consentBold: {
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  consentLink: {
+    fontWeight: '800',
+    color: '#1565D8',
+    textDecorationLine: 'underline',
   },
   buttonSpacing: {
     marginTop: 20,

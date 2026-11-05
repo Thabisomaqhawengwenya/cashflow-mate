@@ -414,6 +414,34 @@ export class MobileStorageService {
     await AsyncStorage.removeItem(STORAGE_KEY_DEBTS);
   }
 
+  /**
+   * Complete GDPR & CCPA "Right to Be Forgotten" data deletion.
+   * Irreversibly purges all local ledger records, debts, business profiles,
+   * saved credentials, and cached tokens from this device.
+   */
+  static async eraseAllUserData(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY_BIZ);
+      await AsyncStorage.removeItem(STORAGE_KEY_TX);
+      await AsyncStorage.removeItem(STORAGE_KEY_DEBTS);
+      await AsyncStorage.removeItem(STORAGE_KEY_GEMINI_KEY);
+      await SecureVault.removeSecret(STORAGE_KEY_GEMINI_KEY);
+
+      const allKeys = await AsyncStorage.getAllKeys();
+      const cashflowKeys = allKeys.filter(
+        (k) =>
+          k.startsWith('@cashflow_') ||
+          k.startsWith('CFM_') ||
+          k.startsWith('@cashflow-mate/')
+      );
+      if (cashflowKeys.length > 0) {
+        await AsyncStorage.multiRemove(cashflowKeys);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   static async resetDemoData(): Promise<void> {
     await this.clearAllLocalData();
   }

@@ -18,6 +18,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { AppearanceProvider } from '@/context/AppearanceContext';
 import { MobileAuthService } from '@/services/auth';
 import { BlueTokens } from '@/constants/Colors';
+import { CookieBanner } from '@/components/CookieBanner';
 
 /**
  * Custom ErrorBoundary that automatically recovers from stale Metro web chunk hashes
@@ -96,7 +97,8 @@ function RootLayoutNav() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const firstSegment = segments[0] as string | undefined;
-  const isAuthScreen = firstSegment === 'login' || firstSegment === 'signup';
+  const isAuthScreen =
+    firstSegment === 'login' || firstSegment === 'signup' || firstSegment === 'legal';
   const isOnboardingScreen = firstSegment === 'onboarding';
 
   useEffect(() => {
@@ -158,8 +160,11 @@ function RootLayoutNav() {
               <Stack.Screen name="appearance" options={{ headerShown: false }} />
               <Stack.Screen name="profile" options={{ headerShown: false }} />
               <Stack.Screen name="admin" options={{ headerShown: false }} />
+              <Stack.Screen name="legal" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
             </Stack>
+
+            <CookieBanner />
 
             {shouldMaskProtectedContent && (
               <View style={styles.authGateMask}>

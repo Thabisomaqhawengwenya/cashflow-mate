@@ -128,6 +128,16 @@ export class MobileSecurityService {
   }
 
   /**
+   * Administratively clears PIN, failed attempt records, lockouts, and privacy masks (e.g. on full account erasure)
+   */
+  static async clearPin(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEY_PIN);
+    await AsyncStorage.removeItem(STORAGE_KEY_ATTEMPTS);
+    await AsyncStorage.removeItem(STORAGE_KEY_LOCKOUT);
+    await AsyncStorage.removeItem(STORAGE_KEY_MASK);
+  }
+
+  /**
    * Toggles the counter privacy mask (hides sensitive balance amounts from customers)
    */
   static async togglePrivacyMask(): Promise<boolean> {
