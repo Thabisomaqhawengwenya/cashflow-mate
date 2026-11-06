@@ -369,7 +369,7 @@ export default function InsightsScreen() {
               setKeyTestMessage(null);
               setIsApiKeyModalOpen(true);
             }}
-            style={styles.backButton}
+            style={styles.headerActionBtn}
             accessibilityRole="button"
             accessibilityLabel="Configure Gemini API Key"
           >
@@ -808,10 +808,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  backButton: {
+  headerActionBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',

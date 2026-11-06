@@ -219,11 +219,11 @@ export default function ImportScreen() {
           <Text style={styles.headerTitle}>{t('import_title')}</Text>
           <Pressable
             onPress={() => router.push('/modal')}
-            style={styles.backButton}
+            style={styles.headerActionBtn}
             accessibilityRole="button"
             accessibilityLabel="Settings"
           >
-            <Ionicons name="key-outline" size={20} color="#FFFFFF" />
+            <Ionicons name="settings-outline" size={19} color="#FFFFFF" />
           </Pressable>
         </View>
 
@@ -444,10 +444,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  backButton: {
+  headerActionBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',

@@ -97,13 +97,13 @@ function RootLayoutNav() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const firstSegment = segments[0] as string | undefined;
-  const isAuthScreen =
-    firstSegment === 'login' ||
-    firstSegment === 'signup' ||
+  const isAuthScreen = firstSegment === 'login' || firstSegment === 'signup';
+  const isPublicPolicyScreen =
     firstSegment === 'legal' ||
     firstSegment === 'refund' ||
     firstSegment === 'cookies' ||
-    firstSegment === 'disclaimer';
+    firstSegment === 'disclaimer' ||
+    firstSegment === 'danger-zone';
   const isOnboardingScreen = firstSegment === 'onboarding';
 
   useEffect(() => {
@@ -117,7 +117,7 @@ function RootLayoutNav() {
       setIsAuthenticated(loggedIn);
       setIsAuthChecked(true);
 
-      if (!loggedIn && !isAuthScreen) {
+      if (!loggedIn && !isAuthScreen && !isPublicPolicyScreen) {
         // Always open the Sign In (/login) page first for unauthenticated users
         router.replace('/login' as any);
       } else if (loggedIn && session?.role === 'admin') {
@@ -188,6 +188,7 @@ function ThemedRootContainer({
           <Stack.Screen name="refund" options={{ headerShown: false }} />
           <Stack.Screen name="cookies" options={{ headerShown: false }} />
           <Stack.Screen name="disclaimer" options={{ headerShown: false }} />
+          <Stack.Screen name="danger-zone" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
 

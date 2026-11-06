@@ -123,7 +123,7 @@ export default function TransactionsScreen() {
           <Pressable
             onPress={() => router.push('/modal')}
             hitSlop={10}
-            style={styles.backButton}
+            style={styles.headerActionBtn}
             accessibilityRole="button"
             accessibilityLabel="Settings"
           >
@@ -428,10 +428,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  backButton: {
+  headerActionBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',

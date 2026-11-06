@@ -13,7 +13,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, router } from 'expo-router';
+import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import Colors, { EmeraldTokens, BlueTokens } from '@/constants/Colors';
 import { DesignTokens } from '@/constants/DesignTokens';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -104,9 +104,20 @@ export default function OverviewScreen() {
   const [category, setCategory] = useState('sales_goods');
 
   // SMS Quick-Paste Modal State
+  const params = useLocalSearchParams<{ openSms?: string }>();
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
   const [rawSmsInput, setRawSmsInput] = useState('');
   const [parsedSms, setParsedSms] = useState<ParsedSmsResult | null>(null);
+
+  useEffect(() => {
+    if (params?.openSms === 'true') {
+      setIsSmsModalOpen(true);
+      const sample = SAMPLE_SMS_CHIPS[0].sms;
+      setRawSmsInput(sample);
+      const res = parseZimbabweSms(sample);
+      setParsedSms(res);
+    }
+  }, [params?.openSms]);
 
   // Unified Portfolio & Exchange Rates State
   const [portfolioValuation, setPortfolioValuation] = useState<PortfolioValuation | null>(null);
@@ -1421,7 +1432,7 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',

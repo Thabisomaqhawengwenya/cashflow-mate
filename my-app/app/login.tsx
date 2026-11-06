@@ -113,8 +113,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               accessibilityLabel="Create Account"
             >
-              <Text style={styles.topBarLinkText}>Sign Up</Text>
-              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+              <Text style={styles.topBarLinkText}>Create Account</Text>
             </Pressable>
           </View>
 

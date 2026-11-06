@@ -1147,6 +1147,25 @@ export default function ModalScreen() {
               <Ionicons name="chevron-forward" size={18} color={EmeraldTokens.textSubtle} />
             </View>
           </Pressable>
+
+          {/* Item 9: Danger Zone Data Erasure */}
+          <Pressable
+            onPress={() => router.push('/danger-zone' as any)}
+            style={styles.settingItem}
+            accessibilityRole="button"
+            accessibilityLabel="Open Account and Data Erasure Danger Zone"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconSquircle, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              </View>
+              <View style={styles.settingTextCol}>
+                <Text style={[styles.settingLabel, { color: '#DC2626' }]}>Danger Zone &bull; Data Erasure</Text>
+                <Text style={styles.settingSub}>Statutory account purge &bull; Right to Be Forgotten</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#DC2626" />
+          </Pressable>
         </View>
 
         {/* App Branding & Version Card */}
